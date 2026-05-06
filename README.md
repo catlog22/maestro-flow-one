@@ -8,6 +8,8 @@ All 49 Maestro workflow commands as a single skill with dual-variant support (Co
 npm install -g maestro-flow-one
 ```
 
+> **Important:** The CLI must be globally installed (`maestro-flow` command available in PATH) to ensure delegate sessions can correctly invoke `/maestro-flow --cmd ...` during wave/step execution. Without global install, external steps and cross-command calls will fail.
+
 ### Install skill
 
 ```bash
