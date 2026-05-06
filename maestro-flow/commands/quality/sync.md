@@ -1,51 +1,111 @@
 ---
 name: quality-sync
-description: Sync codebase docs after code changes - traces git diff through component/feature/requirement impact chain
+description: Sync codebase docs after code changes -- traces git diff through component/feature/requirement layers
 argument-hint: "[--full] [--since <commit|HEAD~N>] [--dry-run]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
+
 <purpose>
-Synchronize project state after manual code changes or to refresh codebase documentation. Detects changes via git diff, traces impact through doc-index.json (file -> component -> feature -> requirement), updates state.json and index.json, and refreshes affected `.workflow/codebase/` documentation. Use --full flag for a complete resync of all tracked files regardless of git diff.
+Sync codebase documentation after code changes by tracing git diff through component, feature, and requirement layers. Updates `.workflow/codebase/` docs to reflect current source state.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/sync.md
-</required_reading>
-
 <context>
-$ARGUMENTS -- optional flags:
-- `--full` -- Complete resync of all tracked files (ignores git diff, rebuilds all docs)
+
+```bash
+$quality-sync
+$quality-sync "--since HEAD~5"
+$quality-sync "--full"
+$quality-sync "--dry-run"
+$quality-sync "--since abc123 --dry-run"
+```
+
+**Flags**:
+- `--full` -- Complete resync of all tracked files (ignores git diff)
 - `--since <commit|HEAD~N>` -- Diff since specific commit (default: last sync timestamp)
-- `--dry-run` -- Show what would be updated without writing changes
+- `--dry-run` -- Show what would be updated without writing
+
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/sync.md' completely.
 
-**Next-step routing on completion:**
-- Docs refreshed → `/manage-status`
-- Major structural changes detected → `/manage-codebase-rebuild` (full rebuild recommended)
+### Step 1: Validate
+
+Verify `.workflow/` directory exists — if missing, raise E001.
+
+### Step 2: Detect Changes
+
+If `--full`: skip diff, mark all tracked files as changed.
+
+Otherwise:
+1. Read last sync timestamp from `state.json` field `last_synced`
+2. If `--since` provided, use that as baseline
+3. Run `git diff --name-only {baseline} HEAD` to get changed files
+
+If no changes and not `--full`, report clean state (W001) and exit.
+
+### Step 3: Trace Impact Chain
+
+For each changed file, trace through `doc-index.json` impact layers:
+1. **File layer** -- Which doc entries reference this file directly
+2. **Component layer** -- Which components contain this file
+3. **Feature layer** -- Which features depend on affected components
+4. **Requirement layer** -- Which requirements trace to affected features
+
+Build the full set of affected documentation entries.
+
+### Step 4: Update Documentation
+
+If `--dry-run`: display affected entries and exit.
+
+For each affected entry:
+1. Re-read source files
+2. Regenerate the documentation section in `.workflow/codebase/`
+3. Update `doc-index.json` with new timestamp and content hash
+
+### Step 5: Update State
+
+Update `state.json`:
+- `last_synced: "{ISO timestamp}"`
+- `last_synced_commit: "{HEAD commit hash}"`
+
+Update affected `index.json` files in phase directories if task files were modified.
+
+### Step 6: Tech Stack Refresh (Conditional)
+
+If dependency manifests changed (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `pom.xml`):
+- Re-read manifest files
+- Update `project.md` Tech Stack section with current dependencies/versions
+- Update `doc-index.json` tech-registry entries
+
+### Step 7: Report & Routing
+
+Display summary: files changed, components affected, features affected, docs updated, tech stack refreshed (if applicable).
+
+**Next-step routing:**
+
+| Result | Next Step |
+|--------|-----------|
+| Docs refreshed successfully | `$manage-status` |
+| Major structural changes detected (new modules, removed dirs) | `$manage-codebase-rebuild` (full rebuild recommended) |
+| Dependency manifests changed significantly | Review `project.md` Tech Stack for accuracy |
+
 </execution>
 
 <error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E001 | error | .workflow/ not initialized | Suggest running `/maestro-init` first|
-| W001 | warning | No changes detected since last sync | Report clean state, skip updates |
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | error | `.workflow/` not initialized -- run `Skill({ skill: "maestro-flow", args: "--cmd maestro-init" })` first |
+| W001 | warning | No changes detected since last sync |
+
 </error_codes>
 
 <success_criteria>
-- [ ] state.json updated with current sync timestamp
-- [ ] Codebase docs refreshed for all affected components
-- [ ] doc-index.json reflects current file state
-- [ ] Changes tracked and logged
-- [ ] project.md Tech Stack section refreshed if dependency manifests changed
+- [ ] Changed files detected (or full resync triggered)
+- [ ] Impact chain traced through all layers (file → component → feature → requirement)
+- [ ] Documentation entries updated in `.workflow/codebase/`
+- [ ] `doc-index.json` reflects current file state with updated hashes
+- [ ] `state.json` updated with sync timestamp and commit hash
+- [ ] If dependency manifests changed: project.md Tech Stack section refreshed
+- [ ] Summary report with next-step routing displayed
 </success_criteria>

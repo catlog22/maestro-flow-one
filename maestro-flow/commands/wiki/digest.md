@@ -1,69 +1,87 @@
 ---
 name: wiki-digest
-description: Generate knowledge digest from wiki entries with theme clustering, gap analysis, and coverage heatmap
-argument-hint: "[<topic>|--recent N] [--type <type>] [--format brief|full]"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+description: Knowledge synthesis from wiki entries. Theme clustering, gap analysis, coverage heatmap (type × theme matrix). Optionally creates knowledge-gap issues. Persists meta-insights to lessons.jsonl.
+argument-hint: "[<topic>|--recent N] [--type <type>] [--format brief|full] [--create-issues]"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
-<purpose>
-Knowledge synthesis command that generates actionable digests from the wiki knowledge graph. Clusters entries by semantic theme, identifies knowledge gaps, and produces a coverage heatmap. Unique to maestro — leverages the wiki graph (BM25 search, backlinks, health) to surface trends and missing knowledge.
 
-Unlike `maestro wiki list` which shows raw entries, this command synthesizes and interprets the knowledge base, producing a curated summary with gap analysis and recommended next actions.
+<purpose>
+Knowledge synthesis that generates actionable digests from the wiki knowledge graph.
+Clusters entries by semantic theme, identifies knowledge gaps, and produces a coverage
+heatmap. Unlike `maestro wiki list` (raw entries), this synthesizes and interprets
+the knowledge base with gap analysis and recommended actions.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/wiki-digest.md
-</required_reading>
-
-<deferred_reading>
-- @~/.maestro/workflows/issue.md (issues.jsonl canonical schema for `--create-issues` routing)
-</deferred_reading>
-
 <context>
-Arguments: $ARGUMENTS
+$ARGUMENTS — scope and optional flags.
 
-Flags, scope resolution, storage paths, and CLI commands defined in workflow wiki-digest.md.
+**Scope resolution:**
+- `<topic>` — Search wiki for matching entries
+- `--recent N` — Entries updated in last N days
+- `--type <type>` — Filter by wiki type
+- No args — entire wiki
+
+**Flags:**
+- `--format brief` — Compact summary (default)
+- `--format full` — Detailed with per-entry summaries
+- `--create-issues` — Auto-create knowledge-gap issues in issues.jsonl
+
+**Output**: `.workflow/learning/digest-{slug}-{date}.md`
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/wiki-digest.md' completely (Stages 1-8).
 
-**Next-step routing:**
-- Deep dive on a theme → `/learn-follow <wiki-id>`
-- Fix graph gaps → `/wiki-connect --fix`
-- Decompose code for missing patterns → `/learn-decompose <path>`
-- Create missing entries → `maestro wiki create --type <type> --slug <slug>`
-- Triage gap issues → `/manage-issue list --source wiki-digest`
+### Stage 1: Scope & Load
+Load entries via `maestro wiki list/search`. Run `maestro wiki health` for baseline.
+
+### Stage 2: Theme Clustering
+Group entries into 3-5 themes via: tag co-occurrence, title BM25 similarity, relationship proximity, type grouping.
+
+### Stage 3: Per-Theme Analysis
+Per theme: summary paragraph, key entries (by hub score), gap detection (broken links, orphans, TODO markers, missing perspectives), health score.
+
+### Stage 4: Cross-Reference with Lessons
+Search `lessons.jsonl` for related insights. Flag unlinked insights (lessons matching theme but not referenced by wiki entries).
+
+### Stage 5: Coverage Heatmap
+Type × theme matrix showing knowledge density:
+```
+              Theme 1    Theme 2    Theme 3
+spec          ███░░      ░░░░░      █████
+memory        ████░      ███░░      ░░░░░
+lesson        █░░░░      ██░░░      ████░
+```
+Empty cells = knowledge gaps.
+
+### Stage 6: Write Digest
+Produce `digest-{slug}-{date}.md` with themes, heatmap, gaps, unlinked insights, recommended actions.
+
+### Stage 7: Gap → Issue (if --create-issues)
+For each gap: dedup against issues.jsonl, append with `type: "knowledge-gap"`, `source: "wiki-digest"`.
+
+### Stage 8: Persist
+Append meta-insights to `lessons.jsonl` (source: "wiki-digest"). Display summary.
+
+**Next steps:** `/learn-follow <wiki-id>`, `/wiki-connect --fix`, `/manage-wiki cleanup`, `/learn-decompose <path>`
 </execution>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
-| E001 | error | No wiki entries found (empty index) | Initialize wiki content first |
-| E002 | error | Topic search returned 0 results | Broaden topic or check wiki content |
-| W001 | warning | Too few entries (<5) for meaningful theme clustering | Digest produced but themes may be trivial |
-| W002 | warning | lessons.jsonl not found — skipping cross-reference | Proceed without lesson context |
-| W003 | warning | Some entry bodies failed to load — partial summaries | Note incomplete entries in digest |
+| E001 | error | No wiki entries found | Initialize wiki content |
+| E002 | error | Topic search returned 0 | Broaden topic |
+| W001 | warning | Too few entries (<5) | Themes may be trivial |
+| W002 | warning | lessons.jsonl not found | Skip cross-reference |
+| W003 | warning | Some entry bodies failed to load | Partial summaries |
 </error_codes>
 
 <success_criteria>
 - [ ] Scope parsed and entries loaded
-- [ ] Baseline health score recorded
 - [ ] Entries clustered into 3-5 semantic themes
-- [ ] Per-theme analysis: summary, key entries, gaps, health
+- [ ] Per-theme analysis with gaps identified
 - [ ] Cross-reference with lessons.jsonl completed
-- [ ] Coverage heatmap generated (type × theme matrix)
-- [ ] Knowledge gaps identified with suggested actions
-- [ ] If `--create-issues`: gap issues created in `issues.jsonl` (deduped)
+- [ ] Coverage heatmap generated
+- [ ] If --create-issues: gap issues created (deduped)
 - [ ] Digest written to `digest-{slug}-{date}.md`
-- [ ] Meta-insights appended to `lessons.jsonl`
-- [ ] `learning-index.json` updated
-- [ ] No files modified outside `.workflow/learning/` and `.workflow/issues/` (issues only when `--create-issues`)
-- [ ] Summary displayed with key findings and next-step routing
+- [ ] Meta-insights appended to lessons.jsonl
 </success_criteria>

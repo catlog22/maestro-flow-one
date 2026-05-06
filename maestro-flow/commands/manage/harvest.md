@@ -1,94 +1,91 @@
 ---
 name: manage-harvest
-description: Extract knowledge from workflow artifacts and route to wiki / spec / issue stores
+description: Extract knowledge fragments from workflow artifacts (analysis, brainstorm, debug, lite-plan, scratchpad, sessions) and route to wiki / spec / issue stores. Dedup via stable fragment IDs. Closed-loop with downstream consumers.
 argument-hint: "[<session-id|path>] [--to wiki|spec|issue|auto] [--source <type>] [--recent N] [--dry-run] [-y]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
+
 <purpose>
-Extract knowledge fragments from workflow artifacts (analysis results, brainstorm outputs, debug sessions, lite-plan/fix results, scratchpad notes, completed sessions) and route them into the project's three knowledge stores: wiki entries, spec conventions, and trackable issues.
+Knowledge extraction from workflow artifacts, routed into three stores: wiki entries,
+spec conventions, and trackable issues. Prevents knowledge loss from completed sessions.
 
-Complements `quality-retrospective` (which is phase-scoped) by harvesting from **any** workflow artifact. Prevents knowledge loss from completed analysis and planning sessions that would otherwise only exist as stale files.
-
-**Closed-loop**: harvest extracts → wiki/spec/issue stores → downstream commands consume (wiki-digest, spec-load, maestro-plan --gaps).
+**Closed-loop**: harvest extracts → stores → downstream consumers (wiki-digest, spec-load, maestro-plan --gaps).
 </purpose>
 
 <required_reading>
 @~/.maestro/workflows/harvest.md
 </required_reading>
 
-<deferred_reading>
-- @~/.maestro/workflows/issue.md (issues.jsonl schema for issue routing — read when creating issues in Stage 6c)
-- @~/.maestro/workflows/specs-add.md (spec entry format — read when routing to spec in Stage 6b)
-</deferred_reading>
-
 <context>
-Arguments: $ARGUMENTS
+$ARGUMENTS — session-id, path, or empty for scan mode.
 
-**Modes (auto-detected):**
-- No arguments → `scan` mode: discover all harvestable artifacts, interactive selection
-- `<session-id>` (e.g., `ANL-auth-20260410`, `WFS-xxx`) → `session` mode: harvest specific session
-- `<path>` (e.g., `.workflow/.analysis/ANL-auth-20260410/`) → `path` mode: harvest from explicit directory
+**Modes:**
+- No args → `scan`: discover all harvestable artifacts, interactive selection
+- `<session-id>` → `session`: harvest specific session
+- `<path>` → `path`: harvest from explicit directory
 
-Flags, source registry (scan paths), and storage locations defined in workflow harvest.md.
+**Flags:**
+- `--to <target>` — Force routing: wiki, spec, issue, auto (default: auto)
+- `--source <type>` — Filter: analysis, brainstorm, debug, lite-plan, lite-fix, scratchpad, session, learning, all
+- `--recent N` — Artifacts within last N days (default: 30)
+- `--dry-run` — Preview without writing
+- `-y` — Skip confirmations
+- `--min-confidence N` — Minimum 0.0-1.0 (default: 0.5)
+
+**Source registry:**
+| Source | Scan Path | Key Files |
+|--------|-----------|-----------|
+| analysis | `.workflow/.analysis/ANL-*/` | conclusions.json |
+| brainstorm | `.workflow/scratch/brainstorm-*/` | guidance-specification.md |
+| lite-plan | `.workflow/.lite-plan/*/` | plan.json |
+| lite-fix | `.workflow/.lite-fix/*/` | fix-plan.json |
+| debug | `.workflow/.debug/*/` | debug-log.md |
+| scratchpad | `.workflow/.scratchpad/` | *.md |
+| session | `.workflow/active/WFS-*/` | workflow-session.json |
+| learning | `.workflow/learning/` | lessons.jsonl |
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/harvest.md' Stages 1-8 in order.
+Follow '~/.maestro/workflows/harvest.md' Stages 1–8.
 
 **Key invariants:**
-1. **Read-only until Stage 6** — extraction and classification happen in-memory.
-2. **Dedup before write** — check harvest-log.jsonl and existing stores before each write.
-3. **Never modify source artifacts** — harvest is purely extractive.
+1. **Read-only until Stage 6** — extraction/classification in-memory only
+2. **Dedup before write** — check harvest-log.jsonl + existing stores
+3. **Stable fragment IDs** — `HRV-{8 hex}` from `hash(source_id + content_hash)`
+4. **Never modify source artifacts** — purely extractive
+5. **Confidence filtering** — below threshold logged but not routed
+6. **Spec format enforcement** — all spec routing must use `<spec-entry>` closed-tag format with `category`, `keywords`, `date`, `source="harvest"` attributes
 
-Extraction patterns, classification rules, routing infrastructure, and fragment ID scheme defined in workflow harvest.md.
+**Routing rules:**
+- Universal design patterns → `coding` or `arch` category
+- Component-level pitfalls → `learning` category
+- Quality enforcement rules → `quality` category
+- Wiki: `maestro wiki create --type <type> --slug harvest-<source_type>-<short_id>`
+- Spec: `maestro wiki append spec-<file> --category <category> --body "<content>" --keywords "<kws>"` (unified write path) or `Skill({ skill: "maestro-flow", args: "--cmd spec-add <category> <content>" })`
+- Issue: append to `issues.jsonl` matching canonical schema
 
-**Next-step routing on completion:**
-- Review wiki entries → `maestro wiki list --type note`
-- Connect wiki graph → `/wiki-connect --fix`
-- Triage issues → `/manage-issue list --source harvest`
-- View specs → `/spec-load --category learning`
-- Full retrospective → `/quality-retrospective`
+**Next steps:** `/manage-wiki health`, `maestro wiki list --type note`, `/wiki-connect --fix`, `/wiki-digest`, `/manage-issue list --source harvest`
 </execution>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
-| E001 | error | `.workflow/` not initialized | Run `/maestro-init` first |
-| E002 | error | Invalid `--to` target (must be: wiki, spec, issue, auto) | Display valid options |
-| E003 | error | Invalid `--source` type | Display valid source types from registry |
-| E004 | error | Session ID not found in any source path | Show available sessions with `--source all` |
-| E005 | error | Path does not exist or contains no parseable artifacts | Verify path and file structure |
-| W001 | warning | No harvestable artifacts found within `--recent` window | Widen time window or check `.workflow/` contents |
-| W002 | warning | `maestro wiki create` failed — wiki entries saved to `.workflow/harvest/wiki-pending-*.md` | Apply pending entries manually or retry |
-| W003 | warning | Some fragments below confidence threshold — logged but not routed | Lower `--min-confidence` to include |
-| W004 | warning | Duplicate fragments skipped | Review harvest-log.jsonl for prior routing |
-| W005 | warning | `.workflow/issues/` directory missing | Auto-create directory and empty issues.jsonl |
+| E001 | error | .workflow/ not initialized | Run $maestro-init |
+| E002 | error | Invalid --to target | Valid: wiki, spec, issue, auto |
+| E003 | error | Invalid --source type | Display valid types |
+| E004 | error | Session ID not found | Show available sessions |
+| W001 | warning | No harvestable artifacts in window | Widen --recent |
+| W003 | warning | Fragments below threshold | Lower --min-confidence |
+| W004 | warning | Duplicate fragments skipped | Review harvest-log.jsonl |
 </error_codes>
 
 <success_criteria>
-- [ ] Mode correctly resolved (scan / session / path)
-- [ ] Source artifacts discovered and listed with metadata
-- [ ] User selected artifact(s) to harvest (or auto-selected via session/path mode)
-- [ ] All files in selected artifacts loaded and parsed
-- [ ] Knowledge fragments extracted with category, confidence, tags
-- [ ] Fragments filtered by `--min-confidence`
-- [ ] Routing classification applied (auto or forced by `--to`)
-- [ ] Dedup check passed against harvest-log.jsonl and existing stores
-- [ ] If `--dry-run`: preview displayed, no files written
-- [ ] If not dry-run: all routed items written to target stores
-- [ ] Wiki entries created via `maestro wiki create` (or fallback to pending files)
-- [ ] Spec entries added via `spec-add` mechanism
-- [ ] Issue entries appended to `issues.jsonl` with canonical schema
-- [ ] `harvest-log.jsonl` updated with provenance for each routed item
-- [ ] `harvest-report-{date}.md` written with full summary
+- [ ] Mode resolved (scan / session / path)
+- [ ] Artifacts discovered and parsed
+- [ ] Fragments extracted with category, confidence, tags
+- [ ] Dedup check passed against harvest-log.jsonl and stores
+- [ ] If not dry-run: routed items written to target stores
+- [ ] harvest-log.jsonl updated with provenance
+- [ ] harvest-report-{date}.md written
 - [ ] No source artifacts modified
-- [ ] Summary displayed with counts and next-step routing
 </success_criteria>

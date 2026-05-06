@@ -1,167 +1,86 @@
 ---
 name: learn-second-opinion
-description: Multi-perspective analysis with review, challenge, and consult modes
-argument-hint: "<target> [--mode review|challenge|consult]"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+description: Multi-perspective analysis via CSV wave pipeline. Review mode spawns 3 parallel persona agents (pragmatist, purist, strategist), then synthesis agent merges verdicts. Also supports challenge and consult modes. Persists findings to lessons.jsonl.
+argument-hint: "[-y|--yes] [-c|--concurrency 3] [--continue] \"<target> [--mode review|challenge|consult]\""
+allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
+
 <purpose>
-Structured second-opinion workflow for code, decisions, or plans. Three modes inspired by gstack `/codex`:
+Structured second-opinion for code, decisions, or plans. Three modes:
+- **review** (default): 3 parallel persona agents independently assess target via spawn_agents_on_csv
+- **challenge**: single adversarial agent via spawn_agents_on_csv (1 worker)
+- **consult**: interactive Q&A (no CSV wave — direct orchestration)
 
-- **review** (default): 3 parallel agents with distinct personas (pragmatist, purist, strategist) independently assess the target
-- **challenge**: single adversarial agent that tries to break the approach, find hidden assumptions, and propose alternatives
-- **consult**: interactive Q&A mode where the agent studies the target and answers your questions
-
-Decoupled from the phase/execution lifecycle — can be invoked on any piece of code or knowledge at any time. Findings persist to `lessons.jsonl`.
+Findings persist to `lessons.jsonl`. Decoupled from phase lifecycle.
 </purpose>
 
 <context>
-Arguments: $ARGUMENTS
+$ARGUMENTS — target and optional flags.
 
 **Target resolution (auto-detected):**
-- File path → analyze that file's content
-- Wiki ID (`<type>-<slug>`) → fetch via `maestro wiki get`
-- `HEAD` or `staged` → analyze current git diff (`git diff HEAD` or `git diff --staged`)
-- Phase number (e.g., `3`) → resolve via `state.json.artifacts[]` to find plan in scratch dir
+- File path → analyze file content
+- Wiki ID (`type-slug`) → fetch via `maestro wiki get`
+- `HEAD` / `staged` → analyze git diff
+- Phase number → analyze phase plan
 
 **Flags:**
 - `--mode review` — 3-persona parallel review (default)
 - `--mode challenge` — Adversarial single-agent analysis
 - `--mode consult` — Interactive Q&A session
 
-**Storage written:**
-- `.workflow/learning/opinion-{slug}-{YYYY-MM-DD}.md` — Opinion report
-- `.workflow/learning/lessons.jsonl` — New insights from analysis (source: "second-opinion")
-- `.workflow/learning/learning-index.json` — Updated index
-
-**Storage read:**
-- Target content (file, wiki entry, diff, or plan)
-- `.workflow/specs/` — Project conventions for context
-- `maestro wiki search` — Related knowledge entries
-- `.workflow/learning/lessons.jsonl` — Prior insights about the topic
+**Output**: `.workflow/learning/opinion-{slug}-{date}.md`
 </context>
 
 <execution>
 
-### Stage 1: Resolve Target
-- File path: Read the file
-- Wiki ID: `maestro wiki get <id>`
-- `HEAD`: `git diff HEAD` (unstaged + staged changes)
-- `staged`: `git diff --staged`
-- Phase N: Resolve via `state.json.artifacts.find(a => a.type === 'plan' && a.phase === N)` → read `.workflow/{artifact.path}/plan.json`
-- If unresolvable, AskUserQuestion for clarification
+### Phase 1: Resolve Target + Load Context
+Resolve target to content. Load specs, wiki search, prior lessons for context brief.
 
-### Stage 2: Load Context
-- Read relevant specs: `Skill({ skill: "maestro-flow", args: "--cmd spec-load" })` silently to get project conventions
-- Search wiki: `maestro wiki search "<target topic>"` for related entries (top 5)
-- Search lessons: grep `lessons.jsonl` for entries related to the target area
-- Build context brief: target content + conventions + related knowledge
+### Phase 2: Execute Mode
 
-### Stage 3: Execute Mode
+#### Review Mode (spawn_agents_on_csv)
 
-#### Mode: review (default)
-Spawn 3 Agents in a single message with distinct personas:
+| id | persona | focus | grading |
+|----|---------|-------|---------|
+| 1 | pragmatist | Simplicity, YAGNI, maintenance cost, readability | complexity score, abstraction depth |
+| 2 | purist | Correctness, type safety, edge cases, error handling | error paths, type completeness |
+| 3 | strategist | Scalability, extensibility, architecture alignment | coupling, cohesion |
+| 4 | synthesis | Merge verdicts → agreements, disagreements, top 3 recommendations | combined verdict |
 
-**Agent 1 — Pragmatist:**
-- Focus: simplicity, YAGNI, maintenance cost, readability
-- Question: "Is this the simplest thing that could work? What's the maintenance burden?"
-- Evaluates: complexity score, abstraction depth, dependency count
+Wave 1: 3 persona agents in parallel. Wave 2: synthesis agent with wave 1 findings as prev_context.
 
-**Agent 2 — Purist:**
-- Focus: correctness, type safety, edge cases, error handling
-- Question: "What assumptions can be violated? Where are the edge cases?"
-- Evaluates: error paths covered, type completeness, invariant preservation
+Each persona returns: `{ persona, verdict: approve|concern|reject, confidence, findings: [{severity, description, location, suggestion}], summary }`
 
-**Agent 3 — Strategist:**
-- Focus: scalability, extensibility, architecture alignment
-- Question: "Does this support future growth? Does it fit the overall architecture?"
-- Evaluates: coupling, cohesion, architecture constraint compliance
+#### Challenge Mode
+Single agent via spawn_agents_on_csv (1 worker). Adversarial analysis with forcing questions:
+- "What assumption would invalidate this entire approach?"
+- "What's the simplest thing that breaks this?"
+- "What's the implicit contract that isn't enforced?"
 
-Each agent returns:
-```json
-{
-  "persona": "pragmatist|purist|strategist",
-  "verdict": "approve|concern|reject",
-  "confidence": "high|medium|low",
-  "findings": [{ "severity": "high|medium|low", "description": "...", "location": "file:line", "suggestion": "..." }],
-  "summary": "one paragraph assessment"
-}
-```
+#### Consult Mode
+Interactive loop via AskUserQuestion. Agent studies target, answers questions with code references. Compile Q&A into report on exit.
 
-#### Mode: challenge
-Spawn 1 Agent as an adversarial reviewer:
+### Phase 3: Persist
+1. Write `opinion-{slug}-{date}.md` with per-persona findings + synthesis
+2. Append non-trivial findings to `lessons.jsonl` (source: "second-opinion")
+3. Display summary with verdict and next steps
 
-- Try to find the weakest assumption in the approach
-- Propose a concrete scenario that breaks the current implementation
-- Identify the single biggest risk
-- Suggest an alternative approach and argue why it might be better
-- Apply forcing questions:
-  - "What assumption would invalidate this entire approach?"
-  - "What's the simplest thing that breaks this?"
-  - "If you had to rewrite this in 6 months, what would you regret?"
-  - "What's the implicit contract that isn't enforced?"
-
-#### Mode: consult
-Interactive loop:
-1. Agent studies the target content thoroughly
-2. Display: "Target loaded. What would you like to know?"
-3. AskUserQuestion for the first question
-4. Agent answers with code references and evidence
-5. Loop: AskUserQuestion for follow-up or "done" to exit
-6. On exit, compile all Q&A into the report
-
-### Stage 4: Synthesize
-Across all perspectives (or from single agent in challenge/consult):
-- **Points of agreement**: findings all personas share
-- **Points of disagreement**: where personas diverge (with reasoning)
-- **Verdict**: combined assessment with confidence level
-- **Top 3 recommendations**: prioritized by impact
-
-### Stage 5: Persist & Report
-1. Write `.workflow/learning/opinion-{slug}-{date}.md`:
-   - Target summary
-   - Per-persona findings (review) / adversarial analysis (challenge) / Q&A transcript (consult)
-   - Synthesis: agreements, disagreements, verdict
-   - Recommendations
-2. Append non-trivial findings to `lessons.jsonl`:
-   - `source: "second-opinion"`, `category: "pattern"` or `"antipattern"` or `"decision"`
-   - Tags: `["second-opinion", "{mode}", "{target-slug}"]`
-3. Update `learning-index.json`
-4. Display summary with verdict and recommendations
-
-**Next-step routing:**
-- Create issue for a finding → `/manage-issue create <description>`
-- Decompose patterns found → `/learn-decompose <path>`
-- Follow-along on the code → `/learn-follow <path>`
+**Next steps:** `/manage-issue create`, `/learn-decompose <path>`, `/learn-follow <path>`
 </execution>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
-| E001 | error | Target not resolvable (file/wiki/diff/plan not found) | Verify target argument, provide correct path or ID |
-| E002 | error | Unknown --mode value | Use: review, challenge, or consult |
-| W001 | warning | One review agent failed — partial perspectives | Proceed with available agents, note incomplete coverage |
-| W002 | warning | No related wiki entries found for context | Proceed without wiki context |
-| W003 | warning | Git diff empty (no changes) for HEAD/staged target | Nothing to review; suggest using a file path instead |
+| E001 | error | Target not resolvable | Verify path/ID |
+| E002 | error | Unknown --mode value | Use: review, challenge, consult |
+| W001 | warning | Persona agent failed — partial perspectives | Proceed with available agents |
+| W003 | warning | Git diff empty for HEAD/staged | Use file path instead |
 </error_codes>
 
 <success_criteria>
-- [ ] Target resolved and content loaded
-- [ ] Context gathered (specs, wiki, lessons)
-- [ ] Mode executed correctly:
-  - review: 3 agents spawned in parallel, all returned findings
-  - challenge: adversarial analysis completed with forcing questions
-  - consult: interactive Q&A loop completed
+- [ ] Target resolved and context loaded
+- [ ] Mode executed: review (3 parallel agents), challenge (adversarial), or consult (interactive)
 - [ ] Synthesis produced with agreements, disagreements, verdict
 - [ ] Report written to `opinion-{slug}-{date}.md`
 - [ ] Non-trivial findings appended to `lessons.jsonl`
-- [ ] `learning-index.json` updated
-- [ ] No files modified outside `.workflow/learning/`
-- [ ] Summary displayed with verdict and next-step routing
 </success_criteria>

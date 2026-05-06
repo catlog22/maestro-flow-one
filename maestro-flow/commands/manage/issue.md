@@ -1,73 +1,75 @@
 ---
 name: manage-issue
-description: Issue CRUD operations -- create, query, update, close, and link issues to tasks
+description: Issue CRUD -- create, list, status, update, close, and link issues to tasks
 argument-hint: "<create|list|status|update|close|link> [options]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - AskUserQuestion
+allowed-tools: Read, Write, Bash, Glob, Grep, AskUserQuestion
 ---
+
 <purpose>
-Issue lifecycle management for the project issue tracker. Supports create, list, status, update, close, and link (bidirectional issue-task cross-reference). All issues stored in `.workflow/issues/issues.jsonl` using the issue.json schema.
-
-For automated issue discovery, use `/manage-issue-discover`.
-
-**Closed-loop workflow**: After creating an issue, use `/maestro-analyze --gaps <ISS-ID>` for root cause analysis, `/maestro-plan --gaps` for solution planning, and `/maestro-execute` for execution.
+Issue CRUD operations: create, list, status, update, close, and link issues to tasks.
+All data stored in `.workflow/issues/issues.jsonl` with auto-created directory on first use.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/issue.md
-</required_reading>
-
-<deferred_reading>
-- [issue.json template](~/.maestro/templates/issue.json) — read when creating or updating issue records (create, update, close)
-</deferred_reading>
-
 <context>
-$ARGUMENTS -- subcommand + options. Parse first token as subcommand.
+$ARGUMENTS — subcommand followed by options.
 
-**Valid subcommands:**
-- `create` -- create a new issue (--title, --severity, --source, --phase, --description)
-- `list` -- list issues with optional filters (--status, --phase, --severity, --source)
-- `status` -- show full detail for a specific issue (ISS-XXXXXXXX-NNN)
-- `update` -- update issue fields (ISS-XXXXXXXX-NNN --status, --priority, --severity, --tags, ...)
-- `close` -- close an issue with resolution (ISS-XXXXXXXX-NNN --resolution)
-- `link` -- link issue to a task (ISS-XXXXXXXX-NNN --task TASK-NNN)
+```bash
+$manage-issue "create --title 'Auth token expiry bug' --severity high --source manual"
+$manage-issue "list --status open --severity high"
+$manage-issue "status ISS-20260318-001"
+$manage-issue "update ISS-20260318-001 --priority critical --tags auth,security"
+$manage-issue "close ISS-20260318-001 --resolution fixed"
+$manage-issue "link ISS-20260318-001 --task TASK-003"
+```
 
-**State files:**
-- `.workflow/issues/issues.jsonl` -- active issues (one JSON per line)
-- `.workflow/issues/issue-history.jsonl` -- archived/closed issues
+**Subcommands**: `create`, `list`, `status`, `update`, `close`, `link`.
 </context>
 
 <execution>
-Parse subcommand from first token of $ARGUMENTS.
-Follow '~/.maestro/workflows/issue.md' completely.
 
-**Next-step routing on completion:**
-- create → `/maestro-analyze --gaps <ISS-ID>` or `/maestro-plan --gaps`
-- list → `/maestro-analyze --gaps <ISS-ID>` for any open issue
-- close → `/manage-status`
+### Step 1: Parse Subcommand
+
+Extract first token as subcommand. Valid: `create`, `list`, `status`, `update`, `close`, `link`.
+If missing or invalid, display usage and prompt user (E_NO_SUBCOMMAND, E_INVALID_SUBCOMMAND).
+
+### Step 2: Ensure Storage
+
+Auto-create `.workflow/issues/` and empty `issues.jsonl` if missing (E_ISSUES_DIR_MISSING handled silently).
+
+### Step 3: Execute Subcommand
+
+**create**: Read `~/.maestro/templates/issue.json` for schema. Generate ID `ISS-{YYYYMMDD}-{NNN}`. Prompt for missing required fields (title, severity). Append JSON line to `issues.jsonl`.
+
+**list**: Read `issues.jsonl`, filter by `--status`, `--phase`, `--severity`, `--source`. Display as table:
+```
+ID              | Severity | Status | Title
+ISS-20260318-001 | high     | open   | Auth token expiry bug
+```
+
+**status**: Find issue by ID in `issues.jsonl`. Display all fields in detail format.
+
+**update**: Find issue by ID, merge provided fields, rewrite the line in `issues.jsonl`. Track `updated_at` timestamp.
+
+**close**: Find issue by ID, set status to `closed`, add `resolution` and `closed_at`. Move line from `issues.jsonl` to `issue-history.jsonl`.
+
+**link**: Find issue by ID, add task reference to issue's `linked_tasks` array. If task JSON exists (`.task/TASK-*.json`), add issue reference to task's `linked_issues`. Bidirectional cross-reference.
 </execution>
 
 <error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E_NO_SUBCOMMAND | error | No subcommand provided in $ARGUMENTS | Display valid subcommands, prompt user to select |
-| E_INVALID_SUBCOMMAND | error | Unrecognized subcommand | Display valid subcommands with usage hints |
-| E_ISSUES_DIR_MISSING | warning | `.workflow/issues/` directory does not exist | Auto-create directory and empty issues.jsonl |
+| Code | Severity | Description |
+|------|----------|-------------|
+| E_NO_SUBCOMMAND | error | No subcommand provided -- display valid subcommands |
+| E_INVALID_SUBCOMMAND | error | Unrecognized subcommand |
+| E_ISSUES_DIR_MISSING | warning | `.workflow/issues/` not found -- auto-created |
 </error_codes>
 
 <success_criteria>
-- [ ] Subcommand parsed and routed to correct handler
-- [ ] Issue data read/written to correct JSONL file
-- [ ] Output displayed in appropriate format (table for list, detail for status)
-- [ ] Cross-references maintained (link creates bidirectional references)
-- [ ] Next step routing by subcommand:
-  - create → `/maestro-analyze --gaps <ISS-ID>` or `/maestro-plan --gaps`
-  - list → `/maestro-analyze --gaps <ISS-ID>` for any open issue
-  - close → `/manage-status`
+- [ ] Subcommand parsed and validated
+- [ ] Storage directory and files auto-created on first use
+- [ ] create: generates unique ISS-id, prompts for required fields, appends to JSONL
+- [ ] list: filters by status/phase/severity/source, renders table
+- [ ] status: displays full detail for given ISS-id
+- [ ] update: merges fields, tracks updated_at timestamp
+- [ ] close: sets status closed, moves to history file
+- [ ] link: bidirectional cross-reference between issue and task
 </success_criteria>

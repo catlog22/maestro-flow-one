@@ -1,90 +1,468 @@
 ---
 name: maestro-verify
-description: Goal-Backward verification with 3-layer must-have checks, anti-pattern scan, Nyquist test coverage validation, and gap-fix plan generation
-argument-hint: "[phase] [--skip-tests] [--skip-antipattern] [--dir <path>]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+description: Goal-Backward 3-layer verification via CSV wave pipeline. Staged parallel waves check Truths, Artifacts, and Wiring with anti-pattern scan and Nyquist test coverage audit. Replaces maestro-verify command.
+argument-hint: "[-y|--yes] [-c|--concurrency N] [--continue] \"<phase> [--skip-tests] [--skip-antipattern]\""
+allowed-tools: spawn_agents_on_csv, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
+
 <purpose>
-Verify execution results through three complementary methods:
-1. **Goal-Backward verification** — 3-layer check (Truths → Artifacts → Wiring) that validates goals are actually achieved
-2. **Anti-pattern scan** — detect stubs, placeholders, TODO/FIXME, empty returns in modified files
-3. **Nyquist test coverage validation** — requirement-to-test mapping with gap classification
+Wave-based 3-layer Goal-Backward verification using `spawn_agents_on_csv`. Decomposes verification into staged parallel checks across three waves: truth + artifact existence (Wave 1), artifact substance + wiring (Wave 2), anti-pattern scan + Nyquist audit (Wave 3).
 
-Supports dual-level verification:
-- **Single plan**: `verify --dir scratch/plan-xxx` — verifies one plan, writes `verification.json` into plan dir
-- **Milestone**: `verify` (no args) — aggregates all execute artifacts for current milestone into `scratch/{YYYYMMDD}-verify-M{N}-{slug}/milestone-verification.json`
+**Core workflow**: Load Phase Artifacts -> Establish Must-Haves -> Decompose Checks -> Staged Parallel Verification -> Aggregate + Fix Plans
 
-Registers VRF artifact in state.json on completion.
+**Core principle**: Task completion != Goal achievement. A task marked complete may contain stubs/placeholders. This verifier checks that goals are actually achieved.
+
+```
++-------------------------------------------------------------------------+
+|                  VERIFICATION CSV WAVE WORKFLOW                         |
++-------------------------------------------------------------------------+
+|                                                                         |
+|  Phase 1: Phase Resolution -> CSV                                       |
+|     +-- Resolve phase directory from arguments                          |
+|     +-- Load index.json, plan.json, TASK-*.json, summaries              |
+|     +-- Establish must-haves (truths, artifacts, key links)             |
+|     +-- Decompose into check tasks per layer                            |
+|     +-- Assign waves based on layer dependencies                        |
+|     +-- Generate tasks.csv with one row per check                       |
+|     +-- User validates check breakdown (skip if -y)                     |
+|                                                                         |
+|  Phase 2: Wave Execution Engine                                         |
+|     +-- Wave 1: Truth Checks + Artifact Existence (parallel)            |
+|     |   +-- Truth agents verify observable behaviors                    |
+|     |   +-- Artifact-exist agents check L1 (file exists on disk)        |
+|     |   +-- Discoveries shared via board (gap patterns, stubs)          |
+|     |   +-- Results: status + evidence + gaps_found per check           |
+|     +-- Wave 2: Artifact Substance + Wiring (parallel)                  |
+|     |   +-- Substance agents check L2 (real impl, not stub)             |
+|     |   +-- Wiring agents check L3 (imported + used)                    |
+|     |   +-- Needs truth context from wave 1                             |
+|     |   +-- Results: status + evidence + gaps_found per check           |
+|     +-- Wave 3: Anti-Pattern Scan + Nyquist Audit (parallel)            |
+|     |   +-- Anti-pattern agent scans modified files (skip if flagged)   |
+|     |   +-- Nyquist agent maps requirements to tests (skip if flagged)  |
+|     |   +-- Needs artifact context from wave 2                          |
+|     |   +-- Results: antipatterns[] + coverage gaps                     |
+|     +-- discoveries.ndjson shared across all waves (append-only)        |
+|                                                                         |
+|  Phase 3: Results Aggregation                                           |
+|     +-- Export results.csv                                              |
+|     +-- Build verification.json (must_haves, gaps, antipatterns, fixes) |
+|     +-- Build validation.json (if Nyquist ran)                          |
+|     +-- Generate context.md with all findings                           |
+|     +-- Auto-create issues for gaps + blocker anti-patterns             |
+|     +-- Generate fix plans (cluster related gaps)                       |
+|     +-- Update phase index.json with verification status                |
+|     +-- Display summary with next steps                                 |
+|                                                                         |
++-------------------------------------------------------------------------+
+```
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/verify.md
-</required_reading>
-
-<deferred_reading>
-- [verification.json](~/.maestro/templates/verification.json) — read when generating output
-- [validation.json](~/.maestro/templates/validation.json) — read when generating test output
-</deferred_reading>
-
 <context>
-$ARGUMENTS — phase number or no args for milestone-wide, with optional flags.
+```bash
+$maestro-verify "3"
+$maestro-verify -c 4 "3 --skip-tests"
+$maestro-verify -y "3 --skip-antipattern"
+$maestro-verify --continue "20260318-verify-P3-auth"
+```
 
-Flags (`--skip-tests`, `--skip-antipattern`, `--dir`), scope routing, output paths, and VRF artifact registration schema are defined in workflow `verify.md`.
+**Flags**:
+- `-y, --yes`: Skip all confirmations (auto mode)
+- `-c, --concurrency N`: Max concurrent agents within each wave (default: 4)
+- `--continue`: Resume existing session
+
+When `--yes` or `-y`: Auto-confirm check decomposition, skip interactive validation, use defaults for layer detection.
+
+**Output Directory**: `.workflow/.csv-wave/{session-id}/`
+**Core Output**: `tasks.csv` (master state) + `results.csv` (final) + `discoveries.ndjson` (shared exploration) + `context.md` (human-readable report) + `verification.json` (structured verification output) + `validation.json` (test coverage output, if Nyquist ran)
 </context>
 
+<csv_schema>
+
+### tasks.csv (Master State)
+
+```csv
+id,title,description,layer,phase_dir,check_type,deps,context_from,wave,status,findings,gaps_found,fix_plan,error
+"1","Truth: User can see existing messages","Verify observable behavior: user can see existing messages by checking supporting artifacts, API calls, and render logic.","truth",".workflow/scratch/plan-chat-2026/","observable_behavior","","","1","","","","",""
+"2","Truth: User can send new messages","Verify observable behavior: user can send new messages by checking form submission, API POST, and state update.","truth",".workflow/scratch/plan-chat-2026/","observable_behavior","","","1","","","","",""
+"3","Artifact Exists: src/components/Chat.tsx","Check L1 existence: verify file src/components/Chat.tsx exists on disk.","artifact",".workflow/scratch/plan-chat-2026/","exists","","","1","","","","",""
+"4","Artifact Exists: src/api/chat.ts","Check L1 existence: verify file src/api/chat.ts exists on disk.","artifact",".workflow/scratch/plan-chat-2026/","exists","","","1","","","","",""
+"5","Artifact Substance: src/components/Chat.tsx","Check L2 substance: verify src/components/Chat.tsx has real implementation (not stub/placeholder). Minimum logic threshold, no placeholder markers.","artifact",".workflow/scratch/plan-chat-2026/","substance","3","3","2","","","","",""
+"6","Artifact Substance: src/api/chat.ts","Check L2 substance: verify src/api/chat.ts has real implementation (not stub/placeholder).","artifact",".workflow/scratch/plan-chat-2026/","substance","4","4","2","","","","",""
+"7","Wiring: Chat.tsx -> /api/chat","Check L3 wiring: verify Chat.tsx imports and calls /api/chat endpoints. Check import statements and actual usage beyond imports.","wiring",".workflow/scratch/plan-chat-2026/","import_usage","3;4","3;4","2","","","","",""
+"8","Anti-Pattern Scan","Scan all modified files for TODO/FIXME/XXX/HACK, placeholder content, empty returns, log-only functions, hardcoded test data, disabled tests. Categorize as Blocker/Warning/Info.","antipattern",".workflow/scratch/plan-chat-2026/","pattern_scan","1;2;5;6;7","1;2;5;6;7","3","","","","",""
+"9","Nyquist Test Coverage Audit","Map requirements to test files. Classify each as COVERED/PARTIAL/MISSING. Detect test framework, run coverage if available.","nyquist",".workflow/scratch/plan-chat-2026/","test_coverage","1;2;5;6;7","1;2;5;6;7","3","","","","",""
+```
+
+**Columns**:
+
+| Column | Phase | Description |
+|--------|-------|-------------|
+| `id` | Input | Unique task identifier (string) |
+| `title` | Input | Short check title |
+| `description` | Input | Detailed verification instructions for this check |
+| `layer` | Input | Verification layer: truth/artifact/wiring/antipattern/nyquist |
+| `phase_dir` | Input | Target directory path (e.g., `.workflow/scratch/plan-chat-2026/`) |
+| `check_type` | Input | Specific check type: observable_behavior/exists/substance/import_usage/pattern_scan/test_coverage |
+| `deps` | Input | Semicolon-separated dependency task IDs |
+| `context_from` | Input | Semicolon-separated task IDs whose findings this task needs |
+| `wave` | Computed | Wave number (1 = truths + existence, 2 = substance + wiring, 3 = antipattern + nyquist) |
+| `status` | Output | `pending` -> `completed` / `failed` / `skipped` |
+| `findings` | Output | Key verification findings summary (max 500 chars) |
+| `gaps_found` | Output | JSON array of gap descriptions: `[{"id":"GAP-001","type":"missing_feature","severity":"critical","description":"...","fix_direction":"..."}]` |
+| `fix_plan` | Output | Suggested fix actions for identified gaps |
+| `error` | Output | Error message if failed |
+
+### Per-Wave CSV (Temporary)
+
+Each wave generates `wave-{N}.csv` with extra `prev_context` column.
+
+### Output Artifacts
+
+| File | Purpose | Lifecycle |
+|------|---------|-----------|
+| `tasks.csv` | Master state -- all tasks with status/findings | Updated after each wave |
+| `wave-{N}.csv` | Per-wave input (temporary) | Created before wave, deleted after |
+| `results.csv` | Final export of all task results | Created in Phase 3 |
+| `discoveries.ndjson` | Shared exploration board | Append-only, carries across waves |
+| `context.md` | Human-readable verification report | Created in Phase 3 |
+| `verification.json` | Structured verification output for downstream | Created in Phase 3 |
+| `validation.json` | Nyquist test coverage output (if ran) | Created in Phase 3 |
+
+### Session Structure
+
+```
+.workflow/.csv-wave/{YYYYMMDD}-verify-P{N}-{slug}/
++-- tasks.csv
++-- results.csv
++-- discoveries.ndjson
++-- context.md
++-- verification.json
++-- validation.json (if Nyquist ran)
++-- wave-{N}.csv (temporary)
+```
+</csv_schema>
+
+<invariants>
+1. **Start Immediately**: First action is session initialization, then Phase 1
+2. **Wave Order is Sacred**: Never execute wave 2 before wave 1 completes and results are merged
+3. **CSV is Source of Truth**: Master tasks.csv holds all state
+4. **Context Propagation**: prev_context built from master CSV, not from memory
+5. **Discovery Board is Append-Only**: Never clear, modify, or recreate discoveries.ndjson
+6. **Skip on Failure**: If artifact existence check failed, skip its substance/wiring checks
+7. **Respect Skip Flags**: `--skip-tests` and `--skip-antipattern` mark wave 3 tasks as skipped, not removed
+8. **Cleanup Temp Files**: Remove wave-{N}.csv after results are merged
+9. **DO NOT STOP**: Continuous execution until all waves complete
+10. **Goal-Backward**: Verify goals are achieved, not just tasks completed
+</invariants>
+
 <execution>
-Follow '~/.maestro/workflows/verify.md' completely.
 
-### Post-verify Knowledge Inquiry
+### Session Initialization
 
-After verification completes, evaluate inquiry triggers:
+**Parse from `$ARGUMENTS`**:
 
-1. **Anti-pattern detection**: If anti-pattern scan found blockers (TODO/FIXME, stubs, empty returns):
-   → Ask: "Verification found {N} anti-patterns. Should `quality-rules.md` be updated to enforce these checks? (`/spec-add quality`)"
+| Variable | Source | Default |
+|----------|--------|---------|
+| `AUTO_YES` | `--yes` or `-y` | false |
+| `continueMode` | `--continue` | false |
+| `maxConcurrency` | `--concurrency N` or `-c N` | 4 |
+| `skipTests` | `--skip-tests` | false |
+| `skipAntipattern` | `--skip-antipattern` | false |
+| `phaseArg` | remaining text after flag removal | — |
 
-2. **Constraint violation**: If Goal-Backward check found constraint_violations or missing wiring:
-   → Ask: "Verification found architecture constraint violations. Should `architecture-constraints.md` be updated? (`/spec-add arch`)"
+**Session path** (UTC+8 date prefix): `.workflow/.csv-wave/{YYYYMMDD}-verify-P{phaseArg}-{phaseSlug}/`
 
-3. **Test coverage gaps**: If Nyquist gaps found with recurring pattern (same module/type across tasks):
-   → Ask: "Persistent test coverage gap detected in {module}. Should it be added to `test-conventions.md` as a required test area? (`/spec-add test`)"
+Create session directory.
 
-If user confirms, invoke `Skill({ skill: "maestro-flow", args: "--cmd spec-add <category> <content>" })`.
+### Phase 1: Phase Resolution -> CSV
 
-**Next-step routing on completion:**
-- All checks pass, no gaps → /quality-review
-- Gaps found (must-have failures or anti-pattern blockers) → /maestro-plan --gaps
-- Low test coverage (Nyquist gaps) → /quality-auto-test
+**Objective**: Resolve phase, load artifacts, establish must-haves, decompose into check tasks, generate tasks.csv.
 
-**Gap-fix closure loop:**
-Gaps found → maestro-plan --gaps → maestro-execute → maestro-verify (re-run)
+**Decomposition Rules**:
+
+1. **Phase resolution**: Resolve `{phaseArg}` via artifact registry in `state.json` to `.workflow/scratch/{YYYYMMDD}-{type}-{slug}/`
+2. **Artifact loading**: Read from phase directory:
+   - `index.json` -- success_criteria (ground truth for verification)
+   - `plan.json` -- original plan with task_ids
+   - All `.task/TASK-{NNN}.json` -- task definitions with convergence.criteria
+   - All `.summaries/TASK-{NNN}-summary.md` -- execution results
+   - `uat.md` (if exists) -- human UAT gaps to incorporate
+
+3. **Must-have establishment** (priority order):
+   - **success_criteria from index.json** -- primary contract
+   - **convergence.criteria from task JSON** -- per-task completion criteria
+   - **Derived from phase goal** -- fallback: derive 3-7 observable behaviors
+
+4. **Must-have decomposition** into 3 layers:
+   - **Truths**: Observable behaviors (e.g., "User can see existing messages")
+   - **Artifacts**: Concrete file paths that must exist and be substantive
+   - **Key Links**: Critical wiring between artifacts (e.g., "Chat.tsx imports /api/chat")
+
+5. **Check task generation**: For each must-have, generate check rows:
+
+| Layer | Check Types | Wave |
+|-------|-------------|------|
+| truth | observable_behavior | 1 |
+| artifact (exists) | exists | 1 |
+| artifact (substance) | substance | 2 |
+| wiring | import_usage | 2 |
+| antipattern | pattern_scan | 3 (skip if `--skip-antipattern`) |
+| nyquist | test_coverage | 3 (skip if `--skip-tests`) |
+
+6. **Wave computation**: Assign waves based on layer dependency chain:
+   - Wave 1: truth + artifact/exists (no predecessors, parallel)
+   - Wave 2: artifact/substance + wiring (need existence confirmation from wave 1)
+   - Wave 3: antipattern + nyquist (need substance/wiring context from wave 2)
+
+7. **Specs loading**: `specs_content = maestro spec load --category quality`
+
+8. **CSV generation**: One row per check task.
+
+**User validation**: Display check breakdown (skip if AUTO_YES).
+
+### Phase 2: Wave Execution Engine
+
+**Objective**: Execute verification checks wave-by-wave via spawn_agents_on_csv.
+
+#### Wave 1: Truth Checks + Artifact Existence (Parallel)
+
+Filter `wave == 1 && status == pending` from master CSV. No prev_context (no predecessors). Write `wave-1.csv`.
+
+```javascript
+spawn_agents_on_csv({
+  csv_path: `${sessionFolder}/wave-1.csv`,
+  id_column: "id",
+  instruction: buildVerifyInstruction(sessionFolder, "wave1"),
+  max_concurrency: maxConcurrency,
+  max_runtime_seconds: 3600,
+  output_csv_path: `${sessionFolder}/wave-1-results.csv`,
+  output_schema: { id, status: ["completed"|"failed"], findings, gaps_found, fix_plan, error }
+  // required: id, status, findings
+})
+```
+
+Merge results into master `tasks.csv`, delete `wave-1.csv`.
+
+**Truth check agent**: Identify supporting artifacts, check existence + substance + wiring indicators. Status: VERIFIED / FAILED / UNCERTAIN. Report gaps for FAILED with severity + fix direction.
+
+**Artifact existence agent**: Check file on disk. Missing = gap (severity=critical). Exists = note size + structure for wave 2.
+
+#### Wave 2: Artifact Substance + Wiring (Parallel)
+
+Filter `wave == 2 && status == pending`. Skip substance check if all wave 1 existence checks failed for that artifact. Build `prev_context` from wave 1 findings (format: `[Task N: Title] status - summary`). Write `wave-2.csv`, execute `spawn_agents_on_csv`, merge results, delete temp CSV.
+
+**Substance check agent**: <10 lines real logic or contains placeholder markers ("placeholder", "coming soon", "TODO: implement") = STUB. Otherwise SUBSTANTIVE.
+
+**Wiring check agent**: Grep for import statements + actual usage beyond imports. Status: WIRED / ORPHANED / NOT_WIRED.
+
+#### Wave 3: Anti-Pattern Scan + Nyquist Audit (Parallel)
+
+Filter `wave == 3 && status == pending`. Mark as `skipped` per skip flags (`--skip-antipattern`, `--skip-tests`). Build `prev_context` from wave 1 + wave 2 findings. Write `wave-3.csv`, execute `spawn_agents_on_csv`, merge results, delete temp CSV.
+
+**Anti-pattern scan agent**: Extract modified files from task summaries. Scan for TODO/FIXME/XXX/HACK, placeholder content, empty returns, log-only functions, hardcoded test data, disabled tests. Categorize: Blocker / Warning / Info. Report as JSON array in `gaps_found`.
+
+**Nyquist audit agent**: Detect test framework, map requirements to test files, classify COVERED / PARTIAL / MISSING. Run coverage if available. Report gaps + coverage percentage.
+
+### Phase 3: Results Aggregation
+
+**Objective**: Generate final results, fix plans, and human-readable report.
+
+1. Read final master `tasks.csv`
+2. Export as `results.csv`
+3. **Aggregate must_haves** from all check results:
+
+```json
+{
+  "truths": [
+    { "claim": "User can see existing messages", "status": "verified", "evidence": "Chat.tsx renders from /api/chat GET" }
+  ],
+  "artifacts": [
+    { "path": "src/components/Chat.tsx", "status": "exists", "substantive": true }
+  ],
+  "key_links": [
+    { "from": "Chat.tsx -> /api/chat", "status": "wired" }
+  ]
+}
+```
+
+4. **Collect all gaps** from all tasks' `gaps_found` columns + UAT gaps (if uat.md exists)
+5. **Generate fix plans**: Cluster related gaps -> generate plan per cluster -> order by dependency
+6. **Build verification.json**:
+
+```json
+{
+  "phase": "<phase>",
+  "status": "passed|gaps_found|human_needed",
+  "verified_at": "<ISO>",
+  "verifier": "csv-wave-verifier",
+  "must_haves": { "truths": [...], "artifacts": [...], "key_links": [...] },
+  "gaps": [...],
+  "antipatterns": [...],
+  "fix_plans": [...],
+  "human_verification": [...],
+  "coverage_score": 0.85
+}
+```
+
+7. **Build validation.json** (if Nyquist ran):
+
+```json
+{
+  "phase": "<phase>",
+  "status": "passed|gaps_found",
+  "validated_at": "<ISO>",
+  "test_framework": "vitest",
+  "coverage": { "statements": 80, "branches": 72, "functions": 85, "lines": 78 },
+  "requirement_coverage": [
+    { "requirement": "REQ-001", "tests": ["auth.spec.ts"], "status": "covered" }
+  ],
+  "gaps": [...]
+}
+```
+
+8. **Generate context.md**:
+
+```markdown
+# Verification Report -- Phase {phase}
+
+## Summary
+- Truths: {verified}/{total} verified
+- Artifacts: {artifact_verified}/{artifact_total} (L1-L3)
+- Wiring: {links_wired}/{links_total} key links
+- Anti-patterns: {blocker_count} blockers, {warning_count} warnings
+- Nyquist: {coverage_pct}% coverage ({skipped|status})
+
+## Overall Status: **{status}**
+
+## Must-Have Truths
+### {truth_claim}
+Status: {VERIFIED|FAILED|UNCERTAIN}
+Evidence: {evidence}
+
+## Artifact Checks
+| Path | Exists | Substantive | Wired | Status |
+|------|--------|-------------|-------|--------|
+
+## Key Links
+| Link | Status | Evidence |
+
+## Gaps
+| ID | Type | Severity | Description | Fix Direction |
+
+## Anti-Patterns
+| File:Line | Pattern | Severity | Description |
+
+## Fix Plans
+### {cluster_name}
+Objective: {objective}
+Tasks: {task_list}
+Issue Refs: {issue_ids}
+
+## Nyquist Coverage
+{requirement_coverage_table}
+```
+
+9. **Overall status determination**:
+
+| Condition | Status |
+|-----------|--------|
+| All truths VERIFIED, all artifacts pass L1-L3, all key links WIRED, no blockers | passed |
+| Any truth FAILED, artifact MISSING/STUB, key link NOT_WIRED, or blocker found | gaps_found |
+| All automated checks pass but human verification items remain | human_needed |
+
+10. **Auto-create issues** from gaps + blocker anti-patterns (ID format: `ISS-YYYYMMDD-NNN`).
+
+11. **Archive previous artifacts**: Move existing `verification.json`/`validation.json` in phase dir to `.history/`.
+
+12. **Copy outputs** to phase directory: `verification.json`, `validation.json` (if generated).
+
+13. **Update phase index.json** with verification status and timestamps.
+
+14. **Display summary**: Phase name, truths verified/total, artifacts L1-L3, wiring status, anti-pattern counts, Nyquist coverage, gaps by severity, fix plan count, issues created, human verification items, output file paths.
+
+15. **Post-verify Knowledge Inquiry** (before next step routing):
+
+| Signal | Prompt User | Spec Category |
+|--------|-------------|---------------|
+| Anti-pattern blockers found | "Update `quality-rules.md`?" | `quality` via `/spec-add` |
+| Constraint/wiring violations | "Update `architecture-constraints.md`?" | `arch` via `/spec-add` |
+| Recurring Nyquist coverage gaps | "Add to `test-conventions.md`?" | `test` via `/spec-add` |
+
+On user confirm, append `<spec-entry>` to matching category file.
+
+16. **Next step routing**:
+
+| Result | Suggestion |
+|--------|------------|
+| All passed, no gaps | `$quality-review "{phase}"` for code review |
+| Critical gaps found | `$quality-debug` for investigation |
+| Minor gaps only | `$maestro-plan "{phase} --gaps"` -> `$maestro-execute` -> re-run `$maestro-verify` |
+| Low test coverage | `$quality-auto-test "{phase}"` to generate missing tests |
+| Human verification needed | `$quality-test "{phase}"` for interactive UAT |
+
+### Shared Discovery Board Protocol
+
+#### Standard Discovery Types
+
+| Type | Dedup Key | Data Schema | Description |
+|------|-----------|-------------|-------------|
+| `code_pattern` | `data.name` | `{name, file, description}` | Reusable code pattern found |
+| `integration_point` | `data.file` | `{file, description, exports[]}` | Module connection point |
+| `convention` | singleton | `{naming, imports, formatting}` | Project code conventions |
+| `blocker` | `data.issue` | `{issue, severity, impact}` | Blocking issue found |
+| `tech_stack` | singleton | `{framework, language, tools[]}` | Technology stack info |
+
+#### Domain Discovery Types
+
+| Type | Dedup Key | Data Schema | Description |
+|------|-----------|-------------|-------------|
+| `verification_gap` | `data.gap_id` | `{gap_id, layer, severity, description}` | Verification gap found |
+| `stub_detected` | `data.file` | `{file, line, marker, content}` | Stub/placeholder file detected |
+| `broken_wiring` | `data.from+data.to` | `{from, to, expected, actual}` | Broken integration link |
+| `antipattern` | `data.location` | `{location, pattern, severity}` | Anti-pattern instance |
+| `test_gap` | `data.requirement` | `{requirement, status, suggested_test}` | Missing test coverage |
+
+#### Protocol
+
+1. **Read** `{session_folder}/discoveries.ndjson` before own check
+2. **Skip covered**: If discovery of same type + dedup key exists, skip
+3. **Write immediately**: Append findings as found
+4. **Append-only**: Never modify or delete
+5. **Deduplicate**: Check before writing
+
+```bash
+echo '{"ts":"<ISO>","worker":"{id}","type":"verification_gap","data":{"gap_id":"GAP-001","layer":"truth","severity":"critical","description":"User cannot send messages - form handler is a stub"}}' >> {session_folder}/discoveries.ndjson
+```
 </execution>
 
 <error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E001 | error | No executed plans found for verification | Run maestro-execute first |
-| E002 | error | Plan directory not found | Check --dir path |
-| E003 | error | No execution results found (missing summaries) | Run maestro-execute first |
-| W001 | warning | Test coverage below configured threshold | Review coverage gaps |
-| W002 | warning | Anti-pattern blockers found in modified files | Fix blockers before proceeding |
+
+| Error | Resolution |
+|-------|------------|
+| Phase directory not found | Resolve via state.json artifact registry; abort if not found |
+| No execution results found | Abort with error: "No completed tasks found -- run execute first" |
+| No summaries found | Warn, proceed with task file analysis only |
+| No success_criteria in index.json | Derive must-haves from phase goal (fallback) |
+| Truth check agent timeout | Mark as failed, continue remaining checks |
+| Substance check on missing artifact | Auto-skip (dep failed), mark as skipped |
+| Anti-pattern scan disabled | Mark as skipped, note in context.md |
+| Nyquist audit disabled | Mark as skipped, note in context.md |
+| Test framework not detected | Skip coverage calculation, warn user |
+| CSV parse error | Validate format, show line number |
+| discoveries.ndjson corrupt | Ignore malformed lines |
+| Continue mode: no session found | List available sessions |
 </error_codes>
 
 <success_criteria>
-- [ ] Must-haves established (from convergence.criteria in tasks)
-- [ ] All truths verified with status and evidence (Layer 1)
-- [ ] All artifacts checked at L1 (exists), L2 (substantive), L3 (wired) (Layer 2)
-- [ ] All key links verified with evidence (Layer 3)
-- [ ] Anti-patterns scanned and categorized (unless skipped)
-- [ ] Nyquist test coverage assessed (unless skipped)
-- [ ] Fix plans generated for identified gaps
-- [ ] verification.json written to plan dir (single plan) or milestone verify dir
-- [ ] VRF artifact registered in state.json
+- [ ] Session folder created with valid tasks.csv
+- [ ] All 3 waves executed in order (with skip flags respected)
+- [ ] verification.json produced with must_haves, gaps, antipatterns
+- [ ] validation.json produced (if Nyquist ran)
+- [ ] context.md produced with full report
+- [ ] Fix plans generated for gap clusters
+- [ ] Issues auto-created for gaps + blocker anti-patterns
+- [ ] Output files copied to phase directory
+- [ ] Phase index.json updated with verification status
+- [ ] discoveries.ndjson append-only throughout
 </success_criteria>

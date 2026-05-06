@@ -1,75 +1,91 @@
 ---
 name: maestro-milestone-complete
-description: Archive completed milestone and prepare for next
-argument-hint: "[<milestone>]"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+description: Archive completed milestone scratch artifacts to milestones/ dir, move artifact entries to milestone_history, extract learnings, advance state.
+argument-hint: "[milestone] [--force] [-y]"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 <purpose>
-Mark a milestone as complete after its audit has passed. Archives all scratch artifacts to `milestones/{M}/artifacts/`, moves artifact entries from `state.json.artifacts[]` to `milestone_history`, extracts final learnings, and advances to the next milestone.
+Sequential milestone archival: validate audit → archive scratch dirs → extract learnings → move artifact entries to milestone_history → advance state → clean scratch.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/milestone-complete.md
-</required_reading>
-
 <context>
-Milestone: $ARGUMENTS (optional -- defaults to current_milestone from state.json).
 
-**Requires:** `/maestro-milestone-audit` should have passed.
+```bash
+$maestro-milestone-complete "M1"
+$maestro-milestone-complete              # uses current_milestone from state.json
+$maestro-milestone-complete --force "M1"  # skip audit check
+```
 
-**State files:**
-- `.workflow/state.json` — artifacts[], milestones[], current_milestone, milestone_history[]
-- `.workflow/roadmap.md` — milestone structure
-- `.workflow/milestones/{milestone}/audit-report.md` — audit results
+**Output**: `.workflow/milestones/{milestone}/` archive directory
+
 </context>
 
+<invariants>
+1. **Audit before archive** — refuse without passing audit (unless --force)
+2. **Atomic state update** — write state.json via tmp+rename
+3. **Learnings are mandatory** — always extract before archiving
+4. **Clean after archive** — remove scratch dirs only after successful copy
+5. **Advance state** — always set next milestone or mark project complete
+</invariants>
+
 <execution>
-Follow '~/.maestro/workflows/milestone-complete.md' completely.
 
-Archive flow steps (validation, directory archival, artifact history, learning extraction, state advancement, cleanup) are defined in workflow `milestone-complete.md`.
+### Step 1: Parse & Validate
 
-### Knowledge Promotion Inquiry
+Read `.workflow/state.json` for `current_milestone`, `artifacts[]`, `milestones[]`. Determine target from args or current_milestone (E001 if none). Validate audit report at `.workflow/milestones/{milestone}/audit-report.md` with PASS verdict (E002 unless `--force`). Verify all milestone artifacts completed (E003 unless `--force`).
 
-After learning extraction (step 4), scan `learnings.md` for promotion candidates:
+### Step 2: Archive Scratch Dirs
 
-1. **High-frequency pattern detection**: Scan all `<spec-entry category="learning">` entries for keyword overlap (≥2 entries sharing keywords):
-   → Ask: "Keyword '{keyword}' appears in {N} learning entries. Should this be promoted to a formal coding convention? (`/spec-add coding`)"
+Copy each milestone artifact's directory to `.workflow/milestones/{milestone}/artifacts/`. Snapshot `roadmap.md` as `roadmap-snapshot.md` in the milestone archive.
 
-2. **Convention drift detection**: Compare executed task summaries against `coding-conventions.md` and `architecture-constraints.md`:
-   → Ask: "Were any established conventions bypassed during this milestone? Should conventions be updated?"
+### Step 3: Extract Learnings
 
-3. **Wiki island check**: Auto-trigger `wiki-connect --fix` to link newly extracted knowledge.
+Read `.summaries/` and `reflection-log.md` from execute artifacts. Extract patterns, pitfalls, strategy adjustments. Dedup against existing entries via `maestro spec load --category learning`. Append to `.workflow/specs/learnings.md` using `<spec-entry>` closed-tag format (category=`learning`, auto-extract keywords, date=today, source=`milestone-complete`).
 
-If user confirms promotion, invoke `Skill({ skill: "maestro-flow", args: "--cmd spec-add <category> <content>" })` with promoted content, preserving original date and source traceability.
+### Step 3b: Knowledge Promotion Inquiry
 
-**Next-step routing on completion:**
-- Cut a release → `/maestro-milestone-release`
-- Next milestone → `/maestro-analyze` or `/maestro-plan 1`
-- View state → `/manage-status`
+1. **High-frequency patterns**: Scan learning entries for keyword overlap (>=2 entries) -- offer promotion to coding convention via `/spec-add coding`
+2. **Convention drift**: Compare summaries against `coding-conventions.md` and `architecture-constraints.md` -- ask if conventions need updating
+3. **Wiki island check**: Auto-trigger `wiki-connect --fix` to link new knowledge
+
+If `-y`: auto-accept all promotions without asking.
+If not `-y`: ask user for confirmation. If user confirms, append `<spec-entry>` to target category file preserving original date and source.
+
+### Step 4: Archive Artifact Entries
+
+Move milestone artifacts from `state.json.artifacts[]` to `milestone_history[]` with completion metadata (id, name, status, completed_at, archive_path, archived_artifacts). Remove from active `artifacts[]`.
+
+### Step 5: Advance State
+
+Set `current_milestone` to next pending milestone (mark it active), or set project `status: "completed"` if none remain. Atomic write to `state.json`.
+
+### Step 6: Clean Scratch
+
+Remove archived artifact directories from `.workflow/`.
+
+### Step 7: Generate Summary & Report
+
+Write `.workflow/milestones/{milestone}/summary.md` with outcomes and learnings. Update `.workflow/project.md` Context section. Display completion report with next steps: `$maestro-milestone-release`, `$maestro-analyze`, `$manage-status`, `$manage-wiki health`, `$wiki-digest`.
+
 </execution>
 
 <error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E001 | error | Milestone identifier required | Check arguments |
-| E002 | error | Audit not passed | Run maestro-milestone-audit first |
-| E003 | error | Incomplete artifacts remain | Complete remaining work first |
+
+| Code | Severity | Description | Recovery |
+|------|----------|-------------|----------|
+| E001 | error | Milestone identifier required | Specify milestone |
+| E002 | error | Audit not passed | Run milestone-audit first |
+| E003 | error | Incomplete artifacts remain | Complete work first |
+
 </error_codes>
 
 <success_criteria>
-- [ ] Audit report verified as PASS
-- [ ] Scratch artifacts moved to milestones/{M}/artifacts/
-- [ ] Artifact entries archived to milestone_history
-- [ ] Learnings extracted to specs/learnings.md
-- [ ] state.json updated: next milestone as current, artifacts[] cleared
-- [ ] Roadmap snapshot saved
-- [ ] project.md Context updated with milestone summary
+- [ ] Audit report validated (or --force used)
+- [ ] Scratch directories archived to milestones/
+- [ ] Learnings extracted and appended to specs/learnings.md
+- [ ] Artifact entries moved to milestone_history in state.json
+- [ ] State advanced to next milestone (or project marked complete)
+- [ ] Scratch directories cleaned
+- [ ] Summary and completion report generated
 </success_criteria>

@@ -1,62 +1,73 @@
 ---
 name: wiki-connect
-description: Surface hidden connections in the wiki knowledge graph and suggest or apply new links
+description: Wiki knowledge graph link discovery and health improvement. Finds orphaned entries, missing connections, transitive gaps. Scores candidates and optionally auto-applies new related links via --fix.
 argument-hint: "[--scope <type>] [--min-similarity N] [--fix] [--max N]"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
-<required_reading>
-@~/.maestro/workflows/wiki-connect.md
-</required_reading>
 
 <purpose>
-Knowledge graph link discovery and health improvement. Analyzes the wiki index to find orphaned entries, missing connections, and transitive link gaps, then suggests or auto-applies new `related` links to improve graph connectivity.
-
-Leverages maestro's unique wiki graph infrastructure (BM25 search, backlinks, health scoring) — no equivalent in gstack. Directly improves the quality of all downstream wiki consumers (search, digest, follow-along).
+Knowledge graph link discovery. Analyzes wiki index to find orphaned entries, missing
+bidirectional links, and transitive closure gaps. Scores connection candidates and
+optionally auto-applies new `related` links to improve graph connectivity.
 </purpose>
 
 <context>
-Arguments: $ARGUMENTS
+$ARGUMENTS — optional flags.
 
-Flags, storage paths, and CLI commands defined in workflow wiki-connect.md.
+**Flags:**
+- `--scope <type>` — Limit to wiki type (spec, knowhow, note, lesson, issue). Default: all.
+- `--min-similarity N` — Threshold 0.0-1.0 (default: 0.3)
+- `--fix` — Auto-apply top suggestions
+- `--max N` — Max suggestions (default: 20)
+
+**Output**: `.workflow/learning/wiki-connections-{date}.md`
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/wiki-connect.md' completely (Stages 1-6).
 
-**Next-step routing:**
-- Generate knowledge digest → `/wiki-digest <topic>`
-- Follow-along on orphan → `/learn-follow <wiki-id>`
-- View full graph → `maestro wiki graph`
+### Stage 1: Load Wiki State
+Parallel `maestro wiki` commands: `list --json`, `health`, `orphans`, `hubs --top 10`.
+
+### Stage 2: Identify Connection Candidates
+- **Orphan rescue**: BM25 search by title, tag overlap, same category/parent
+- **Missing bidirectional**: A→B exists but B→A missing
+- **Transitive closure**: A→B and B→C but no A→C (with shared tags/category)
+- **Type bridge**: Different types referencing same concept but unlinked
+- **Parent cluster**: Entries sharing the same parent but not linked to each other
+
+### Stage 3: Score Candidates
+Score = 0.4 x tag_overlap + 0.3 x title_bm25 + 0.2 x same_category + 0.1 x type_bridge. Filter by `--min-similarity`, rank desc, limit by `--max`.
+
+### Stage 4: Present Suggestions
+Display ranked suggestions with scores, reasons, projected health delta.
+If not `--fix`: display and exit.
+
+### Stage 5: Apply (--fix only)
+For each suggestion: get entry → append target to `related` → update via `maestro wiki update`.
+Re-run `maestro wiki health` for delta.
+
+### Stage 6: Persist
+Write `wiki-connections-{date}.md`. Append graph insights to `lessons.jsonl` (source: "wiki-connect").
+
+**Next steps:** `/wiki-digest <topic>`, `/manage-wiki health`, `/learn-follow <wiki-id>`, `maestro wiki graph`
 </execution>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
-| E001 | error | No wiki entries found (empty index) | Initialize wiki content first, or run `/maestro-init` |
-| E002 | error | `maestro wiki` CLI not available | Check maestro installation |
-| W001 | warning | No connection candidates found above threshold | Lower --min-similarity or check if graph is already well-connected |
-| W002 | warning | Some wiki update calls failed during --fix | Partial application; retry failed entries manually |
-| W003 | warning | Health score unchanged after fix | Connections may not have improved the specific health metrics |
+| E001 | error | No wiki entries found | Initialize wiki content |
+| W001 | warning | No candidates above threshold | Lower --min-similarity |
+| W002 | warning | Some wiki updates failed during --fix | Retry manually |
+| W003 | warning | Health score unchanged after fix | Connections may not affect specific metrics |
 </error_codes>
 
 <success_criteria>
-- [ ] Wiki index loaded with entry count and type distribution
+- [ ] Wiki index loaded with type distribution
 - [ ] Baseline health score recorded
 - [ ] Orphans identified and rescue candidates generated
-- [ ] Connection candidates scored and ranked
-- [ ] Results filtered by --min-similarity and limited by --max
+- [ ] Candidates scored and ranked
 - [ ] Suggestions displayed with scores and reasons
-- [ ] If --fix: entries updated with new `related` links
-- [ ] If --fix: new health score computed and delta reported
+- [ ] If --fix: entries updated, new health score reported
 - [ ] Report written to `wiki-connections-{date}.md`
 - [ ] Graph insights appended to `lessons.jsonl`
-- [ ] No unintended entry modifications (only `related` field changed)
-- [ ] Summary displayed with next-step routing
 </success_criteria>

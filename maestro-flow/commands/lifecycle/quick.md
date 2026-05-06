@@ -1,56 +1,124 @@
 ---
 name: maestro-quick
-description: Execute a quick task with workflow guarantees but skip optional agents
-argument-hint: "[description] [--full] [--discuss]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Task
-  - AskUserQuestion
+description: Fast-track single task execution with workflow guarantees — analyze, plan, execute in one pass
+argument-hint: "\"task description\" [--discuss] [--full]"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent, AskUserQuestion
 ---
+
 <purpose>
-Execute small, ad-hoc tasks with workflow guarantees (atomic commits, state tracking) using a shortened pipeline. Invoked for tasks that are well-understood and do not require full phase-level planning. Produces scratch task directory with plan, execution results, and optional verification. Flags --discuss and --full enable additional pipeline stages.
+Shortened pipeline for well-understood tasks. Creates a scratch directory, runs quick analysis, generates a plan, executes tasks, and optionally verifies results. Single agent, sequential flow — no CSV waves needed.
+
+**Pipeline**: `[discuss] → analyze-q → plan → execute → [verify]`
+
+Quick tasks default to minimal interaction. `--discuss` adds a decision extraction step. `--full` adds plan-checking and post-execution verification.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/quick.md
-</required_reading>
-
 <context>
-$ARGUMENTS
 
-Parse for:
-- `--full` flag -- Enables plan-checking (max 2 iterations) and post-execution verification
-- `--discuss` flag -- Decision extraction before planning (gray areas, Locked/Free/Deferred classification)
-- Remaining text as task description
+```bash
+$maestro-quick "add rate limiting to /api/auth endpoints"
+$maestro-quick "refactor user service to use repository pattern" --discuss
+$maestro-quick "fix memory leak in WebSocket handler" --full
+$maestro-quick "add dark mode toggle to settings page" --discuss --full
+```
+
+**Flags**:
+- `--discuss`: Decision extraction before planning (Locked/Free/Deferred classification)
+- `--full`: Enable plan-checking (max 2 iterations) and post-execution verification
+
+**Output**: `.workflow/scratch/{slug}/` with plan.json, execution results, optional verification
+
 </context>
 
-<execution>
-Follow '~/.maestro/workflows/quick.md' completely.
+<invariants>
+1. **Speed over ceremony** — minimal overhead, get to implementation fast
+2. **Follow existing patterns** — grep for 3+ similar implementations before writing new code
+3. **Atomic commits** — one commit per quick task, descriptive message
+4. **Scratch isolation** — all metadata stays in .workflow/scratch/{slug}/
+5. **Works without init** — quick tasks function even without full .workflow/ setup
+</invariants>
 
-**Next-step routing on completion:**
-- Task done, --full verification passed → /manage-status
-- Task done, verification found gaps → /quality-debug {issue}
-- Task done, want to sync docs → /quality-sync
-- Need a full phase workflow instead → /maestro-plan {phase}
+<execution>
+
+### Step 1: Parse Arguments
+
+Extract from arguments:
+- `--discuss` flag
+- `--full` flag
+- Remaining text as task description (required — E001 if empty)
+
+### Step 2: Load Project Context
+
+Read `.workflow/state.json` and `.workflow/project.md` if they exist. If `.workflow/` does not exist, create minimal scratch structure anyway (quick works without full init).
+
+### Step 3: Create Scratch Directory
+
+Generate slug from task description (lowercase, hyphens, max 40 chars). Create `.workflow/scratch/{slug}/`. Write `config.json` with: `task`, `flags` (discuss, full), `created_at` (ISO), `status` ("active").
+
+### Step 4: Discussion Phase (if --discuss)
+
+**Only when `--discuss` is set.**
+
+Analyze the task for gray areas and ambiguities:
+1. Identify decision points in the task
+2. Classify each as: **Locked** (clear from context), **Free** (implementation choice), **Deferred** (need user input)
+3. For Deferred items: ask user for decisions
+4. Write `context.md` to scratch directory with all decisions
+
+### Step 5: Quick Analysis
+
+Rapid codebase exploration focused on the task:
+1. Search for related files using Grep/Glob
+2. Identify existing patterns to follow
+3. Map dependencies and integration points
+4. Write analysis findings to `context.md` (append if --discuss created it)
+
+### Step 6: Generate Plan
+
+Create `plan.json` in scratch directory:
+- Decompose task into subtasks (typically 1-5 for quick tasks)
+- Each task has: id, title, description, scope, convergence_criteria, files
+- Assign single wave (sequential execution)
+
+**If `--full`**: Present plan for review, allow up to 2 revision iterations.
+
+### Step 7: Execute Tasks
+
+For each task in plan.json (sequential):
+1. Read task definition
+2. Implement changes following existing patterns
+3. Run any specified verification commands
+4. Write task summary with files_modified, status
+
+Update plan.json task statuses as completed.
+
+### Step 8: Verification (if --full)
+
+**Only when `--full` is set.** Run convergence criteria checks for each task via grep/test commands. If gaps found (W001): attempt single fix iteration, then report remaining gaps.
+
+### Step 9: Commit and Report
+
+Commit all changes: `git add -A && git commit -m "quick: {slug} - {short description}"`. Update `.workflow/state.json` scratch task entry (if state.json exists).
+
+Display report: task description, scratch path, status (completed/completed-with-gaps), tasks completed/total, files modified count. If `--full`: include verification result (PASS/GAPS).
+
 </execution>
 
 <error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E001 | error | Task description required (no text provided) | Check arguments format, re-run with correct input |
-| E002 | error | Scratch directory creation failed | Check disk space and .workflow/ permissions |
-| W001 | warning | Verification found minor gaps | Review gaps and determine if they need fixing |
+
+| Code | Severity | Description | Recovery |
+|------|----------|-------------|----------|
+| E001 | error | Task description required | Ask user for description |
+| E002 | error | Scratch directory creation failed | Check permissions |
+| W001 | warning | Verification found minor gaps | Report gaps, continue |
+
 </error_codes>
 
 <success_criteria>
-- [ ] Scratch task directory created under .workflow/scratch/
-- [ ] plan.json written with task definitions
-- [ ] All tasks executed with summaries written
-- [ ] state.json updated with scratch task entry
-- [ ] Commit created with task changes
+- [ ] Scratch directory created with config.json
+- [ ] Analysis completed and context.md written
+- [ ] Plan generated with subtasks
+- [ ] All tasks executed and statuses updated
+- [ ] Changes committed with descriptive message
+- [ ] Completion report displayed
 </success_criteria>

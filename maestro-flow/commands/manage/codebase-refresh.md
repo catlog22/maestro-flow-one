@@ -1,57 +1,66 @@
 ---
 name: manage-codebase-refresh
-description: Incremental refresh of codebase docs based on recent changes
+description: Incremental refresh of codebase docs based on recent git changes
 argument-hint: "[--since <date>] [--deep]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 <purpose>
-Incrementally refresh .workflow/codebase/ documentation based on changes since the last rebuild or refresh. Detects which files have changed (via git diff), identifies which codebase docs are affected, selectively re-runs mapper agents on those areas only, and updates timestamps. Much faster than a full rebuild for ongoing maintenance.
+Incremental refresh of codebase documentation based on recent git changes. Detects changed files, maps them to existing doc entries, and updates only affected sections. Use `--deep` for broader context re-scanning.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/codebase-refresh.md
-</required_reading>
-
 <context>
-$ARGUMENTS -- optional flags.
+$ARGUMENTS — optional flags.
 
-**Flags:**
-- `--since <date>` -- Override change detection window (ISO date or relative like "3d")
-- `--deep` -- Force deeper re-scan even for files with minor changes
+```bash
+$manage-codebase-refresh
+$manage-codebase-refresh "--since 2026-03-15"
+$manage-codebase-refresh "--deep"
+$manage-codebase-refresh "--since 3d --deep"
+```
 
-**State files:**
-- `.workflow/` -- must be initialized
-- `.workflow/codebase/` -- must contain existing docs (from prior rebuild)
-- `.workflow/codebase/doc-index.json` -- documentation index with timestamps
-- `.workflow/state.json` -- contains `codebase_last_rebuilt` timestamp
+**Flags**:
+- `--since <date>` -- Override change detection window (ISO date or relative like `3d`)
+- `--deep` -- Force deeper re-scan even for minor changes
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/codebase-refresh.md' completely.
+
+### Step 1: Validate Preconditions
+
+Verify `.workflow/` exists (E001) and `.workflow/codebase/` exists (E002 -- use codebase-rebuild instead).
+
+### Step 2: Detect Changes
+
+Resolve baseline: `--since` flag > `state.json.codebase_last_refreshed` > `codebase_last_rebuilt` > 7-day fallback. Run `git diff --name-only --since="{baseline}" HEAD`. If no changes: W001, exit.
+
+### Step 3: Map Changes to Docs
+
+Read `.workflow/codebase/doc-index.json` to find doc entries covering changed files. Build affected entry list.
+
+### Step 4: Refresh Affected Docs
+
+For each affected entry: re-read changed source files, update corresponding doc in `.workflow/codebase/`, update timestamp in `doc-index.json`. With `--deep`: also re-scan adjacent files.
+
+### Step 5: Update State
+
+Update `doc-index.json` timestamps and `state.json.codebase_last_refreshed`. Display summary with change/refresh/skip counts.
 </execution>
 
 <error_codes>
-| Code | Meaning                                                  |
-|------|----------------------------------------------------------|
-| E001 | .workflow/ not initialized                               |
-| E002 | No codebase/ docs exist, use codebase-rebuild instead    |
-| W001 | No changes detected since last refresh                   |
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | fatal | `.workflow/` not initialized |
+| E002 | fatal | No codebase docs exist -- use `Skill({ skill: "maestro-flow", args: "--cmd codebase-rebuild" })` instead |
+| W001 | warning | No changes detected since last refresh |
 </error_codes>
 
 <success_criteria>
-- [ ] Changed files detected via git diff since last refresh
-- [ ] Affected documentation entries identified from doc-index.json
-- [ ] Only affected docs refreshed (selective mapper re-run)
-- [ ] doc-index.json timestamps updated per affected entry
-- [ ] state.json updated with codebase_last_refreshed timestamp
-- [ ] Next step routing: `/manage-status` or `/spec-load` to use updated docs
+- [ ] Preconditions validated (.workflow/ and .workflow/codebase/ exist)
+- [ ] Change detection baseline resolved (--since flag, state.json, or 7-day fallback)
+- [ ] Git changes detected and mapped to doc entries via doc-index.json
+- [ ] Affected docs refreshed with updated source content
+- [ ] --deep flag triggers adjacent file re-scan
+- [ ] doc-index.json timestamps and state.json codebase_last_refreshed updated
+- [ ] Summary displayed with change/refresh/skip counts
 </success_criteria>

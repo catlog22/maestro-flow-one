@@ -1,51 +1,77 @@
 ---
 name: spec-load
-description: Load relevant specs and lessons for current context (used by agents before execution)
-argument-hint: "[--category <type>] [--keyword <word>] [--with-lessons]"
-allowed-tools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
+description: Load relevant specs for current context, optionally filtered by category or keyword
+argument-hint: "[--category <type>] [--keyword <word>]"
+allowed-tools: Read, Bash, Glob, Grep
 ---
+
 <purpose>
-Load and display relevant spec files for the current working context.
-Supports filtering by category (file-level) and keyword (entry-level via `<spec-entry>` tags).
+Load relevant specs filtered by category (file-level) and/or keyword (entry-level via `<spec-entry>` tags).
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/specs-load.md
-</required_reading>
-
 <context>
-$ARGUMENTS -- optional flags and keyword
+$ARGUMENTS — optional category filter and keyword.
 
-Category-to-file mapping (1:1) and flag details defined in workflow specs-load.md.
+```bash
+$spec-load
+$spec-load "--category coding"
+$spec-load "--keyword auth"
+$spec-load "--category coding --keyword naming"
+```
 
-**Examples:**
-```
-/spec-load --keyword auth
-/spec-load --category coding --keyword naming
-/spec-load --category arch
-```
+**Category-to-file mapping (1:1, same as spec-add):**
+
+| Category | File loaded |
+|----------|------------|
+| `coding` | `coding-conventions.md` |
+| `arch` | `architecture-constraints.md` |
+| `quality` | `quality-rules.md` |
+| `debug` | `debug-notes.md` |
+| `test` | `test-conventions.md` |
+| `review` | `review-standards.md` |
+| `learning` | `learnings.md` |
+| `bug` | `learnings.md` |
+| `pattern` | `coding-conventions.md` |
+| `decision` | `architecture-constraints.md` |
+| `rule` | `quality-rules.md` |
+| `validation` | `quality-rules.md` |
+| `all` (default) | All spec files |
+
+Extended types (`bug`, `pattern`, `decision`, `rule`, `validation`) are stored in their closest core category's file but retain their specific category in the `<spec-entry>` tag.
+
+**Keyword filtering**: When `--keyword` is provided, only entries with matching keyword in their `<spec-entry keywords="...">` attribute are returned. Legacy entries (heading format) are filtered by text grep.
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/specs-load.md' completely.
+
+### Step 1: Validate Specs Directory
+
+Verify `.workflow/specs/` exists (E001).
+
+### Step 2: Parse Arguments
+
+Extract optional `--category` and `--keyword` flags.
+
+### Step 3: Load via CLI
+
+Run `maestro spec load [--category <cat>] [--keyword <word>]`. If CLI unavailable, read files directly and apply keyword filter.
+
+### Step 4: Display Results
+
+Show matched entries grouped by filename and category, with `<spec-entry>` tags stripped.
 </execution>
 
 <error_codes>
-| Code | Severity | Description | Stage |
-|------|----------|-------------|-------|
-| E001 | fatal | `.workflow/specs/` not initialized -- run `/spec-setup` first | detect_context |
-| W001 | warning | No matching specs found for keyword -- showing all specs in category instead | load_specs |
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | fatal | `.workflow/specs/` not initialized -- run `Skill({ skill: "maestro-flow", args: "--cmd spec-setup" })` first |
+| W001 | warning | No matching specs for keyword -- showing all in category |
 </error_codes>
 
 <success_criteria>
-- [ ] Category and/or keyword parsed from arguments
-- [ ] Spec files loaded per category mapping
-- [ ] Keyword filtering applied at entry level (via `<spec-entry>` keywords attribute)
-- [ ] Legacy entries filtered by text grep fallback
-- [ ] Results displayed with file:category references
+- [ ] `.workflow/specs/` directory validated
+- [ ] Category and keyword parsed from arguments
+- [ ] Files loaded per category mapping
+- [ ] Keyword filtering applied at entry level (via `<spec-entry>` keywords)
+- [ ] Results displayed with file references and stripped tags
 </success_criteria>
-</output>

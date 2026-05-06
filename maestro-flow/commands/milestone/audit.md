@@ -1,68 +1,87 @@
 ---
 name: maestro-milestone-audit
-description: Audit current milestone for cross-phase integration gaps
-argument-hint: "[<milestone>]"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+description: Audit current milestone using artifact registry for cross-phase integration gaps and produce verdict report
+argument-hint: "[milestone, e.g., 'M1']"
+allowed-tools: Read, Write, Bash, Glob, Grep, Agent
 ---
 
 <purpose>
-Audit milestone completion using the artifact registry. Checks:
-1. Phase coverage — every phase in roadmap has plan + execute artifacts (completed)
-2. Ad-hoc completeness — all adhoc artifacts are completed (or explicitly skipped)
-3. Execution completeness — all tasks in executed plans are completed
-4. Cross-artifact integration — interfaces, data contracts, configuration consistency
-
-Data source: `state.json.artifacts[]` filtered by current milestone.
-Produces audit report at `.workflow/milestones/{milestone}/audit-report.md`.
+Sequential audit based on artifact registry in state.json. Checks phase coverage (ANL->PLN->EXC chains), ad-hoc completeness, execution completeness, and cross-artifact integration. Produces PASS/FAIL verdict report.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/milestone-audit.md
-</required_reading>
-
 <context>
-Milestone: $ARGUMENTS (optional -- defaults to current_milestone from state.json).
 
-**Requires:** All phases in the milestone should have completed execute artifacts.
+```bash
+$maestro-milestone-audit ""
+$maestro-milestone-audit "M1"
+```
 
-**Data source:**
-- `.workflow/state.json` — artifacts[], current_milestone, milestones[]
-- `.workflow/roadmap.md` — milestone-to-phase mapping
-- Plan scratch dirs — for task status verification
+**Output**: Audit report with artifact chain verification, integration analysis, and PASS/FAIL verdict
+
 </context>
 
+<invariants>
+1. **Artifact registry is source of truth** — don't scan directories, read state.json
+2. **Non-blocking warnings** — missing analyze is warning, missing execute is error
+3. **Integration check is required** — always spawn checker agent
+4. **Clear verdict** — PASS or FAIL with specific reasons
+</invariants>
+
 <execution>
-Follow '~/.maestro/workflows/milestone-audit.md' completely.
 
-Audit checklist steps (phase coverage, ad-hoc completeness, execution completeness, cross-artifact integration) are defined in workflow `milestone-audit.md`.
+### Step 1: Parse Arguments
 
-**Next-step routing on completion:**
-- Verdict PASS → `/maestro-milestone-complete {milestone}`
-- Verdict FAIL, integration gaps → `/maestro-plan --gaps`
-- Verdict FAIL, incomplete execution → `/maestro-execute`
+Extract milestone identifier from arguments. Fallback: read `current_milestone` from `.workflow/state.json`. If still empty: E001.
+
+### Step 2: Load Artifact Registry
+
+Read `.workflow/state.json` and `.workflow/roadmap.md`. Filter `artifacts[]` by milestone, parse phase list, group by type and phase.
+
+### Step 3: Phase Coverage Check
+
+For each phase: check for completed analyze (optional), plan (required), execute (required) artifacts. Report coverage matrix.
+
+### Step 4: Ad-hoc & Execution Completeness
+
+Verify all adhoc-scoped artifacts completed. For each execute artifact, verify all tasks in plan dir completed.
+
+### Step 5: Integration Check
+
+Spawn Agent for cross-phase validation: shared interfaces, dependency chains, data contracts, API consistency. Write report to `.workflow/milestones/{milestone}/audit-report.md`.
+
+### Step 6: Verdict
+
+**PASS**: All phases have completed EXC artifacts, no critical integration gaps, all adhoc completed.
+**FAIL**: Missing EXC artifacts or critical integration gaps found.
+
+Display structured audit report.
+
+**Next-step routing:**
+
+| Verdict | Next Step |
+|---------|-----------|
+| PASS | `$maestro-milestone-complete "{milestone}"` |
+| FAIL, integration gaps | `$maestro-plan "--gaps"` |
+| FAIL, incomplete execution | `$maestro-execute` |
+
 </execution>
 
 <error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E001 | error | Milestone identifier required | Check arguments format |
+
+| Code | Severity | Description | Recovery |
+|------|----------|-------------|----------|
+| E001 | error | Milestone identifier required | Specify milestone or ensure current_milestone is set |
 | E002 | error | Milestone not found in state.json | Check milestone ID |
-| E003 | error | No execute artifacts found for milestone | Run maestro-execute first |
-| W001 | warning | Some phases lack complete artifact chains | Review incomplete phases |
+| E003 | error | No execute artifacts found | Run maestro-execute first |
+| W001 | warning | Some phases lack analyze artifacts | Note: analysis optional but recommended |
+
 </error_codes>
 
 <success_criteria>
-- [ ] All phases in milestone identified from roadmap
-- [ ] Artifact chains verified (ANL→PLN→EXC) per phase
-- [ ] Ad-hoc artifacts checked for completion
-- [ ] Integration check completed (shared interfaces, data contracts)
-- [ ] Audit report written with clear PASS/FAIL verdict
-- [ ] Next-step routing provided
+- [ ] Artifact registry loaded and filtered by milestone
+- [ ] Phase coverage matrix generated
+- [ ] Ad-hoc and execution completeness verified
+- [ ] Integration check performed via agent
+- [ ] Audit report written to milestones/ directory
+- [ ] Clear PASS/FAIL verdict with specific reasons
 </success_criteria>

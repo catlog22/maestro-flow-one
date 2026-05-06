@@ -1,51 +1,75 @@
 ---
 name: spec-setup
-description: Initialize system specs by scanning project structure and generating conventions
+description: Initialize project specs by scanning codebase for conventions and tech stack
 argument-hint: ""
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
+allowed-tools: Read, Write, Bash, Glob, Grep
 ---
+
 <purpose>
-Initialize the project-level specs directory by scanning the codebase for conventions, patterns, and tech stack.
-Core files (coding, arch, learning) are always created. Optional files (quality, debug, test, review) are created only when relevant signals are detected.
-All output lands in `.workflow/specs/`.
+Initialize project specs by scanning the codebase and generating spec files in `.workflow/specs/`.
+Core files (coding, arch, learning) always created. Optional files created only when relevant signals detected.
+
+Triggered automatically by `maestro-init` for **existing projects** (source files detected). Greenfield projects skip this — specs are populated progressively by analyze, plan, and execute stages.
+
+```bash
+$spec-setup
+```
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/specs-setup.md
-</required_reading>
-
-<deferred_reading>
-</deferred_reading>
-
 <context>
-$ARGUMENTS (no arguments expected)
-
-**Preconditions:**
-- `.workflow/` directory must exist (created by `/maestro-init`)  # (see code: E001)
-- Project must contain source files to scan  # (see code: E002)
+No arguments. Scans the codebase and generates spec files in `.workflow/specs/`.
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/specs-setup.md' completely.
+
+### Step 1: Validate Preconditions
+
+Verify `.workflow/` exists (E001) and project contains source files (E002).
+
+### Step 2: Scan Codebase
+
+Detect conventions and tech stack by scanning:
+- Package files (`package.json`, `Cargo.toml`, `go.mod`, etc.)
+- Config files (`.eslintrc`, `tsconfig.json`, `.prettierrc`, etc.)
+- Source structure (directories, naming patterns, import style)
+- Test patterns (framework, naming, location)
+
+### Step 3: Generate Core Spec Files (always)
+
+Create `.workflow/specs/` directory and write:
+
+1. **`coding-conventions.md`** — Detected naming, import, formatting patterns (category: `coding`)
+2. **`architecture-constraints.md`** — Structural rules, layer boundaries (category: `arch`)
+3. **`learnings.md`** — Initialized with format instructions for future entries (category: `learning`)
+
+### Step 4: Generate Optional Spec Files (when signals detected)
+
+| File | Created when |
+|------|-------------|
+| `quality-rules.md` | Linter config, CI config, or lint scripts detected |
+| `test-conventions.md` | Test framework, test files, or test scripts detected |
+| `debug-notes.md` | Skipped — created on demand via `spec-add debug` |
+| `review-standards.md` | Skipped — created on demand via `spec-add review` |
+
+### Step 5: Display Report
+
+List created files with categories. Show next steps: `/spec-add <category> <content>`, available categories (core + extended), `/spec-remove`, wiki graph commands.
+
 </execution>
 
 <error_codes>
-| Code | Severity | Description | Stage |
-|------|----------|-------------|-------|
-| E001 | fatal | `.workflow/` directory not initialized -- run `/maestro-init` first | parse_input |
-| E002 | fatal | No source files found in project -- nothing to scan | scan_codebase |
-| W001 | warning | Convention detection uncertain for one or more categories -- marked `[UNCERTAIN]` | generate_specs |
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | fatal | `.workflow/` not initialized -- run `Skill({ skill: "maestro-flow", args: "--cmd maestro-init" })` first |
+| E002 | fatal | No source files found in project |
+| W001 | warning | Convention detection uncertain -- marked `[UNCERTAIN]` |
+
 </error_codes>
 
 <success_criteria>
 - [ ] `.workflow/specs/` directory created
-- [ ] Core files always created: `coding-conventions.md`, `architecture-constraints.md`, `learnings.md`
-- [ ] Optional files created when detected: `quality-rules.md` (linter/CI), `test-conventions.md` (test framework), `debug-notes.md` (on demand), `review-standards.md` (on demand)
-- [ ] Report displayed with summary and next steps
+- [ ] 3 core spec files always created (coding, arch, learning)
+- [ ] Optional files created only when relevant signals detected
+- [ ] Completion report displayed with category labels
 </success_criteria>
-</output>

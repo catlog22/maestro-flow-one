@@ -1,93 +1,135 @@
 ---
 name: maestro-ui-design
-description: Generate UI design prototypes with multiple styles via ui-ux-pro-max, user selects winner, solidify as code reference
-argument-hint: "<phase|topic> [--styles N] [--stack <stack>] [--targets <pages>] [--layouts N] [--refine] [--persist] [--full] [-y]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+description: Generate UI design prototypes with multiple styles. User selects style/palette/typography, generates design tokens, produces prototypes. Delegates to ui-ux-pro-max when available, falls back to self-contained pipeline.
+argument-hint: "[topic] [-y] [--style-skill PKG]"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent, AskUserQuestion
 ---
+
 <purpose>
-Generate UI design prototypes for a phase or topic. Two workflow paths, auto-selected by skill availability:
+Two workflow paths, auto-selected by skill availability:
+1. **Primary (ui-ux-pro-max)**: Lightweight -- delegates design generation, owns selection and solidification
+2. **Fallback (self-contained)**: Full 4-layer pipeline (style -> animation -> layout -> assembly)
 
-1. **Primary (ui-style.md):** Delegates design to ui-ux-pro-max skill. Generates multiple style variants via `--design-system`, user selects, solidifies as code reference. Lightweight and fast.
-2. **Fallback (ui-design.md):** Self-contained 4-layer pipeline (style → animation → layout → assembly) with 6D attribute space, OKLCH tokens, layout templates, and full prototype matrix. Used when ui-ux-pro-max is unavailable or `--full` is requested.
-
-Both paths produce the same output contract: MASTER.md + design-tokens.json + animation-tokens.json + selection.json for downstream plan/execute consumption.
-
-Position in pipeline: analyze -> **ui-design** -> plan -> execute -> verify
+Both produce the same output contract for downstream plan/execute consumption.
 </purpose>
 
-<deferred_reading>
-- [ui-style.md](~/.maestro/workflows/ui-style.md) — read when SKILL_PATH found (primary path)
-- [ui-design.md](~/.maestro/workflows/ui-design.md) — read when SKILL_PATH empty or --full (fallback path)
-- [index.json](~/.maestro/templates/index.json) — read when updating phase metadata
-- [scratch-index.json](~/.maestro/templates/scratch-index.json) — read when operating in scratch mode
-</deferred_reading>
-
 <context>
-$ARGUMENTS — phase number for phase mode, topic text for scratch mode, with optional flags.
+$ARGUMENTS -- phase number or topic text, plus optional flags.
 
-Flags, workflow routing, scope modes, and output artifacts defined in the routed workflow (ui-style.md or ui-design.md).
+**Usage**:
 
-**Phase mode** (number): resolves phase directory, reads context.md/brainstorm for requirements.
-**Scratch mode** (text): creates `.workflow/scratch/{YYYYMMDD}-ui-design-{slug}/` for standalone exploration.
+```bash
+$maestro-ui-design "3"                          # phase mode
+$maestro-ui-design "landing page for SaaS"      # scratch mode
+$maestro-ui-design -y "3 --styles 5"            # auto mode, 5 variants
+$maestro-ui-design "3 --style-skill PKG --stack react"
+```
+
+**Flags**:
+- `[topic]`: Phase number or topic text (scratch mode)
+- `-y, --yes`: Auto mode -- skip all interactive selection
+- `--style-skill PKG`: Override ui-ux-pro-max skill path
+- `--styles N`: Number of style variants (default: 3, range: 2-5)
+- `--stack <stack>`: Tech stack for implementation guidelines (default: html-tailwind)
+- `--targets <pages>`: Comma-separated page/component targets
+- `--persist`: Save design system with hierarchical page overrides
+- `--full`: Force full 4-layer self-contained pipeline
+
+When `--yes` or `-y`: Skip interactive selection, auto-pick top-scored variant, skip brief review.
+
+**Output**: `{scratch_dir}/design-ref/` with MASTER.md, design-tokens.json, animation-tokens.json, selection.json, prototypes/
 </context>
 
+<invariants>
+1. **Output contract is fixed** -- both paths produce MASTER.md + design-tokens.json + animation-tokens.json + selection.json
+2. **Colors in OKLCH** format in design-tokens.json
+3. **WCAG AA** contrast: 4.5:1 text, 3:1 UI elements
+4. **No lorem ipsum** -- use contextual placeholder content
+5. **Agent calls use `run_in_background: false`** for synchronous execution
+6. **Variant contrast** -- each variant must represent a distinctly different design direction
+</invariants>
+
 <execution>
-## Workflow Routing
 
-Detect ui-ux-pro-max skill availability and route to the appropriate workflow:
+### Step 1: Parse Input and Resolve Target
 
-- **`--full` flag present** → Follow '~/.maestro/workflows/ui-design.md' completely (forced full pipeline)
-- **ui-ux-pro-max found** → Follow '~/.maestro/workflows/ui-style.md' completely (lightweight delegation)
-- **ui-ux-pro-max not found** → Follow '~/.maestro/workflows/ui-design.md' completely (self-contained fallback)
+1. Parse flags from `$ARGUMENTS`: `--styles N`, `--stack`, `--targets`, `--persist`, `--full`, `-y`
+2. **Phase mode** (number): resolve via state.json artifact registry to `.workflow/scratch/{YYYYMMDD}-{type}-{slug}/`
+3. **Scratch mode** (text): create `.workflow/scratch/ui-design-{slug}-{date}/` with minimal index.json
+4. Create output directories: `${PHASE_DIR}/design-ref/prototypes/` and `${PHASE_DIR}/design-ref/layout-templates/`
 
-Skill detection logic, report format, and complete pipeline steps defined in the routed workflow file.
+### Step 2: Detect Skill Availability
 
-**Next-step routing on completion:**
-- Plan with design reference → /maestro-plan {phase}
-- Refine selected design → /maestro-ui-design {phase} --refine
-- Analyze before planning → /maestro-analyze {phase}
+Search for `ui-ux-pro-max` script at `skills/ui-ux-pro-max/scripts/search.py` or `$HOME/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/*/scripts/search.py`.
+
+- If `--style-skill PKG` provided: override detected path
+- If `--full`: force self-contained pipeline regardless of skill availability
+
+### Step 3: Gather Requirements Context
+
+1. Read phase context (context.md, brainstorm results, spec references)
+2. Synthesize design brief: product_type, industry, style_keywords, audience
+3. Infer targets from phase goal if not specified (fallback: "home")
+4. **Interactive brief review** (skip if `-y`): present brief, allow user adjustments
+
+### Step 4: Generate Style Variants
+
+**If SKILL_PATH found (primary path):**
+
+Generate `styleCount` keyword sets with intentional contrast, then call ui-ux-pro-max for each:
+```bash
+python3 "${SKILL_PATH}" "${variant_keywords}" --design-system -p "${project_name}" -f markdown
+```
+
+**If SKILL_PATH empty or --full (fallback path):**
+
+Spawn ui-design-agent to generate variants using 6D attribute space (mood, density, contrast, rounding, motion, color-temp) for maximum contrast between styles.
+
+### Step 5: Present and Select
+
+Present all variants with key attributes (colors, typography, effects).
+
+**Interactive** (default): user selects variant number, "redo", or "all"
+**Auto** (`-y`): select variant 1
+
+### Step 6: Solidify Selected Design
+
+Spawn Agent to extract structured tokens from selected variant: `design-tokens.json` (OKLCH colors, component_styles, typography.combinations, spacing, border_radius, shadows, breakpoints) and `animation-tokens.json` (duration, easing, transitions, keyframes, interactions, reduced_motion).
+
+Write output artifacts:
+- `design-ref/MASTER.md` -- complete design system specification
+- `design-ref/design-tokens.json` -- production-ready tokens
+- `design-ref/animation-tokens.json` -- animation system
+- `design-ref/selection.json` -- selection metadata + rationale
+
+### Step 7: Optional Prototype Generation
+
+For each target, spawn Agent to generate standalone HTML+CSS prototype from design-tokens.json and animation-tokens.json. Requirements: realistic content (no lorem ipsum), SVG icons via CDN, responsive at 375/768/1024px, WCAG AA contrast.
+
+### Step 8: Update State and Report
+
+1. Update index.json with `design_ref` status
+2. Display completion report: phase, variant count + selected, stack, targets, design system artifact paths (`MASTER.md`, `design-tokens.json`, `animation-tokens.json`, `prototypes/`). Suggest next: `$maestro-plan {phase}` or `$maestro-ui-design {phase} --refine`.
 </execution>
 
 <error_codes>
-| Code | Severity | Description | Stage |
-|------|----------|-------------|-------|
-| E001 | error | Phase or topic argument required | parse_input |
-| E002 | error | Phase directory not found | parse_input |
-| E003 | error | Python not available (both paths need Python for ui-ux-pro-max or agent fallback) | setup |
-| E004 | error | --refine requires existing design-ref/ | parse_input |
-| W001 | warning | Design system generation returned partial results | generate |
-| W002 | warning | Prototype rendering failed for one variant | render |
-| W003 | warning | No context.md found, using phase goal only | context |
-| W004 | warning | ui-ux-pro-max not found, falling back to full pipeline | routing |
+| Code | Severity | Condition | Recovery |
+|------|----------|-----------|----------|
+| E001 | error | Phase or topic argument required | Prompt user |
+| E002 | error | Phase directory not found | Check phase number |
+| E003 | error | Python not available for ui-ux-pro-max | Fall back to self-contained pipeline |
+| E004 | error | --refine requires existing design-ref/ | Run without --refine first |
+| W001 | warning | Design system returned partial results | Retry with broader keywords |
+| W002 | warning | Prototype rendering failed for one variant | Continue with remaining |
+| W004 | warning | ui-ux-pro-max not found, using fallback | Proceed with self-contained pipeline |
 </error_codes>
 
 <success_criteria>
-**Both paths (common):**
-- [ ] Requirements extracted from phase context (context.md, brainstorm, spec, or user input)
-- [ ] N style variants generated with contrasting design directions
-- [ ] User selected preferred variant (or auto-selected in -y mode)
-- [ ] MASTER.md written with complete design system specification
-- [ ] design-tokens.json written with production-ready tokens (OKLCH colors, component_styles)
-- [ ] animation-tokens.json written (duration, easing, transitions, keyframes)
-- [ ] selection.json recorded with choice metadata
+- [ ] Target resolved (phase or scratch directory)
+- [ ] Style variants generated with intentional contrast
+- [ ] User selected variant (or auto-picked in `-y` mode)
+- [ ] MASTER.md + design-tokens.json + animation-tokens.json + selection.json written
+- [ ] Colors in OKLCH format, WCAG AA contrast met
+- [ ] Prototypes generated for all targets (if applicable)
 - [ ] index.json updated with design_ref status
-
-**ui-style.md path (primary):**
-- [ ] ui-ux-pro-max --design-system called with product/industry/style keywords
-- [ ] Tokens extracted from ui-ux-pro-max output into structured JSON
-
-**ui-design.md path (--full or fallback):**
-- [ ] 6D attribute space used for maximum contrast between variants
-- [ ] Layout templates generated per target (dom_structure + css_layout_rules)
-- [ ] HTML prototypes assembled: styles x layouts x targets
-- [ ] compare.html generated as interactive matrix viewer
 </success_criteria>
-</output>

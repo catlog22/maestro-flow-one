@@ -1,146 +1,76 @@
 ---
 name: manage-knowhow-capture
 description: Capture reusable knowledge into .workflow/knowhow/ — session compact, template, recipe, reference, decision, or tip
-argument-hint: "[type] [description] [--lang <lang>] [--source <url>] [--tag tag1,tag2]"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - AskUserQuestion
+argument-hint: "[type] [description] [--lang lang] [--source url] [--tag tag1,tag2]"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
+
 <purpose>
-Capture reusable knowledge into `.workflow/knowhow/` with type-specific structured fields.
-Six content types, each optimized for a different reuse pattern. All entries are automatically
-indexed by WikiIndexer (type=knowhow) and searchable via `maestro knowhow search`.
+Capture reusable knowledge into `.workflow/knowhow/`. Six content types: `session` (full session recovery), `template` (code/config pattern), `recipe` (step-by-step guide), `reference` (external doc summary), `decision` (ADR), `tip` (quick note). Auto-detects type or asks user.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/knowhow.md
-</required_reading>
-
 <context>
-Arguments: $ARGUMENTS
+$ARGUMENTS — type token followed by description and optional flags.
 
-**Types:**
+```bash
+$manage-knowhow-capture
+$manage-knowhow-capture "compact"
+$manage-knowhow-capture "template React form pattern --lang typescript"
+$manage-knowhow-capture "tip Always check state.json before phase operations --tag workflow,state"
+$manage-knowhow-capture "recipe Deploy to production --tag deploy,ops"
+$manage-knowhow-capture "reference Stripe API --source https://docs.stripe.com/api"
+$manage-knowhow-capture "decision Use PostgreSQL over MongoDB --status accepted"
+```
 
-| Type | Prefix | Use Case | Key Fields |
-|------|--------|----------|------------|
-| `compact` | KNW- | Session state recovery | objective, files, decisions, plan, pending |
-| `template` | TPL- | Code/config templates | language, code block, usage context |
-| `recipe` | RCP- | Step-by-step how-to | prerequisites, steps, expected outcome |
-| `reference` | REF- | External doc / API quick-ref | source URL, key points, scenarios |
-| `decision` | DCS- | Design decision record | context, alternatives, rationale, consequences |
-| `tip` | TIP- | Quick note / reminder | content, tags |
+**Types**: `compact` | `template` | `recipe` | `reference` | `decision` | `tip`
 
-No arguments: auto-detect type or ask user via AskUserQuestion.
-
-**Flags:**
-- `--lang <lang>` — Language for templates (typescript, python, bash, yaml, etc.)
+**Flags**:
+- `--lang <lang>` — Language for templates (typescript, python, bash, yaml, ...)
 - `--source <url>` — Source URL for references
 - `--tag tag1,tag2` — Categorization tags
-- `--title <title>` — Explicit title (auto-generated if omitted)
+- `--title <title>` — Explicit title
 </context>
 
 <execution>
 
-### Step 1: Detect Type
+### Step 1: Validate
 
-Parse first token as type. If ambiguous, AskUserQuestion with options:
+Verify `.workflow/` exists (E001). Create `.workflow/knowhow/` if missing.
 
-| Token Match | Type |
-|-------------|------|
-| `compact`, `session`, `压缩`, `保存` | compact |
+### Step 2: Detect Type
+
+Parse first token as type. If absent or ambiguous, ask user via AskUserQuestion.
+
+| Token | Type |
+|-------|------|
+| `compact`, `session`, `压缩` | session |
 | `template`, `tpl`, `模板` | template |
 | `recipe`, `rcp`, `配方`, `步骤` | recipe |
-| `reference`, `ref`, `参考`, `引用` | reference |
-| `decision`, `dcs`, `决策`, `adr` | decision |
-| `tip`, `note`, `记录`, `快速` | tip |
-| No match, short text, `--tag` present | tip |
-| No arguments | AskUserQuestion (6 options) |
+| `reference`, `ref`, `参考` | reference |
+| `decision`, `dcs`, `决策` | decision |
+| `tip`, `note`, `记录` | tip |
 
-### Step 2: Generate Content by Type
+### Step 3: Capture Content by Type
 
-#### compact (KNW-{YYYYMMDD}-{HHMM}.md)
+**session** (KNW-{YYYYMMDD}-{HHMM}.md):
+Extract from conversation: objective, key decisions, modified files (absolute paths), execution plan (verbatim), pending work, notes. Sections: Session ID, Project Root, Objective, Execution Plan, Working Files, Reference Files, Last Action, Decisions, Constraints, Dependencies, Changes Made, Pending, Notes.
 
-Extract from conversation history:
-- **Session ID** — WFS-* if workflow session active, else `manual-{date}`
-- **Project Root** — Absolute path
-- **Objective** — High-level goal
-- **Execution Plan** — Source + complete verbatim content (never summarize)
-- **Working Files** — Modified files with roles (absolute paths, 3-8 files)
-- **Reference Files** — Read-only context files
-- **Last Action** — Final action + result
-- **Decisions** — Table: decision | reasoning
-- **Constraints** — User-specified limitations
-- **Dependencies** — Added/changed packages
-- **Known Issues** — Deferred bugs
-- **Changes Made** — Completed modifications
-- **Pending** — Next steps
-- **Notes** — Unstructured thoughts
+**template** (TPL-{YYYYMMDD}-{HHMM}.md):
+Prompt for or extract: language (`--lang`), usage context, code content, parameters, dependencies. Sections: Usage, Parameters, Dependencies, Code (fenced block).
 
-Plan detection priority: workflow session IMPL_PLAN.md > TodoWrite items > user-stated > inferred.
+**recipe** (RCP-{YYYYMMDD}-{HHMM}.md):
+Prompt for or extract: goal, prerequisites, numbered steps, expected outcome, common pitfalls, related entries. Sections: Goal, Prerequisites, Steps, Expected Outcome, Common Pitfalls, Related.
 
-#### template (TPL-{YYYYMMDD}-{HHMM}.md)
+**reference** (REF-{YYYYMMDD}-{HHMM}.md):
+Source from `--source` flag (offer WebFetch if URL). Extract: key points, applicable scenarios, quick examples. Sections: Source, Key Points, Applicable Scenarios, Quick Examples.
 
-Ask for or extract:
-- **Language / Tech** — `--lang` flag or inferred from context
-- **Usage** — When/how to use this template
-- **Code** — The template content (ask user to provide or select from conversation)
-- **Parameters** — Placeholders to replace (e.g. `{{name}}`, `{{port}}`)
-- **Dependencies** — Required packages/config
-- **Tags** — From `--tag` flag
+**decision** (DCS-{YYYYMMDD}-{HHMM}.md):
+Prompt for or extract: context, decision, alternatives (at least 2), rationale, consequences. Sections: Context, Decision, Alternatives Considered (table), Rationale, Consequences, Related.
 
-If code not provided explicitly, prompt user: "Paste the template code:"
+**tip** (TIP-{YYYYMMDD}-{HHMM}.md):
+Content from remaining arguments. Auto-detect context from recent conversation files. Sections: Content, Context, Tags, Timestamp.
 
-#### recipe (RCP-{YYYYMMDD}-{HHMM}.md)
-
-Ask for or extract:
-- **Goal** — What this recipe accomplishes
-- **Prerequisites** — Tools, access, config needed
-- **Steps** — Numbered step-by-step instructions
-- **Expected Outcome** — What success looks like
-- **Common Pitfalls** — Known issues / gotchas
-- **Related** — Links to templates, references, decisions used
-- **Tags** — From `--tag` flag
-
-If steps not clear, prompt user: "Describe the steps (numbered list):"
-
-#### reference (REF-{YYYYMMDD}-{HHMM}.md)
-
-Ask for or extract:
-- **Source** — `--source` flag (URL, doc title, API endpoint)
-- **Key Points** — Bullet list of essential info
-- **Applicable Scenarios** — When to consult this reference
-- **Quick Examples** — Copy-paste ready code snippets
-- **Last Verified** — Date (today)
-- **Tags** — From `--tag` flag
-
-If `--source` provided, offer to fetch and summarize via WebFetch.
-
-#### decision (DCS-{YYYYMMDD}-{HHMM}.md)
-
-Ask for or extract:
-- **Context** — Background and problem statement
-- **Decision** — What was decided
-- **Alternatives Considered** — Table: alternative | pros | cons | rejected because
-- **Rationale** — Why this choice over alternatives
-- **Consequences** — Positive and negative impact
-- **Related** — Links to affected specs, recipes, templates
-- **Date** — Decision date
-- **Status** — proposed | accepted | superseded
-
-#### tip (TIP-{YYYYMMDD}-{HHMM}.md)
-
-Simple note:
-- **Content** — Everything after type token (or full $ARGUMENTS)
-- **Context** — Auto-detected from recent conversation files
-- **Tags** — From `--tag` flag
-- **Timestamp** — ISO format
-
-### Step 3: Write File
+### Step 4: Write File
 
 Write to `.workflow/knowhow/{PREFIX}-{YYYYMMDD}-{HHMM}.md` with YAML frontmatter:
 
@@ -151,43 +81,30 @@ type: {type}
 category: {type}
 created: {ISO timestamp}
 tags: [{tags}]
-source: {url if reference}
-lang: {language if template}
-status: {status if decision}
----
-{markdown body}
 ```
+Plus type-specific: `lang` (template), `source` (reference), `status` (decision).
 
-### Step 4: Confirm
+### Step 5: Confirm
 
-```
-=== KNOWHOW CAPTURED ===
-Type: {type}
-ID:   knowhow-{slug}
-File: .workflow/knowhow/{filename}
-
-{type-specific summary line}
-```
+Display: type, ID, file path, and type-specific summary.
 </execution>
 
 <error_codes>
-| Code | Severity | Description | Stage |
-|------|----------|-------------|-------|
-| E001 | error | `.workflow/` not initialized — run `/maestro-init` first | validate |
-| E002 | error | Template: no code provided after prompt | template |
-| E003 | error | Recipe: no steps provided after prompt | recipe |
-| W001 | warning | No active workflow session — compact captures conversation only | compact |
-| W002 | warning | Plan detection found no explicit plan — using inferred plan | compact |
-| W003 | warning | `--source` URL could not be fetched — proceeding with manual entry | reference |
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | error | `.workflow/` not initialized — run `Skill({ skill: "maestro-flow", args: "--cmd maestro-init" })` first |
+| E002 | error | Template: no code provided after prompt |
+| E003 | error | Recipe: no steps provided after prompt |
+| W001 | warning | No active workflow session — compact captures conversation only |
+| W002 | warning | No explicit plan found — using inferred plan |
+| W003 | warning | `--source` URL could not be fetched — proceeding with manual entry |
 </error_codes>
 
 <success_criteria>
-- [ ] Type correctly detected or selected
-- [ ] All type-specific fields populated (not empty)
-- [ ] YAML frontmatter written with correct fields
-- [ ] Markdown body follows type structure
-- [ ] File written to `.workflow/knowhow/` with correct prefix
-- [ ] Auto-indexed by WikiIndexer (type=knowhow)
-- [ ] Confirmation displayed with ID, type, file path
-- [ ] Next step hint appropriate to type shown
+- [ ] `.workflow/` existence validated; `.workflow/knowhow/` created if missing
+- [ ] Type detected or prompted (all 6 types)
+- [ ] Type-specific content collected (code for template, steps for recipe, etc.)
+- [ ] YAML frontmatter with type-specific fields written
+- [ ] Markdown file written with correct prefix and structured sections
+- [ ] Confirmation displayed with ID, type, category, and file path
 </success_criteria>

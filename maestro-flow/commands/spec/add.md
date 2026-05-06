@@ -1,49 +1,101 @@
 ---
 name: spec-add
 description: Add a spec entry to the appropriate specs file by category
-argument-hint: "[--scope project|global|team|personal] <category> <content>"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
+argument-hint: "<category> <content>"
+allowed-tools: Read, Write, Bash, Glob, Grep
 ---
+
 <purpose>
-Add a knowledge entry to the specs system using `<spec-entry>` closed-tag format.
-Each category maps 1:1 to a single target file — no dual-write.
-Supports 4 scopes: project (default), global, team, personal.
+Add a spec entry using `<spec-entry>` closed-tag format. Each category maps 1:1 to a single target file.
+
+```bash
+$spec-add "coding Always use named exports for utility functions"
+$spec-add "learning Off-by-one in pagination when page=0"
+$spec-add "arch Use Zod for runtime validation over io-ts"
+$spec-add "quality All API endpoints must return structured error objects"
+```
+
+**Valid categories**: coding, arch, quality, debug, test, review, learning, bug, pattern, decision, rule, validation.
+
+**CLI alternative**: `maestro spec add <category> "<title>" "<content>" --keywords kw1,kw2 --source <src>`. Used by workflow agents (analyze, plan, execute) for programmatic spec enrichment.
 </purpose>
 
-<required_reading>
-@~/.maestro/workflows/specs-add.md
-</required_reading>
-
 <context>
-$ARGUMENTS -- expects `[--scope <scope>] [--uid <uid>] <category> <content>`
+$ARGUMENTS — `<category> <content>` where category selects the target file.
 
-Scope-to-directory mapping, category-to-file mapping, and entry format defined in workflow specs-add.md.
+**Category-to-file mapping (1:1, same as spec-load):**
+| Category | Target file |
+|----------|------------|
+| `coding` | `coding-conventions.md` |
+| `arch` | `architecture-constraints.md` |
+| `quality` | `quality-rules.md` |
+| `debug` | `debug-notes.md` |
+| `test` | `test-conventions.md` |
+| `review` | `review-standards.md` |
+| `learning` | `learnings.md` |
+| `bug` | `learnings.md` |
+| `pattern` | `coding-conventions.md` |
+| `decision` | `architecture-constraints.md` |
+| `rule` | `quality-rules.md` |
+| `validation` | `quality-rules.md` |
+
+Extended types (`bug`, `pattern`, `decision`, `rule`, `validation`) are stored in the file of their closest core category but retain their specific category in the `<spec-entry>` tag.
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/specs-add.md' completely.
+
+### Step 1: Parse Input
+
+Extract category (first token) and content (remainder) from arguments.
+- Validate category is one of: coding, arch, quality, debug, test, review, learning, bug, pattern, decision, rule, validation (E003 if invalid)
+- Validate content is non-empty (E001 if missing)
+
+### Step 2: Validate Specs Directory
+
+Verify `.workflow/specs/` exists (E002).
+
+### Step 3: Route to File
+
+Resolve target file from category-to-file mapping table. If the target file does not exist, create it with a basic header.
+
+### Step 4: Extract Keywords
+
+Auto-extract 3-5 relevant keywords from the content. Keywords should be:
+- Lowercase, no spaces (use hyphens for multi-word)
+- Domain-specific terms that would help future lookup
+- Avoid generic words (code, file, function, etc.)
+
+### Step 5: Write Entry
+
+Append `<spec-entry>` closed-tag block to target file:
+
+```markdown
+<spec-entry category="{category}" keywords="{kw1},{kw2},{kw3}" date="{YYYY-MM-DD}">
+
+### {title extracted from content}
+
+{content}
+
+</spec-entry>
+```
+
+### Step 6: Confirm
+
+Display: category, target file, extracted keywords, and commands for verify (`/spec-load`) and remove (`/spec-remove`).
 </execution>
 
 <error_codes>
-| Code | Severity | Description | Stage |
-|------|----------|-------------|-------|
-| E001 | fatal | Category and content are both required | parse_input |
-| E002 | fatal | Specs directory not initialized -- run `maestro spec init --scope <scope>` | validate_entry |
-| E003 | fatal | Invalid category -- must be one of: coding, arch, quality, debug, test, review, learning | parse_input |
-| E004 | fatal | Invalid scope -- must be one of: project, global, team, personal | parse_input |
-| E005 | fatal | Personal scope requires uid -- use `--uid` or run `maestro collab join` first | parse_input |
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | fatal | Category and content are both required |
+| E002 | fatal | `.workflow/specs/` not initialized -- run `Skill({ skill: "maestro-flow", args: "--cmd spec-setup" })` first |
+| E003 | fatal | Invalid category -- must be one of: coding, arch, quality, debug, test, review, learning, bug, pattern, decision, rule, validation |
 </error_codes>
 
 <success_criteria>
-- [ ] Scope and category parsed and validated
-- [ ] Keywords auto-extracted from content (3-5 relevant terms)
-- [ ] Entry written in `<spec-entry>` closed-tag format
-- [ ] Entry appended to correct target file for scope
-- [ ] Confirmation report displayed with scope, path, keywords
-- [ ] Next step: `maestro spec load --scope <scope> --keyword {keyword}` to verify
+- [ ] Category and content parsed and validated
+- [ ] Keywords auto-extracted from content (3-5 terms)
+- [ ] Entry written in `<spec-entry>` closed-tag format with keywords attribute
+- [ ] Entry appended to correct target file
+- [ ] Confirmation displayed with keywords and verify command
 </success_criteria>
