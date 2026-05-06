@@ -2,13 +2,21 @@
 
 All 49 Maestro workflow commands as a single skill with dual-variant support (Codex + Claude Code).
 
+## Prerequisites
+
+Install [Maestro Flow](https://github.com/catlog22/maestro-flow) CLI first:
+
+```bash
+npm install -g maestro-flow
+```
+
 ## Install
 
 ```bash
 npm install -g maestro-flow-one
 ```
 
-> **Important:** The CLI must be globally installed (`maestro-flow` command available in PATH) to ensure delegate sessions can correctly invoke `/maestro-flow --cmd ...` during wave/step execution. Without global install, external steps and cross-command calls will fail.
+> **Important:** Both `maestro-flow` and `maestro-flow-one` must be globally installed to ensure delegate sessions can correctly invoke `/maestro-flow --cmd ...` during wave/step execution. Without global install, external steps and cross-command calls will fail.
 
 ### Install skill
 
