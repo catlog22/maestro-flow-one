@@ -5,10 +5,32 @@ const fs = require("fs");
 const path = require("path");
 
 // --- Path resolution ---
-// Skill root: ../maestro-flow/ relative to this script
-const SKILL_ROOT = path.join(__dirname, "..", "maestro-flow");
-const COMMANDS_DIR = path.join(SKILL_ROOT, "commands");
-const CHAINS_FILE = path.join(SKILL_ROOT, "chains", "templates.json");
+// Package root: ../ relative to this script
+const PKG_ROOT = path.join(__dirname, "..");
+const VARIANTS = {
+  codex: path.join(PKG_ROOT, "codex", "maestro-flow"),
+  claude: path.join(PKG_ROOT, "claude", "maestro-flow"),
+};
+const DEFAULT_VARIANT = "codex";
+
+// Resolve active variant: check installed skill first, then default
+function getSkillRoot(variant) {
+  if (variant && VARIANTS[variant]) return VARIANTS[variant];
+  // Check if installed in current project
+  const installed = path.join(process.cwd(), ".claude", "skills", "maestro-flow");
+  if (fs.existsSync(path.join(installed, "SKILL.md"))) return installed;
+  return VARIANTS[DEFAULT_VARIANT];
+}
+
+let SKILL_ROOT = getSkillRoot();
+let COMMANDS_DIR = path.join(SKILL_ROOT, "commands");
+let CHAINS_FILE = path.join(SKILL_ROOT, "chains", "templates.json");
+
+function setVariant(variant) {
+  SKILL_ROOT = getSkillRoot(variant);
+  COMMANDS_DIR = path.join(SKILL_ROOT, "commands");
+  CHAINS_FILE = path.join(SKILL_ROOT, "chains", "templates.json");
+}
 
 // --- Name mapping ---
 const PREFIX_CATEGORY = [
@@ -501,57 +523,81 @@ function rmDir(dir) {
 
 function cmdInstall(args) {
   const targetProject = path.resolve(args.project || process.cwd());
-  const skillTarget = path.join(targetProject, ".claude", "skills", "maestro-flow");
+  const variant = args.variant || "all";
+  const validVariants = ["codex", "claude", "all"];
 
-  console.log("Installing Maestro Flow...");
-  console.log(`  Source: ${SKILL_ROOT}`);
-  console.log(`  Target: ${skillTarget}`);
-  console.log();
-
-  if (!fs.existsSync(path.join(SKILL_ROOT, "SKILL.md"))) {
-    console.error("Error: SKILL.md not found in source.");
+  if (!validVariants.includes(variant)) {
+    console.log(`Invalid variant: ${variant}. Use: ${validVariants.join(", ")}`);
     process.exit(1);
   }
 
-  copyDir(SKILL_ROOT, skillTarget);
+  const toInstall = variant === "all" ? ["codex", "claude"] : [variant];
 
-  const cmdCount = countMd(path.join(skillTarget, "commands"));
+  for (const v of toInstall) {
+    const source = VARIANTS[v];
+    const skillName = toInstall.length > 1 && v === "claude" ? "maestro-flow-claude" : "maestro-flow";
+    const skillTarget = path.join(targetProject, ".claude", "skills", skillName);
+
+    console.log(`Installing [${v}] -> ${skillName}`);
+    console.log(`  Source: ${source}`);
+    console.log(`  Target: ${skillTarget}`);
+
+    if (!fs.existsSync(path.join(source, "SKILL.md"))) {
+      console.error(`  Error: SKILL.md not found in ${source}`);
+      continue;
+    }
+
+    copyDir(source, skillTarget);
+
+    // If claude variant installed as maestro-flow-claude, patch SKILL.md name
+    if (skillName === "maestro-flow-claude") {
+      const skillMd = path.join(skillTarget, "SKILL.md");
+      let content = fs.readFileSync(skillMd, "utf-8");
+      content = content.replace(/^name:\s*maestro-flow\s*$/m, "name: maestro-flow-claude");
+      fs.writeFileSync(skillMd, content, "utf-8");
+    }
+
+    const cmdCount = countMd(path.join(skillTarget, "commands"));
+    console.log(`  Commands: ${cmdCount}`);
+    console.log();
+  }
 
   console.log("Installation complete!");
-  console.log(`  Commands: ${cmdCount}`);
-  console.log(`  Entry:    /maestro-flow`);
+  if (variant === "all") {
+    console.log("  /maestro-flow         -> codex (spawn_agents_on_csv)");
+    console.log("  /maestro-flow-claude  -> claude (Skill + delegate)");
+  } else {
+    console.log(`  /maestro-flow         -> ${variant}`);
+  }
   console.log();
   console.log("Usage:");
-  console.log('  /maestro-flow "your intent"     # Intent-based routing');
-  console.log("  /maestro-flow list               # List commands");
-  console.log("  /maestro-flow --chain quick-fix  # Direct chain");
-  console.log();
-  console.log("CLI:");
-  console.log("  maestro-flow list                # List all commands");
-  console.log("  maestro-flow next                # Load next step");
-  console.log("  maestro-flow done                # Complete current step");
+  console.log('  /maestro-flow "your intent"');
+  console.log("  maestro-flow list");
 }
 
 function cmdUninstall(args) {
   const targetProject = path.resolve(args.project || process.cwd());
-  const skillTarget = path.join(targetProject, ".claude", "skills", "maestro-flow");
+  const variant = args.variant || "all";
+  const names = variant === "all"
+    ? ["maestro-flow", "maestro-flow-claude"]
+    : variant === "claude" ? ["maestro-flow-claude"] : ["maestro-flow"];
 
-  if (!fs.existsSync(skillTarget)) {
-    console.log("Maestro Flow is not installed in this project.");
-    console.log(`  Checked: ${skillTarget}`);
-    return;
+  let removed = 0;
+  for (const name of names) {
+    const skillTarget = path.join(targetProject, ".claude", "skills", name);
+    if (!fs.existsSync(skillTarget)) continue;
+    const cmdCount = countMd(path.join(skillTarget, "commands"));
+    rmDir(skillTarget);
+    console.log(`Uninstalled ${name} (${cmdCount} commands)`);
+    removed++;
   }
 
-  const cmdCount = countMd(path.join(skillTarget, "commands"));
-
-  rmDir(skillTarget);
-
-  console.log("Uninstalled Maestro Flow.");
-  console.log(`  Removed: ${skillTarget}`);
-  console.log(`  Commands removed: ${cmdCount}`);
-  console.log();
-  console.log("The global CLI (maestro-flow) is still available.");
-  console.log("To remove it: npm uninstall -g maestro-flow-one");
+  if (!removed) {
+    console.log("Maestro Flow is not installed in this project.");
+  } else {
+    console.log();
+    console.log("Global CLI still available. Remove: npm uninstall -g maestro-flow-one");
+  }
 }
 
 // --- CLI Parser ---
@@ -576,10 +622,15 @@ function parseArgs() {
       flags.all = true;
     } else if (rest[i] === "--project" || rest[i] === "-p") {
       flags.project = rest[++i];
+    } else if (rest[i] === "--variant" || rest[i] === "-v") {
+      flags.variant = rest[++i];
     } else {
       positional.push(rest[i]);
     }
   }
+
+  // Apply variant for query commands
+  if (flags.variant) setVariant(flags.variant);
 
   switch (cmd) {
     case "list":
@@ -613,9 +664,9 @@ function parseArgs() {
       if (!positional[0]) { console.log("Usage: maestro-flow reset <session-id>"); return; }
       return cmdReset({ sessionId: positional[0] });
     case "install":
-      return cmdInstall({ project: flags.project || positional[0] });
+      return cmdInstall({ project: flags.project || positional[0], variant: flags.variant });
     case "uninstall":
-      return cmdUninstall({ project: flags.project || positional[0] });
+      return cmdUninstall({ project: flags.project || positional[0], variant: flags.variant });
     case "help":
     case "--help":
     case "-h":
@@ -645,8 +696,14 @@ Commands:
   done [session-id]                    Complete current step
   step <session-id> <index> <status>   Update step status
   reset <session-id>                   Reset failed session
-  install [--project <dir>]            Install skill to project
-  uninstall [--project <dir>]          Remove skill from project
+  install [--variant codex|claude|all]  Install skill (default: all)
+  uninstall [--variant codex|claude|all] Remove skill from project
+
+Options:
+  --variant, -v <name>     Select variant: codex, claude, all (default: all)
+  --project, -p <dir>      Target project directory (default: cwd)
+  --category, -c <cat>     Filter by category (list, chains)
+  --all, -a                Show all sessions (sessions)
 `);
 }
 

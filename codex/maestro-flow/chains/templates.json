@@ -1,0 +1,256 @@
+{
+  "version": "2.0",
+  "decision_types": {
+    "post-verify": {
+      "evaluates": "verification.json",
+      "verdict_prompt": "评估验证结果: passed/failed 状态, gaps 严重性",
+      "fix_loop": ["quality-debug", "maestro-plan --gaps", "maestro-execute", "maestro-verify", "decision:post-verify"]
+    },
+    "post-review": {
+      "evaluates": "review.json",
+      "verdict_prompt": "评估代码审查结果: verdict PASS/WARN/BLOCK",
+      "fix_loop": ["quality-debug", "maestro-plan --gaps", "maestro-execute", "quality-review", "decision:post-review"]
+    },
+    "post-test": {
+      "evaluates": "uat.md, test-results.json",
+      "verdict_prompt": "评估测试结果: 通过率, 失败用例严重性",
+      "fix_loop": ["quality-debug", "maestro-plan --gaps", "maestro-execute", "maestro-verify", "decision:post-verify", "quality-test", "decision:post-test"]
+    },
+    "post-business-test": {
+      "evaluates": "business-test-results.json",
+      "verdict_prompt": "评估业务测试结果: 需求覆盖率, 失败场景",
+      "fix_loop": ["quality-debug", "maestro-plan --gaps", "maestro-execute", "maestro-verify", "decision:post-verify", "quality-auto-test", "decision:post-business-test"]
+    },
+    "post-milestone": {
+      "evaluates": "state.json",
+      "verdict_prompt": "检查是否有下一个 milestone",
+      "structural": true
+    }
+  },
+  "templates": {
+    "quick-fix": {
+      "description": "Diagnose and fix a known bug",
+      "category": "quick-fix",
+      "triggers": ["fix", "debug", "bug", "error", "crash", "broken"],
+      "steps": [
+        { "cmd": "quality-debug", "args": "\"{intent}\"", "type": "internal" },
+        { "cmd": "maestro-plan", "args": "{phase} --gaps", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 }
+      ]
+    },
+    "issue-fix": {
+      "description": "Analyze, plan, fix, and close a tracked issue",
+      "category": "quick-fix",
+      "triggers": ["issue", "ISS-", "ticket"],
+      "steps": [
+        { "cmd": "maestro-analyze", "args": "--gaps {issue_id}", "type": "external" },
+        { "cmd": "maestro-plan", "args": "--gaps", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-review", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-review", "args": "", "type": "decision", "decision": "post-review", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "manage-issue", "args": "close {issue_id} --resolution fixed", "type": "internal" }
+      ]
+    },
+    "analyze-plan-execute": {
+      "description": "Fast track: analyze, plan, and implement",
+      "category": "feature-build",
+      "triggers": ["implement", "build", "create", "develop", "add feature"],
+      "steps": [
+        { "cmd": "maestro-analyze", "args": "\"{intent}\"", "type": "external" },
+        { "cmd": "maestro-plan", "args": "--dir {scratch_dir}", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "--dir {scratch_dir}", "type": "external" }
+      ]
+    },
+    "plan-execute-verify": {
+      "description": "Full phase: plan, execute, verify with quality gate",
+      "category": "feature-build",
+      "triggers": ["plan and execute", "phase", "plan execute"],
+      "steps": [
+        { "cmd": "maestro-plan", "args": "{phase}", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 }
+      ]
+    },
+    "execute-verify": {
+      "description": "Execute existing plan and verify",
+      "category": "feature-build",
+      "triggers": ["execute", "run plan", "implement plan"],
+      "steps": [
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" }
+      ]
+    },
+    "quality-loop": {
+      "description": "Full quality check: verify, review, test with decision gates",
+      "category": "quality-check",
+      "triggers": ["check quality", "review and test", "quality", "qa"],
+      "steps": [
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-review", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-review", "args": "", "type": "decision", "decision": "post-review", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-auto-test", "args": "{phase}", "type": "internal" },
+        { "cmd": "quality-test", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-test", "args": "", "type": "decision", "decision": "post-test", "retry_count": 0, "max_retries": 2 }
+      ]
+    },
+    "review-fix": {
+      "description": "Fix review-blocked issues",
+      "category": "quality-check",
+      "triggers": ["fix review", "review block", "review fail"],
+      "steps": [
+        { "cmd": "maestro-plan", "args": "{phase} --gaps", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "quality-review", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-review", "args": "", "type": "decision", "decision": "post-review", "retry_count": 0, "max_retries": 2 }
+      ]
+    },
+    "brainstorm-driven": {
+      "description": "Explore idea then plan and build",
+      "category": "explore",
+      "triggers": ["brainstorm", "explore idea", "ideate"],
+      "steps": [
+        { "cmd": "maestro-brainstorm", "args": "\"{intent}\"", "type": "external" },
+        { "cmd": "maestro-plan", "args": "{phase}", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 }
+      ]
+    },
+    "roadmap-driven": {
+      "description": "From requirements to roadmap to first phase with gates",
+      "category": "lifecycle",
+      "triggers": ["roadmap", "from requirements", "start project", "new project"],
+      "steps": [
+        { "cmd": "maestro-init", "args": "", "type": "internal" },
+        { "cmd": "maestro-roadmap", "args": "\"{intent}\"", "type": "internal" },
+        { "cmd": "maestro-analyze", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-plan", "args": "{phase}", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-review", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-review", "args": "", "type": "decision", "decision": "post-review", "retry_count": 0, "max_retries": 2 }
+      ]
+    },
+    "full-lifecycle": {
+      "description": "Complete phase lifecycle with all quality gates (ralph-equivalent)",
+      "category": "lifecycle",
+      "triggers": ["full lifecycle", "complete phase", "lifecycle", "ralph"],
+      "steps": [
+        { "cmd": "maestro-analyze", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-plan", "args": "{phase}", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-auto-test", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-business-test", "args": "", "type": "decision", "decision": "post-business-test", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-review", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-review", "args": "", "type": "decision", "decision": "post-review", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-auto-test", "args": "{phase}", "type": "internal" },
+        { "cmd": "quality-test", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-test", "args": "", "type": "decision", "decision": "post-test", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "maestro-milestone-audit", "args": "", "type": "internal" },
+        { "cmd": "maestro-milestone-complete", "args": "", "type": "internal" },
+        { "cmd": "decision:post-milestone", "args": "", "type": "decision", "decision": "post-milestone" }
+      ]
+    },
+    "standard-lifecycle": {
+      "description": "Standard phase lifecycle: verify + review + test gates",
+      "category": "lifecycle",
+      "triggers": ["standard lifecycle", "standard phase", "standard"],
+      "steps": [
+        { "cmd": "maestro-plan", "args": "{phase}", "type": "internal" },
+        { "cmd": "maestro-execute", "args": "{phase}", "type": "external" },
+        { "cmd": "maestro-verify", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-verify", "args": "", "type": "decision", "decision": "post-verify", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-review", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-review", "args": "", "type": "decision", "decision": "post-review", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "quality-test", "args": "{phase}", "type": "internal" },
+        { "cmd": "decision:post-test", "args": "", "type": "decision", "decision": "post-test", "retry_count": 0, "max_retries": 2 },
+        { "cmd": "maestro-milestone-audit", "args": "", "type": "internal" }
+      ]
+    },
+    "milestone-close": {
+      "description": "Audit and close current milestone",
+      "category": "milestone",
+      "triggers": ["close milestone", "complete milestone", "milestone done"],
+      "steps": [
+        { "cmd": "maestro-milestone-audit", "args": "", "type": "internal" },
+        { "cmd": "maestro-milestone-complete", "args": "", "type": "internal" },
+        { "cmd": "decision:post-milestone", "args": "", "type": "decision", "decision": "post-milestone" }
+      ]
+    },
+    "milestone-release": {
+      "description": "Audit and release milestone with version tag",
+      "category": "milestone",
+      "triggers": ["release", "publish", "tag version", "ship"],
+      "steps": [
+        { "cmd": "maestro-milestone-audit", "args": "", "type": "internal" },
+        { "cmd": "maestro-milestone-release", "args": "", "type": "internal" }
+      ]
+    },
+    "learn-deep": {
+      "description": "Deep module understanding: read, decompose, critique",
+      "category": "explore",
+      "triggers": ["understand", "deep learn", "study", "learn module"],
+      "steps": [
+        { "cmd": "learn-follow", "args": "\"{intent}\"", "type": "internal" },
+        { "cmd": "learn-decompose", "args": "\"{intent}\"", "type": "internal" },
+        { "cmd": "learn-second-opinion", "args": "\"{intent}\" --mode challenge", "type": "internal" }
+      ]
+    }
+  },
+  "single_commands": {
+    "status": "manage-status",
+    "init": "maestro-init",
+    "analyze": "maestro-analyze",
+    "plan": "maestro-plan",
+    "execute": "maestro-execute",
+    "verify": "maestro-verify",
+    "review": "quality-review",
+    "test": "quality-test",
+    "auto-test": "quality-auto-test",
+    "debug": "quality-debug",
+    "refactor": "quality-refactor",
+    "sync": "quality-sync",
+    "retrospective": "quality-retrospective",
+    "issue": "manage-issue",
+    "discover-issues": "manage-issue-discover",
+    "harvest": "manage-harvest",
+    "knowhow": "manage-knowhow",
+    "knowhow-capture": "manage-knowhow-capture",
+    "spec-add": "spec-add",
+    "spec-load": "spec-load",
+    "spec-remove": "spec-remove",
+    "spec-setup": "spec-setup",
+    "wiki": "manage-wiki",
+    "wiki-connect": "wiki-connect",
+    "wiki-digest": "wiki-digest",
+    "brainstorm": "maestro-brainstorm",
+    "roadmap": "maestro-roadmap",
+    "fork": "maestro-fork",
+    "merge": "maestro-merge",
+    "quick": "maestro-quick",
+    "learn-follow": "learn-follow",
+    "learn-investigate": "learn-investigate",
+    "learn-decompose": "learn-decompose",
+    "learn-retro": "learn-retro",
+    "learn-second-opinion": "learn-second-opinion",
+    "amend": "maestro-amend",
+    "compose": "maestro-composer",
+    "play": "maestro-player",
+    "update": "maestro-update",
+    "ui-design": "maestro-ui-design",
+    "milestone-audit": "maestro-milestone-audit",
+    "milestone-complete": "maestro-milestone-complete",
+    "milestone-release": "maestro-milestone-release",
+    "codebase-rebuild": "manage-codebase-rebuild",
+    "codebase-refresh": "manage-codebase-refresh"
+  }
+}
