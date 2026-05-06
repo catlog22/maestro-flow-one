@@ -21,26 +21,26 @@ npm install -g maestro-flow-one
 ### Install skill
 
 ```bash
-# Default: install both variants
+# Default: global install, both variants
 maestro-flow install
-#   .codex/skills/maestro-flow/  -> codex (spawn_agents_on_csv)
-#   .claude/skills/maestro-flow/ -> claude (Skill + delegate)
+#   ~/.codex/skills/maestro-flow/  -> codex (spawn_agents_on_csv)
+#   ~/.claude/skills/maestro-flow/ -> claude (Skill + delegate)
 
 # Single variant
-maestro-flow install --variant codex
-maestro-flow install --variant claude
+maestro-flow install --variant codex    # codex only -> ~/.codex/skills/
+maestro-flow install --variant claude   # claude only -> ~/.claude/skills/
 
-# Project-level (instead of global ~/.)
-maestro-flow install --project ./my-project
-maestro-flow install --variant codex --project .
+# Project-level install (instead of global)
+maestro-flow install --project .
+maestro-flow install --variant codex --project ./my-project
 ```
 
 ### Uninstall
 
 ```bash
-maestro-flow uninstall                        # Remove both from global
+maestro-flow uninstall                        # Remove both from global (~/)
 maestro-flow uninstall --variant codex        # Remove codex only
-maestro-flow uninstall --project .            # Remove from current project
+maestro-flow uninstall --project .            # Remove from current project only
 npm uninstall -g maestro-flow-one             # Remove global CLI
 ```
 
