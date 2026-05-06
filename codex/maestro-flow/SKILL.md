@@ -21,9 +21,27 @@ Session path: `.workflow/.maestro/flow-{YYYYMMDD-HHmmss}/status.json`
 <context>
 $ARGUMENTS -- intent text, flags, or special keywords.
 
+**Skill directory structure** (relative to this SKILL.md):
+```
+maestro-flow/
+  SKILL.md              <- this file (router + wave executor)
+  commands/
+    lifecycle/          <- 17 commands: init, analyze, plan, execute, verify, ...
+    quality/            <- 7 commands: debug, review, test, auto-test, ...
+    manage/             <- 10 commands: status, issue, wiki, harvest, ...
+    learn/              <- 5 commands: decompose, follow, investigate, ...
+    milestone/          <- 3 commands: audit, complete, release
+    spec/               <- 4 commands: add, load, remove, setup
+    wiki/               <- 2 commands: connect, digest
+  chains/
+    templates.json      <- 14 chain templates + decision types
+```
+
 **State files:**
 - `.workflow/state.json` -- project artifact registry (optional)
 - `.workflow/.maestro/flow-*/status.json` -- flow session state
+
+**CLI prerequisite:** `maestro-flow` command must be globally available (`npm install -g maestro-flow-one`)
 </context>
 
 <invariants>

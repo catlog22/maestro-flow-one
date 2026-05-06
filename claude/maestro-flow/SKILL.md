@@ -30,10 +30,33 @@ Session path: `.workflow/.maestro/flow-{YYYYMMDD-HHmmss}/status.json`
 <context>
 $ARGUMENTS -- intent text, flags, or special keywords.
 
+**Skill directory structure** (relative to this SKILL.md):
+```
+maestro-flow/
+  SKILL.md              <- this file (router)
+  executor.md           <- step execution loop (deferred read)
+  commands/
+    lifecycle/          <- 17 commands: init, analyze, plan, execute, verify, ...
+    quality/            <- 7 commands: debug, review, test, auto-test, ...
+    manage/             <- 10 commands: status, issue, wiki, harvest, ...
+    learn/              <- 5 commands: decompose, follow, investigate, ...
+    milestone/          <- 3 commands: audit, complete, release
+    spec/               <- 4 commands: add, load, remove, setup
+    wiki/               <- 2 commands: connect, digest
+  chains/
+    templates.json      <- 14 chain templates + decision types
+```
+
 **State files:**
 - `.workflow/state.json` -- project artifact registry (optional)
 - `.workflow/.maestro/flow-*/status.json` -- flow session state
+
+**CLI prerequisite:** `maestro-flow` command must be globally available (`npm install -g maestro-flow-one`)
 </context>
+
+<deferred_reading>
+- [executor.md](executor.md) -- read when entering Phase 2 (step execution loop)
+</deferred_reading>
 
 <execution>
 
@@ -59,9 +82,9 @@ Parse $ARGUMENTS:
     -> End.
 
   execute | continue
-    -> Find latest running flow session
-    -> If not found: "No running flow session." End.
-    -> Phase 2 (Step Execution Loop)
+    -> Read executor.md from deferred_reading
+    -> Follow executor.md completely
+    -> End.
 
   --chain <name> [-y] <remaining>
     -> Force chain selection, go to Step 4
@@ -134,98 +157,9 @@ Fall through to Phase 2.
 
 ## Phase 2: Step Execution Loop
 
-### 2.1: Load next step
+Read [executor.md](executor.md) from deferred_reading and follow it completely.
 
-```
-Bash: maestro-flow next
-```
-
-Parse output:
-- `NO_SESSION` -> End.
-- `SESSION_COMPLETE` -> Display summary. End.
-- `STEP: idx/total` + `TYPE` + `SKILL` + `ARGS` + `PATH` + `---COMMAND---` -> continue
-
-### 2.2: Route by type
-
-```
-If TYPE == "decision" -> Step 2.3 (Decision Evaluation)
-If TYPE == "internal" -> Step 2.4 (Internal Execution)
-If TYPE == "external" -> Step 2.5 (External Execution)
-```
-
-### 2.3: Decision Evaluation
-
-**Quality-gate decisions** (post-verify, post-review, post-test, post-business-test):
-
-```
-Resolve artifact dir from .workflow/state.json
-
-Bash({
-  command: `maestro delegate "evaluate ${decision} quality gate
-CONTEXT: @${result_files}
----VERDICT---
-STATUS: proceed | fix | escalate
-REASON: one-line
-GAP_SUMMARY: details
-CONFIDENCE: high | medium | low
----END---" --role analyze --mode analysis`,
-  run_in_background: true
-})
-STOP -- wait for callback.
-```
-
-On callback: parse verdict, apply (proceed/fix-loop/escalate).
-
-**Structural decisions** (post-milestone): evaluate directly.
-
-After decision: `Bash: maestro-flow done` -> loop to 2.1.
-
-### 2.4: Internal Execution
-
-The command content was loaded by `maestro-flow next` (after `---COMMAND---`).
-
-```
-1. Parse loaded command .md
-2. Set $ARGUMENTS = ARGS (with auto-flag if session.auto_mode)
-3. Follow <execution> section completely
-
-Auto flags: maestro-init -y, maestro-plan -y, maestro-execute -y,
-            quality-test -y --auto-fix, etc.
-
-On complete: Bash: maestro-flow done -> loop to 2.1
-On failure: -> Step 2.6
-```
-
-### 2.5: External Execution
-
-```
-Bash({
-  command: `maestro delegate --to claude "Execute: /maestro-flow --cmd {SKILL} {ARGS}" --mode write`,
-  run_in_background: true,
-  timeout: 600000
-})
-STOP -- wait for callback.
-
-On callback:
-  On success: Bash: maestro-flow done -> loop to 2.1
-  On failure: -> Step 2.6
-```
-
-### 2.6: Handle Failure
-
-```
-Auto mode: retry once (maestro-flow step {id} {idx} pending), then skip
-Interactive: AskUserQuestion retry/skip/abort
-```
-
----
-
-## Phase 3: Completion
-
-```
-Display session summary with step statuses.
-End.
-```
+Executor loop: `maestro-flow next` -> route by type -> execute -> `maestro-flow done` -> `Skill({ skill: "maestro-flow", args: "execute" })` until SESSION_COMPLETE.
 
 </execution>
 
