@@ -1,0 +1,24 @@
+{
+  "name": "maestro-flow-one",
+  "version": "0.1.0",
+  "description": "All Maestro workflow commands as a single Claude Code skill — intent routing, decision gates, minimal closed-loop chains",
+  "bin": {
+    "maestro-flow": "bin/maestro-flow.js"
+  },
+  "scripts": {
+    "install-skill": "node bin/maestro-flow.js install"
+  },
+  "keywords": [
+    "claude-code",
+    "workflow",
+    "maestro",
+    "skill",
+    "cli"
+  ],
+  "author": "catlog22",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/catlog22/maestro-flow-one.git"
+  }
+}

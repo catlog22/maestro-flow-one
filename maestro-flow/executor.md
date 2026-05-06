@@ -1,10 +1,10 @@
 # Flow Executor -- CLI-Driven Step Execution
 
-Single-step executor for flow sessions. Uses `flow_cli.py next` to load the next command and `flow_cli.py done` to mark completion and advance.
+Single-step executor for flow sessions. Uses `maestro-flow next` to load the next command and `maestro-flow done` to mark completion and advance.
 
 **Execution loop:**
 ```
-flow_cli.py next  ->  load command  ->  execute  ->  flow_cli.py done  ->  self-invoke
+maestro-flow next  ->  load command  ->  execute  ->  maestro-flow done  ->  self-invoke
 ```
 
 ## Execution
@@ -12,7 +12,7 @@ flow_cli.py next  ->  load command  ->  execute  ->  flow_cli.py done  ->  self-
 ### Step 1: Load Next Step
 
 ```
-result = Bash: python {skill_dir}/tools/flow_cli.py next
+result = Bash: maestro-flow next
 
 Parse output lines:
   "NO_SESSION"       -> "No running flow session. Use /maestro-flow to create." End.
@@ -124,7 +124,7 @@ Mark decision done -> Step 6.
 
 ### Step 4: Internal Execution (script-loaded)
 
-The command content was already loaded by `flow_cli.py next` (after `---COMMAND---`).
+The command content was already loaded by `maestro-flow next` (after `---COMMAND---`).
 
 ```
 1. Parse the loaded command .md content
@@ -178,7 +178,7 @@ STOP -- wait for background callback.
 ### Step 6: Mark Done & Advance
 
 ```
-Bash: python {skill_dir}/tools/flow_cli.py done
+Bash: maestro-flow done
 
 Parse output:
   "COMPLETED: idx skill-name"  -> display confirmation
@@ -197,17 +197,17 @@ End.
 ### Step 7: Handle Failure
 
 ```
-Bash: python {skill_dir}/tools/flow_cli.py step {session_id} {idx} failed
+Bash: maestro-flow step {session_id} {idx} failed
 ```
 
 **Auto mode:**
 ```
 Reset step to pending:
-  Bash: python flow_cli.py step {session_id} {idx} pending
+  Bash: maestro-flow step {session_id} {idx} pending
   -> Skill({ skill: "maestro-flow", args: "--role executor" })  // retry once
 
 If already retried:
-  Bash: python flow_cli.py step {session_id} {idx} skipped
+  Bash: maestro-flow step {session_id} {idx} skipped
   -> Skill({ skill: "maestro-flow", args: "--role executor" })  // continue
 ```
 

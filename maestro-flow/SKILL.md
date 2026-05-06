@@ -22,7 +22,7 @@ Three execution modes:
 3. **Direct** (`--cmd <name> <args>`): Load and execute a specific command (delegate entry point)
 
 Commands are organized in `commands/` by category (lifecycle, quality, manage, learn, spec, wiki, milestone).
-Execution uses `flow_cli.py resolve` for command discovery and `Read()` for inline loading.
+Execution uses `maestro-flow resolve` for command discovery and `Read()` for inline loading.
 
 Session path: `.workflow/.maestro/flow-{YYYYMMDD-HHmmss}/status.json`
 </purpose>
@@ -40,13 +40,10 @@ $ARGUMENTS — intent text, flags, or special keywords.
 
 <execution>
 
-## Step 0: Resolve Skill Directory
+## Step 0: CLI Prerequisite
 
-```
-skill_dir = directory containing this SKILL.md
-```
-
-All paths to commands, chains, tools are relative to skill_dir.
+The global CLI `maestro-flow` must be installed (`npm install -g maestro-flow-one`).
+All command discovery, session tracking, and path resolution go through this CLI.
 
 ## Step 1: Parse & Route
 
@@ -54,13 +51,13 @@ All paths to commands, chains, tools are relative to skill_dir.
 Parse $ARGUMENTS:
 
   --role executor [session-id]
-    → Read {skill_dir}/executor.md
+    → Read executor.md (in same directory as this SKILL.md)
     → Follow its execution instructions
     → Core loop:
-      1. Bash: python {skill_dir}/tools/flow_cli.py next [session-id]
+      1. Bash: maestro-flow next [session-id]
          → Loads next pending step, marks running, outputs command content
       2. Execute by type (internal: inline, external: delegate, decision: Agent)
-      3. Bash: python {skill_dir}/tools/flow_cli.py done [session-id]
+      3. Bash: maestro-flow done [session-id]
          → Marks completed, shows next step
       4. Self-invoke until SESSION_COMPLETE
     → End.
@@ -70,15 +67,15 @@ Parse $ARGUMENTS:
     → End.
 
   list
-    → Bash: python {skill_dir}/tools/flow_cli.py list
+    → Bash: maestro-flow list
     → End.
 
   status [session-id]
-    → Bash: python {skill_dir}/tools/flow_cli.py status [session-id]
+    → Bash: maestro-flow status [session-id]
     → End.
 
   chains
-    → Bash: python {skill_dir}/tools/flow_cli.py chains
+    → Bash: maestro-flow chains
     → End.
 
   continue
@@ -103,7 +100,7 @@ This is the entry point for delegate sessions and single-command execution.
 
 ```
 1. Resolve command path:
-   Bash: python {skill_dir}/tools/flow_cli.py resolve <name>
+   Bash: maestro-flow resolve <name>
    → Returns absolute path to command .md file
 
 2. If NOT_FOUND → Error: "Command not found: <name>". End.
@@ -149,7 +146,7 @@ Parse intent text for:
 ### 3.2: Match chain templates
 
 ```
-Read {skill_dir}/chains/templates.json
+Bash: maestro-flow chains
 
 For each template:
   Score = sum of matching trigger keyword lengths in intent
@@ -299,8 +296,8 @@ End.
 
 <success_criteria>
 - [ ] --role executor routes to executor.md inline execution
-- [ ] --cmd resolves via flow_cli.py and executes command inline
-- [ ] list/status/chains route to flow_cli.py
+- [ ] --cmd resolves via maestro-flow CLI and executes command inline
+- [ ] list/status/chains route to maestro-flow CLI
 - [ ] Intent analysis extracts action, phase, issue_id
 - [ ] Chain matching scores templates by trigger keywords
 - [ ] Session status.json created with correct schema
