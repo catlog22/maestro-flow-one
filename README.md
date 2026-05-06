@@ -1,6 +1,6 @@
 # Maestro Flow One
 
-All 49 Maestro workflow commands as a single Claude Code skill with global CLI.
+All 49 Maestro workflow commands as a single skill with dual-variant support (Codex + Claude Code).
 
 ## Install
 
@@ -8,42 +8,62 @@ All 49 Maestro workflow commands as a single Claude Code skill with global CLI.
 npm install -g maestro-flow-one
 ```
 
-This registers the global `maestro-flow` CLI and makes the skill available for any project.
-
-### Install skill to a project
+### Install skill
 
 ```bash
-cd your-project
+# Default: install both variants
 maestro-flow install
-```
+#   .codex/skills/maestro-flow/  -> codex (spawn_agents_on_csv)
+#   .claude/skills/maestro-flow/ -> claude (Skill + delegate)
 
-This copies the skill to `.claude/skills/maestro-flow/`, registering `/maestro-flow` in Claude Code.
+# Single variant
+maestro-flow install --variant codex
+maestro-flow install --variant claude
+
+# Project-level (instead of global ~/.)
+maestro-flow install --project ./my-project
+maestro-flow install --variant codex --project .
+```
 
 ### Uninstall
 
 ```bash
-maestro-flow uninstall              # Remove skill from current project
-npm uninstall -g maestro-flow-one   # Remove global CLI
+maestro-flow uninstall                        # Remove both from global
+maestro-flow uninstall --variant codex        # Remove codex only
+maestro-flow uninstall --project .            # Remove from current project
+npm uninstall -g maestro-flow-one             # Remove global CLI
 ```
+
+## Variants
+
+| Variant | Install Path | Execution Model |
+|---------|-------------|-----------------|
+| **codex** | `.codex/skills/maestro-flow/` | `spawn_agents_on_csv` wave-based parallel execution |
+| **claude** | `.claude/skills/maestro-flow/` | `Skill()` + `maestro delegate` step-by-step execution |
+
+Both variants share the same 49 commands and 14 chain templates. The difference is the SKILL.md execution engine:
+
+- **Codex**: Builds CSV waves, dispatches via `spawn_agents_on_csv`. Barrier steps solo, non-barriers parallel. Decision nodes evaluated by coordinator between waves.
+- **Claude**: Uses `maestro-flow next/done` CLI loop. Internal steps loaded inline via `Read()`, external steps delegated via `maestro delegate --to claude`.
 
 ## Usage
 
-### Claude Code
+### In Codex / Claude Code
 
 ```bash
-/maestro-flow "fix the login crash"        # Intent -> chain selection -> execute
+/maestro-flow "fix the login crash"        # Intent -> chain -> execute
 /maestro-flow --chain quick-fix "login"     # Direct chain
 /maestro-flow --cmd maestro-plan 1          # Single command
 /maestro-flow list                          # List all 49 commands
 /maestro-flow status                        # Session progress
-/maestro-flow continue                      # Resume session
+/maestro-flow execute                       # Resume session
 ```
 
 ### CLI
 
 ```bash
 maestro-flow list                           # All commands by category
-maestro-flow list --category quality        # Filter
+maestro-flow list --variant claude          # Use claude variant data
 maestro-flow show maestro-plan              # Command details
 maestro-flow chains                         # All 14 chain templates
 maestro-flow chain full-lifecycle           # Chain step details
@@ -54,8 +74,7 @@ maestro-flow next                           # Load next pending step
 maestro-flow done                           # Complete current step
 maestro-flow status                         # Session status
 maestro-flow sessions --all                 # List sessions
-maestro-flow step <id> 3 completed          # Manual step update
-maestro-flow reset <id>                     # Reset failed session
+maestro-flow reset <session-id>             # Reset failed session
 ```
 
 ## Architecture
@@ -63,37 +82,24 @@ maestro-flow reset <id>                     # Reset failed session
 ```
 /maestro-flow "intent"
       |
-      +-- "intent text"  --> chain match --> session create --> wave execution
+      +-- "intent text"  --> chain match --> session create
       |     |
-      |     +-- Phase 2: Wave Execution Loop
+      |     +-- [codex]  Wave Execution Loop
       |     |   +-- buildNextWave (barrier=solo, non-barrier=parallel)
       |     |   +-- write wave-{N}.csv
       |     |   +-- spawn_agents_on_csv
       |     |   +-- read results, update status
-      |     |   +-- barrier context propagation
       |     |
-      |     +-- Decision nodes (between waves)
-      |         +-- delegate evaluate -> proceed / fix-loop / escalate
+      |     +-- [claude] Step Execution Loop
+      |         +-- maestro-flow next  (load command)
+      |         +-- execute inline or delegate
+      |         +-- maestro-flow done  (advance)
+      |
+      +-- Decision nodes (between steps/waves)
+      |     +-- delegate evaluate -> proceed / fix-loop / escalate
       |
       +-- --cmd <name> <args>  --> resolve + Read() + inline execute
-      +-- execute / continue   --> resume wave loop
       +-- list / status / chains  --> maestro-flow CLI
-```
-
-### Execution Model
-
-| Type | How |
-|------|-----|
-| **barrier** | Solo wave via `spawn_agents_on_csv` (analyze, plan, execute, brainstorm, roadmap) |
-| **non-barrier** | Parallel wave, consecutive non-barrier steps grouped into one CSV |
-| **decision** | Coordinator evaluates quality gate between waves -> proceed / fix-loop / escalate |
-
-### Cross-Command Calls
-
-Commands reference each other through the skill router:
-
-```
-Skill({ skill: "maestro-flow", args: "--cmd spec-add pattern ..." })
 ```
 
 ## Commands (49)
@@ -126,12 +132,9 @@ Skill({ skill: "maestro-flow", args: "--cmd spec-add pattern ..." })
 | `quick-fix` | 5 | post-verify |
 | `issue-fix` | 8 | post-verify, post-review |
 | `plan-execute-verify` | 4 | post-verify |
-| `review-fix` | 4 | post-review |
-| `brainstorm-driven` | 5 | post-verify |
 | `quality-loop` | 7 | post-verify, post-review, post-test |
-| `roadmap-driven` | 9 | post-verify, post-review |
 | `standard-lifecycle` | 9 | post-verify, post-review, post-test |
-| `milestone-close` | 3 | post-milestone |
+| `roadmap-driven` | 9 | post-verify, post-review |
 
 ### Full Lifecycle (15 steps, ralph-equivalent)
 
@@ -143,42 +146,27 @@ analyze -> plan -> execute -> verify -> [post-verify]
   -> milestone-audit -> milestone-complete -> [post-milestone]
 ```
 
-Each `[decision]` gate is evaluated by Agent. On failure, fix-loop inserted dynamically (max 2 retries).
-
-## Decision Gates
-
-| Gate | Evaluates | Fix Loop |
-|------|-----------|----------|
-| post-verify | verification.json | debug -> plan --gaps -> execute -> verify -> re-evaluate |
-| post-review | review.json | debug -> plan --gaps -> execute -> review -> re-evaluate |
-| post-test | uat.md + test-results.json | debug -> plan --gaps -> execute -> verify -> test -> re-evaluate |
-| post-business-test | business-test-results.json | debug -> plan --gaps -> execute -> verify -> auto-test -> re-evaluate |
-| post-milestone | state.json | Structural: advance to next milestone or complete |
-
 ## Directory Structure
 
 ```
 maestro-flow-one/
-+-- package.json              # npm package, bin: maestro-flow
-+-- bin/maestro-flow.js        # Global CLI (Node.js)
++-- bin/maestro-flow.js            # Global CLI (Node.js)
++-- package.json                   # npm package
++-- codex/maestro-flow/            # Codex variant -> .codex/skills/
+|   +-- SKILL.md                   # spawn_agents_on_csv executor
+|   +-- commands/ (49)
+|   +-- chains/templates.json
++-- claude/maestro-flow/           # Claude variant -> .claude/skills/
+|   +-- SKILL.md                   # Skill() + delegate executor
+|   +-- commands/ (49)
+|   +-- chains/templates.json
 +-- README.md
 +-- LICENSE
-+-- maestro-flow/              # Skill directory -> .claude/skills/maestro-flow/
-    +-- SKILL.md               # Router + wave executor (single file)
-    +-- commands/              # 49 command files
-    |   +-- lifecycle/ (17)
-    |   +-- quality/ (7)
-    |   +-- manage/ (10)
-    |   +-- learn/ (5)
-    |   +-- milestone/ (3)
-    |   +-- spec/ (4)
-    |   +-- wiki/ (2)
-    +-- chains/templates.json  # 14 chains + decision types
 ```
 
 ## Related
 
-- [Maestro CLI](https://github.com/catlog22/maestro2) - Workflow orchestration CLI (required for `maestro delegate` in external steps)
+- [Maestro CLI](https://github.com/catlog22/maestro2)
 
 ## License
 

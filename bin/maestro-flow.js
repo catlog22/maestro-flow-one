@@ -13,12 +13,21 @@ const VARIANTS = {
 };
 const DEFAULT_VARIANT = "codex";
 
-// Resolve active variant: check installed skill first, then default
+// Resolve active variant: check installed first (project -> global), then package
 function getSkillRoot(variant) {
   if (variant && VARIANTS[variant]) return VARIANTS[variant];
-  // Check if installed in current project
-  const installed = path.join(process.cwd(), ".claude", "skills", "maestro-flow");
-  if (fs.existsSync(path.join(installed, "SKILL.md"))) return installed;
+
+  const home = process.env.HOME || process.env.USERPROFILE;
+  // Check installed locations: project first, then global
+  const candidates = [
+    path.join(process.cwd(), ".codex", "skills", "maestro-flow"),
+    path.join(process.cwd(), ".claude", "skills", "maestro-flow"),
+    path.join(home, ".codex", "skills", "maestro-flow"),
+    path.join(home, ".claude", "skills", "maestro-flow"),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(path.join(c, "SKILL.md"))) return c;
+  }
   return VARIANTS[DEFAULT_VARIANT];
 }
 
@@ -521,8 +530,18 @@ function rmDir(dir) {
   fs.rmdirSync(dir);
 }
 
+// Resolve target skills directory per variant and scope
+// codex -> .codex/skills/   claude -> .claude/skills/
+function resolveSkillsDir(variant, args) {
+  const dotDir = variant === "codex" ? ".codex" : ".claude";
+  if (args.project) {
+    return path.join(path.resolve(args.project), dotDir, "skills");
+  }
+  const home = process.env.HOME || process.env.USERPROFILE;
+  return path.join(home, dotDir, "skills");
+}
+
 function cmdInstall(args) {
-  const targetProject = path.resolve(args.project || process.cwd());
   const variant = args.variant || "all";
   const validVariants = ["codex", "claude", "all"];
 
@@ -531,12 +550,17 @@ function cmdInstall(args) {
     process.exit(1);
   }
 
+  const scope = args.project ? "project" : "global";
+  console.log(`Install scope: ${scope}`);
+  console.log();
+
   const toInstall = variant === "all" ? ["codex", "claude"] : [variant];
 
   for (const v of toInstall) {
     const source = VARIANTS[v];
-    const skillName = toInstall.length > 1 && v === "claude" ? "maestro-flow-claude" : "maestro-flow";
-    const skillTarget = path.join(targetProject, ".claude", "skills", skillName);
+    const skillsDir = resolveSkillsDir(v, args);
+    const skillName = "maestro-flow";
+    const skillTarget = path.join(skillsDir, skillName);
 
     console.log(`Installing [${v}] -> ${skillName}`);
     console.log(`  Source: ${source}`);
@@ -549,14 +573,6 @@ function cmdInstall(args) {
 
     copyDir(source, skillTarget);
 
-    // If claude variant installed as maestro-flow-claude, patch SKILL.md name
-    if (skillName === "maestro-flow-claude") {
-      const skillMd = path.join(skillTarget, "SKILL.md");
-      let content = fs.readFileSync(skillMd, "utf-8");
-      content = content.replace(/^name:\s*maestro-flow\s*$/m, "name: maestro-flow-claude");
-      fs.writeFileSync(skillMd, content, "utf-8");
-    }
-
     const cmdCount = countMd(path.join(skillTarget, "commands"));
     console.log(`  Commands: ${cmdCount}`);
     console.log();
@@ -564,10 +580,11 @@ function cmdInstall(args) {
 
   console.log("Installation complete!");
   if (variant === "all") {
-    console.log("  /maestro-flow         -> codex (spawn_agents_on_csv)");
-    console.log("  /maestro-flow-claude  -> claude (Skill + delegate)");
+    console.log("  .codex/skills/maestro-flow/  -> codex (spawn_agents_on_csv)");
+    console.log("  .claude/skills/maestro-flow/ -> claude (Skill + delegate)");
   } else {
-    console.log(`  /maestro-flow         -> ${variant}`);
+    const dotDir = variant === "codex" ? ".codex" : ".claude";
+    console.log(`  ${dotDir}/skills/maestro-flow/ -> ${variant}`);
   }
   console.log();
   console.log("Usage:");
@@ -576,24 +593,24 @@ function cmdInstall(args) {
 }
 
 function cmdUninstall(args) {
-  const targetProject = path.resolve(args.project || process.cwd());
   const variant = args.variant || "all";
-  const names = variant === "all"
-    ? ["maestro-flow", "maestro-flow-claude"]
-    : variant === "claude" ? ["maestro-flow-claude"] : ["maestro-flow"];
+  const toUninstall = variant === "all" ? ["codex", "claude"] : [variant];
+  const scope = args.project ? "project" : "global";
 
   let removed = 0;
-  for (const name of names) {
-    const skillTarget = path.join(targetProject, ".claude", "skills", name);
+  for (const v of toUninstall) {
+    const skillsDir = resolveSkillsDir(v, args);
+    const skillTarget = path.join(skillsDir, "maestro-flow");
     if (!fs.existsSync(skillTarget)) continue;
     const cmdCount = countMd(path.join(skillTarget, "commands"));
+    const dotDir = v === "codex" ? ".codex" : ".claude";
     rmDir(skillTarget);
-    console.log(`Uninstalled ${name} (${cmdCount} commands)`);
+    console.log(`Uninstalled ${dotDir}/skills/maestro-flow (${cmdCount} commands) [${scope}]`);
     removed++;
   }
 
   if (!removed) {
-    console.log("Maestro Flow is not installed in this project.");
+    console.log(`Maestro Flow not found [${scope}]`);
   } else {
     console.log();
     console.log("Global CLI still available. Remove: npm uninstall -g maestro-flow-one");
@@ -697,11 +714,14 @@ Commands:
   step <session-id> <index> <status>   Update step status
   reset <session-id>                   Reset failed session
   install [--variant codex|claude|all]  Install skill (default: all)
-  uninstall [--variant codex|claude|all] Remove skill from project
+  uninstall [--variant codex|claude|all] Remove skill
 
 Options:
   --variant, -v <name>     Select variant: codex, claude, all (default: all)
-  --project, -p <dir>      Target project directory (default: cwd)
+                           codex  -> .codex/skills/maestro-flow/
+                           claude -> .claude/skills/maestro-flow/
+                           all    -> both
+  --project, -p <dir>      Install to project dir (default: global ~/.claude|.codex)
   --category, -c <cat>     Filter by category (list, chains)
   --all, -a                Show all sessions (sessions)
 `);
