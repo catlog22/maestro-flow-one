@@ -63,25 +63,30 @@ maestro-flow reset <id>                     # Reset failed session
 ```
 /maestro-flow "intent"
       |
-      +-- --role executor --> executor.md
+      +-- "intent text"  --> chain match --> session create --> wave execution
       |     |
-      |     +-- maestro-flow next   (load command, mark running)
-      |     +-- execute by type     (internal/external/decision)
-      |     +-- maestro-flow done   (mark complete, advance)
-      |     +-- self-invoke loop
+      |     +-- Phase 2: Wave Execution Loop
+      |     |   +-- buildNextWave (barrier=solo, non-barrier=parallel)
+      |     |   +-- write wave-{N}.csv
+      |     |   +-- spawn_agents_on_csv
+      |     |   +-- read results, update status
+      |     |   +-- barrier context propagation
+      |     |
+      |     +-- Decision nodes (between waves)
+      |         +-- delegate evaluate -> proceed / fix-loop / escalate
       |
       +-- --cmd <name> <args>  --> resolve + Read() + inline execute
+      +-- execute / continue   --> resume wave loop
       +-- list / status / chains  --> maestro-flow CLI
-      +-- "intent text"  --> chain match --> session create --> executor
 ```
 
 ### Execution Model
 
 | Type | How |
 |------|-----|
-| **internal** | `maestro-flow next` loads .md content -> follow `<execution>` inline |
-| **external** | `maestro delegate --to claude "/maestro-flow --cmd {skill} {args}"` |
-| **decision** | Agent evaluates quality gate -> proceed / fix-loop / escalate |
+| **barrier** | Solo wave via `spawn_agents_on_csv` (analyze, plan, execute, brainstorm, roadmap) |
+| **non-barrier** | Parallel wave, consecutive non-barrier steps grouped into one CSV |
+| **decision** | Coordinator evaluates quality gate between waves -> proceed / fix-loop / escalate |
 
 ### Cross-Command Calls
 
@@ -159,8 +164,7 @@ maestro-flow-one/
 +-- README.md
 +-- LICENSE
 +-- maestro-flow/              # Skill directory -> .claude/skills/maestro-flow/
-    +-- SKILL.md               # Entry point router
-    +-- executor.md            # Step executor
+    +-- SKILL.md               # Router + wave executor (single file)
     +-- commands/              # 49 command files
     |   +-- lifecycle/ (17)
     |   +-- quality/ (7)
