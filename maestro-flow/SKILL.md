@@ -55,11 +55,18 @@ Parse $ARGUMENTS:
 
   --role executor [session-id]
     → Read {skill_dir}/executor.md
-    → Follow its execution instructions with session-id (if given) as context
+    → Follow its execution instructions
+    → Core loop:
+      1. Bash: python {skill_dir}/tools/flow_cli.py next [session-id]
+         → Loads next pending step, marks running, outputs command content
+      2. Execute by type (internal: inline, external: delegate, decision: Agent)
+      3. Bash: python {skill_dir}/tools/flow_cli.py done [session-id]
+         → Marks completed, shows next step
+      4. Self-invoke until SESSION_COMPLETE
     → End.
 
   --cmd <name> <remaining-args>
-    → Step 1a: Direct Command Execution
+    → Step 1a: Direct Command Execution (also used by delegate sessions)
     → End.
 
   list

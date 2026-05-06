@@ -31,7 +31,7 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 COMMANDS_DIR = SKILL_ROOT / "commands"
 CHAINS_FILE = SKILL_ROOT / "chains" / "templates.json"
 
-# Category → prefix mapping (for resolve)
+# Category -> prefix mapping (for resolve)
 CATEGORY_PREFIX = {
     "lifecycle": "maestro-",
     "milestone": "maestro-milestone-",
@@ -42,7 +42,7 @@ CATEGORY_PREFIX = {
     "wiki": "wiki-",
 }
 
-# Reverse: prefix → category (ordered longest first)
+# Reverse: prefix -> category (ordered longest first)
 PREFIX_CATEGORY = [
     ("maestro-milestone-", "milestone"),
     ("maestro-ralph-", "lifecycle"),
@@ -126,7 +126,7 @@ def find_sessions(workflow_dir: Path, all_sessions: bool = False) -> list[dict]:
     return sessions
 
 
-# ─── Commands ───────────────────────────────────────────────────────
+# --- Commands -------------------------------------------------------
 
 def cmd_list(args):
     """List available commands."""
@@ -136,7 +136,7 @@ def cmd_list(args):
 
     total = 0
     print(f"{'Category':<14} {'Command':<30} Description")
-    print(f"{'─'*13}  {'─'*29} {'─'*40}")
+    print(f"{'-'*13}  {'-'*29} {'-'*40}")
     for cat in categories:
         cat_dir = COMMANDS_DIR / cat
         for f in sorted(cat_dir.glob("*.md")):
@@ -158,18 +158,18 @@ def cmd_show(args):
     fm = parse_frontmatter(path)
     purpose = extract_purpose(path)
 
-    print(f"┌{'─'*50}┐")
-    print(f"│ {fm.get('name', args.name):<48} │")
-    print(f"│ {fm.get('description', '')[:48]:<48} │")
-    print(f"├{'─'*50}┤")
+    print(f"+{'-'*50}+")
+    print(f"| {fm.get('name', args.name):<48} |")
+    print(f"| {fm.get('description', '')[:48]:<48} |")
+    print(f"+{'-'*50}┤")
     if fm.get("argument-hint"):
-        print(f"│ Args: {fm['argument-hint'][:42]:<42}   │")
-    print(f"│ File: {str(path.relative_to(SKILL_ROOT))[:42]:<42}   │")
+        print(f"| Args: {fm['argument-hint'][:42]:<42}   |")
+    print(f"| File: {str(path.relative_to(SKILL_ROOT))[:42]:<42}   |")
     if purpose:
-        print(f"├{'─'*50}┤")
+        print(f"+{'-'*50}┤")
         for line in textwrap.wrap(purpose, width=48):
-            print(f"│ {line:<48} │")
-    print(f"└{'─'*50}┘")
+            print(f"| {line:<48} |")
+    print(f"+{'-'*50}┘")
 
 
 def cmd_chains(args):
@@ -181,7 +181,7 @@ def cmd_chains(args):
         templates = {k: v for k, v in templates.items() if v.get("category") == args.category}
 
     print(f"{'Template':<25} {'Category':<16} {'Steps':>5}  Description")
-    print(f"{'─'*24}  {'─'*15} {'─'*5}  {'─'*35}")
+    print(f"{'-'*24}  {'-'*15} {'-'*5}  {'-'*35}")
     for name, tmpl in templates.items():
         steps = len(tmpl.get("steps", []))
         desc = tmpl.get("description", "")[:35]
@@ -204,7 +204,7 @@ def cmd_chain(args):
     print(f"  Triggers: {', '.join(tmpl.get('triggers', []))}")
     print(f"\n  Steps:")
     for i, step in enumerate(tmpl.get("steps", [])):
-        type_badge = "⚡" if step["type"] == "external" else " "
+        type_badge = "*" if step["type"] == "external" else ">" if step["type"] == "decision" else " "
         print(f"    {i}. {type_badge} {step['cmd']} {step.get('args', '')}  [{step['type']}]")
     print()
 
@@ -298,7 +298,7 @@ def cmd_status(args):
             "pending": "    ",
         }.get(status, "    ")
 
-        type_badge = "⚡" if stype == "external" else "◆" if stype == "decision" else " "
+        type_badge = "*" if stype == "external" else ">" if stype == "decision" else " "
         print(f"    [{icon}] {idx}. {type_badge} {skill} {step_args}  [{stype}]")
     print()
 
@@ -311,7 +311,7 @@ def cmd_sessions(args):
         return
 
     print(f"{'Session ID':<30} {'Status':<12} {'Source':<8} {'Chain':<20} Intent")
-    print(f"{'─'*29}  {'─'*11} {'─'*7} {'─'*19} {'─'*30}")
+    print(f"{'-'*29}  {'-'*11} {'-'*7} {'-'*19} {'-'*30}")
     for s in sessions[:20]:
         sid = s.get("session_id", "?")
         status = s.get("status", "?")
@@ -351,7 +351,135 @@ def cmd_step(args):
     session["updated_at"] = now
     del session["_path"]
     status_path.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Step {idx} → {args.status}")
+    print(f"Step {idx} -> {args.status}")
+
+
+def cmd_next(args):
+    """Find next pending step, mark running, load and output command content."""
+    sessions = find_sessions(Path.cwd(), all_sessions=True)
+    if args.session_id:
+        sessions = [s for s in sessions if s.get("session_id") == args.session_id]
+    else:
+        sessions = [s for s in sessions if s.get("status") == "running"]
+
+    if not sessions:
+        print("NO_SESSION")
+        return
+
+    session = sessions[0]
+    status_path = Path(session["_path"])
+    steps = session.get("steps", [])
+    total = len(steps)
+
+    # Find next pending
+    pending = None
+    for step in steps:
+        if step.get("status") == "pending":
+            pending = step
+            break
+
+    if pending is None:
+        # All done
+        session["status"] = "completed"
+        session["updated_at"] = datetime.now().isoformat()
+        del session["_path"]
+        status_path.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
+        print("SESSION_COMPLETE")
+        return
+
+    idx = pending["index"]
+    skill = pending.get("skill", "?")
+    stype = pending.get("type", "internal")
+    step_args = pending.get("args", "")
+
+    # Mark running
+    pending["status"] = "running"
+    pending["started_at"] = datetime.now().isoformat()
+    session["current_step"] = idx
+    session["updated_at"] = datetime.now().isoformat()
+
+    path_str = session.pop("_path")
+    status_path.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # Output step info header
+    print(f"STEP: {idx}/{total - 1}")
+    print(f"TYPE: {stype}")
+    print(f"SKILL: {skill}")
+    print(f"ARGS: {step_args}")
+
+    # For decision nodes, output decision metadata
+    if stype == "decision":
+        print(f"DECISION: {pending.get('decision', '')}")
+        print(f"RETRY: {pending.get('retry_count', 0)}/{pending.get('max_retries', 2)}")
+        print("---COMMAND---")
+        print("(decision node - evaluate via Agent)")
+        return
+
+    # Resolve and load command
+    cmd_path = resolve_command(skill)
+    if cmd_path is None:
+        print(f"RESOLVE_FAILED: {skill}")
+        return
+
+    print(f"PATH: {cmd_path}")
+    print("---COMMAND---")
+    print(cmd_path.read_text(encoding="utf-8"))
+
+
+def cmd_done(args):
+    """Mark current running step as completed, output next step info."""
+    sessions = find_sessions(Path.cwd(), all_sessions=True)
+    if args.session_id:
+        sessions = [s for s in sessions if s.get("session_id") == args.session_id]
+    else:
+        sessions = [s for s in sessions if s.get("status") == "running"]
+
+    if not sessions:
+        print("NO_SESSION")
+        return
+
+    session = sessions[0]
+    status_path = Path(session["_path"])
+    steps = session.get("steps", [])
+
+    # Find current running step
+    running = None
+    for step in steps:
+        if step.get("status") == "running":
+            running = step
+            break
+
+    if running is None:
+        print("NO_RUNNING_STEP")
+        return
+
+    # Mark completed
+    running["status"] = "completed"
+    running["completed_at"] = datetime.now().isoformat()
+    session["updated_at"] = datetime.now().isoformat()
+
+    del session["_path"]
+    status_path.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    idx = running["index"]
+    print(f"COMPLETED: {idx} {running.get('skill', '?')}")
+
+    # Check next
+    session["_path"] = str(status_path)
+    next_pending = None
+    for step in steps:
+        if step.get("status") == "pending":
+            next_pending = step
+            break
+
+    if next_pending is None:
+        session_data = json.loads(status_path.read_text(encoding="utf-8"))
+        session_data["status"] = "completed"
+        session_data["updated_at"] = datetime.now().isoformat()
+        status_path.write_text(json.dumps(session_data, indent=2, ensure_ascii=False), encoding="utf-8")
+        print("SESSION_COMPLETE")
+    else:
+        print(f"NEXT: {next_pending['index']} {next_pending.get('skill', '?')} [{next_pending.get('type', 'internal')}]")
 
 
 def cmd_reset(args):
@@ -376,10 +504,10 @@ def cmd_reset(args):
     session["updated_at"] = datetime.now().isoformat()
     del session["_path"]
     status_path.write_text(json.dumps(session, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Reset {reset_count} steps to pending. Session status → running.")
+    print(f"Reset {reset_count} steps to pending. Session status -> running.")
 
 
-# ─── Main ───────────────────────────────────────────────────────────
+# --- Main -----------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Maestro Flow CLI")
@@ -417,6 +545,12 @@ def main():
     p_reset = sub.add_parser("reset", help="Reset failed session")
     p_reset.add_argument("session_id", help="Session ID")
 
+    p_next = sub.add_parser("next", help="Load next pending step (mark running, output command)")
+    p_next.add_argument("session_id", nargs="?", help="Session ID (default: latest running)")
+
+    p_done = sub.add_parser("done", help="Complete current step, show next")
+    p_done.add_argument("session_id", nargs="?", help="Session ID (default: latest running)")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -427,6 +561,7 @@ def main():
         "chain": cmd_chain, "suggest": cmd_suggest, "resolve": cmd_resolve,
         "status": cmd_status, "sessions": cmd_sessions,
         "step": cmd_step, "reset": cmd_reset,
+        "next": cmd_next, "done": cmd_done,
     }
     cmd_map[args.command](args)
 
