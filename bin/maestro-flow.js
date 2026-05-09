@@ -541,6 +541,17 @@ function resolveSkillsDir(variant, args) {
   return path.join(home, dotDir, "skills");
 }
 
+// Resolve target agents directory per variant and scope
+// codex -> .codex/agents/   claude -> .claude/agents/
+function resolveAgentsDir(variant, args) {
+  const dotDir = variant === "codex" ? ".codex" : ".claude";
+  if (args.project) {
+    return path.join(path.resolve(args.project), dotDir, "agents");
+  }
+  const home = process.env.HOME || process.env.USERPROFILE;
+  return path.join(home, dotDir, "agents");
+}
+
 function cmdInstall(args) {
   const variant = args.variant || "all";
   const validVariants = ["codex", "claude", "all"];
@@ -575,6 +586,22 @@ function cmdInstall(args) {
 
     const cmdCount = countMd(path.join(skillTarget, "commands"));
     console.log(`  Commands: ${cmdCount}`);
+
+    // Install agents to the proper location (outside skill dir)
+    const agentsSource = path.join(source, "agents");
+    if (fs.existsSync(agentsSource)) {
+      const agentsTarget = resolveAgentsDir(v, args);
+      fs.mkdirSync(agentsTarget, { recursive: true });
+      let agentCount = 0;
+      for (const entry of fs.readdirSync(agentsSource)) {
+        const srcPath = path.join(agentsSource, entry);
+        if (fs.statSync(srcPath).isFile()) {
+          fs.copyFileSync(srcPath, path.join(agentsTarget, entry));
+          agentCount++;
+        }
+      }
+      console.log(`  Agents:   ${agentCount} -> ${agentsTarget}`);
+    }
     console.log();
   }
 
@@ -582,9 +609,12 @@ function cmdInstall(args) {
   if (variant === "all") {
     console.log("  .codex/skills/maestro-flow/  -> codex (spawn_agents_on_csv)");
     console.log("  .claude/skills/maestro-flow/ -> claude (Skill + delegate)");
+    console.log("  .codex/agents/              -> codex agent definitions");
+    console.log("  .claude/agents/             -> claude agent definitions");
   } else {
     const dotDir = variant === "codex" ? ".codex" : ".claude";
     console.log(`  ${dotDir}/skills/maestro-flow/ -> ${variant}`);
+    console.log(`  ${dotDir}/agents/             -> ${variant} agent definitions`);
   }
   console.log();
   console.log("Usage:");
