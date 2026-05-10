@@ -54,7 +54,7 @@ Extraction patterns, classification rules, routing infrastructure, and fragment 
 - Review wiki entries → `maestro wiki list --type note`
 - Connect wiki graph → `/wiki-connect --fix`
 - Triage issues → `/manage-issue list --source harvest`
-- View specs → `/spec-load --category learning`
+- View specs → `/spec-load --role implement`
 - Full retrospective → `/quality-retrospective`
 </execution>
 
