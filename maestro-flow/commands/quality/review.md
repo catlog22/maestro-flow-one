@@ -56,7 +56,7 @@ Extract conclusions from related artifacts that may affect this review. Pass as 
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:
-   `maestro wiki list --role review`
+   `maestro wiki list --category review`
 2. Analyze the index, identify entries relevant to the current task
 3. Load selected documents:
    `maestro wiki load <id1> [id2] [id3...]`

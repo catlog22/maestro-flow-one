@@ -51,7 +51,7 @@ Extract conclusions from related artifacts that may affect this debug session â€
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:
-   `maestro wiki list --role analyze`
+   `maestro wiki list --category debug`
 2. Analyze the index, identify entries relevant to the current task
 3. Load selected documents:
    `maestro wiki load <id1> [id2] [id3...]`

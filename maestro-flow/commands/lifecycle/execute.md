@@ -40,7 +40,7 @@ Scope routing, flags, resolution logic, output directory format, artifact regist
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:
-   `maestro wiki list --role implement`
+   `maestro wiki list --category coding`
 2. Analyze the index, identify entries relevant to the current task
 3. Load selected documents:
    `maestro wiki load <id1> [id2] [id3...]`

@@ -1,7 +1,7 @@
 ---
 name: spec-add
 description: Add spec entry by category with role tagging
-argument-hint: "[--scope project|global|team|personal] [--roles <csv>] <category> <content>"
+argument-hint: "[--scope project|global|team|personal] <category> <content>"
 allowed-tools:
   - Read
   - Write
@@ -13,7 +13,7 @@ allowed-tools:
 Add a knowledge entry to the specs system using `<spec-entry>` closed-tag format.
 Each category maps 1:1 to a single target file — no dual-write.
 Supports 4 scopes: project (default), global, team, personal.
-Entries use `roles` attribute to declare which agent roles should load them.
+Entries use `category` attribute to declare which category they belong to.
 </purpose>
 
 <required_reading>
@@ -21,10 +21,9 @@ Entries use `roles` attribute to declare which agent roles should load them.
 </required_reading>
 
 <context>
-$ARGUMENTS -- expects `[--scope <scope>] [--uid <uid>] [--roles <csv>] <category> <content>`
+$ARGUMENTS -- expects `[--scope <scope>] [--uid <uid>] <category> <content>`
 
 **Options:**
-- `--roles <csv>` — Comma-separated roles (implement, plan, test, review, analyze, explore). Determines which agents load this entry via `spec load --role`.
 - `--ref <path>` — Create as index entry referencing a knowhow document. If the path exists, only creates the spec index entry. If path doesn't exist, also creates the knowhow file.
 - `--knowhow-type <type>` — Knowhow document type when creating with --ref (asset, blueprint, document, template, recipe, reference, decision)
 
@@ -32,16 +31,12 @@ Scope-to-directory mapping, category-to-file mapping, and entry format defined i
 
 **Examples:**
 ```bash
-# Tool spec with roles (stored in tools.md)
-/spec-add tools "Integration Test Flow" "## Steps\n1. Setup\n2. Run" --roles "implement,test" --keywords "testing,api"
+# Standard spec entry
+/spec-add coding "Named exports" "Always use named exports" --keywords "exports,naming"
 
-# Tool spec with ref to detailed knowhow
-/spec-add tools "OAuth PKCE Flow" "完整 PKCE 集成流程" --roles "implement" --ref knowhow/RCP-oauth-pkce.md
+# Spec with ref to detailed knowhow
+/spec-add coding "OAuth PKCE Flow" "完整 PKCE 集成流程" --ref knowhow/RCP-oauth-pkce.md --keywords "oauth,pkce"
 
-# Standard spec with role
-/spec-add coding "Named exports" "Always use named exports" --roles "implement"
-
-# Legacy style (no --roles, backward compat)
 /spec-add arch "OAuth PKCE 集成" "完整流程设计" --ref knowhow/AST-oauth-flow.md
 ```
 </context>

@@ -134,7 +134,7 @@ Build the decomposition report grouped by dimension:
 
 ### Stage 6: Persist
 1. Write `.workflow/knowhow/KNW-decompose-{slug}-{date}.md`
-2. Append each **new** pattern as a `<spec-entry>` block to `specs/learnings.md` via `maestro spec add learning --roles implement --body "<content>" --keywords "decompose,pattern,{dimension},{target-slug}"`:
+2. Append each **new** pattern as a `<spec-entry>` block to `specs/learnings.md` via `maestro spec add learning --body "<content>" --keywords "decompose,pattern,{dimension},{target-slug}"`:
    - Stable INS-id from `hash("decompose" + target + pattern_name)`
 4. If `--save-spec`: for each new pattern, invoke `Skill({ skill: "spec-add", args: "pattern {description}" })`
 5. If `--save-wiki`: create wiki note per dimension group via `maestro wiki create --type note --slug decompose-{dimension}-{slug}`

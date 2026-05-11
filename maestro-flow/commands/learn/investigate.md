@@ -178,7 +178,7 @@ Write final `report.md`:
 ```
 
 ### Stage 8: Persist
-1. Append findings as `<spec-entry>` blocks to `specs/learnings.md` via `maestro spec add learning --roles implement --body "<content>" --keywords "investigate,{question-slug}"`:
+1. Append findings as `<spec-entry>` blocks to `specs/learnings.md` via `maestro spec add learning --body "<content>" --keywords "investigate,{question-slug}"`:
    - Confirmed hypotheses → `roles="implement"` (merge "technique"/"pattern" into keywords)
    - Disproved hypotheses → `roles="analyze"` (merge "gotcha" into keywords)
    - Stable INS-id from `hash("investigate" + question + finding_title)`

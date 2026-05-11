@@ -248,7 +248,7 @@ Write `.workflow/knowhow/KNW-retro-{date}.json` with structured data.
 
 ### Stage 5: Persist
 1. Write report files
-2. Append insights as `<spec-entry>` blocks to `specs/learnings.md` via `maestro spec add learning --roles implement --body "<content>" --keywords "<kw>"`:
+2. Append insights as `<spec-entry>` blocks to `specs/learnings.md` via `maestro spec add learning --body "<content>" --keywords "<kw>"`:
    - Git insights: source="retro-git", roles per insight type
    - Decision insights: source="retro-decision", roles="plan" (merge "decision" into keywords)
    - Stable INS-id from `hash(lens + metric_or_decision + date)`

@@ -48,7 +48,7 @@ Scope routing, base flags (`--collab`, `--spec`, `-y`, `--gaps`, `--dir`), outpu
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:
-   `maestro wiki list --role plan`
+   `maestro wiki list --category arch`
 2. Analyze the index, identify entries relevant to the current task
 3. Load selected documents:
    `maestro wiki load <id1> [id2] [id3...]`

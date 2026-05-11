@@ -1,7 +1,7 @@
 ---
 name: maestro-tools-execute
-description: Load and execute tool specs by role or name
-argument-hint: "[tool-name | --role <role>]"
+description: Load and execute tool specs by category or name
+argument-hint: "[tool-name | --category <category>]"
 allowed-tools:
   - Read
   - Write
@@ -13,10 +13,10 @@ allowed-tools:
   - Agent
 ---
 <purpose>
-Load registered tool specs and execute them step-by-step. Two invocation modes:
+Load registered tool documents and execute them step-by-step. Two invocation modes:
 
 1. **Direct** — Specify tool name, load full steps, execute sequentially
-2. **Role-based** — List available tools for a role, user selects, then execute
+2. **Category-based** — List available tools for a category, user selects, then execute
 
 Execution follows the tool definition steps in order, reporting progress per step and asking user on blockers.
 </purpose>
@@ -26,13 +26,13 @@ Execution follows the tool definition steps in order, reporting progress per ste
 </required_reading>
 
 <context>
-$ARGUMENTS — Tool name, keyword, or --role filter
+$ARGUMENTS — Tool name, keyword, or --category filter
 
 **Examples**:
 ```
 /maestro-tools-execute integration-test
-/maestro-tools-execute --role implement
-/maestro-tools-execute --role review --keyword api
+/maestro-tools-execute --category coding
+/maestro-tools-execute --category review --keyword api
 /maestro-tools-execute
 ```
 
@@ -45,23 +45,23 @@ Empty arguments enters interactive mode: list all tools for user selection.
 
 **By name**:
 ```bash
-maestro spec load --role implement --keyword <name>
+maestro spec load --category coding --keyword <name>
 ```
-Match entries in tools.md whose title or keywords contain the name.
+Match knowhow documents with `tool: true` whose title or keywords contain the name.
 
-**By role**:
+**By category**:
 ```bash
-maestro spec load --role <role>
+maestro spec load --category <category>
 ```
-Extract tools.md entries from output, list available tools.
+Extract tool entries from the "Available Tools" section in output.
 
 **Empty args**:
-Load all tools.md entries, present to user with AskUserQuestion for selection.
+Load all categories, collect tool entries, present to user with AskUserQuestion for selection.
 
 ### Step 2: Display Tool
 
 Show tool information:
-- Name, roles, keywords
+- Name, category, keywords
 - Steps overview (for ref entries, expand knowhow detail first)
 
 Expand ref entries:

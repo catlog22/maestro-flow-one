@@ -1,7 +1,7 @@
 ---
 name: spec-load
 description: Load specs and lessons for current context
-argument-hint: "[--role <role>] [--keyword <word>]"
+argument-hint: "[--category <category>] [--keyword <word>]"
 allowed-tools:
   - Read
   - Bash
@@ -9,8 +9,8 @@ allowed-tools:
   - Grep
 ---
 <purpose>
-Load relevant specs filtered by role (primary), category (file-level), and/or keyword (entry-level).
-Role-based loading: loads the role's primary doc in full + matching entries from other files.
+Load relevant specs filtered by category (file-level) and/or keyword (entry-level).
+Category-based loading: loads the category's primary doc in full + matching entries from other files.
 </purpose>
 
 <required_reading>
@@ -21,26 +21,25 @@ Role-based loading: loads the role's primary doc in full + matching entries from
 $ARGUMENTS -- optional flags and keyword
 
 **Flags:**
-- `--role <role>` — Load by role: primary role doc (full) + cross-file entries with matching roles attr. Roles: implement, plan, test, review, analyze, explore, brainstorm, research.
+- `--category <category>` — Load by category: primary category doc (full) + cross-file entries with matching category attr. Categories: coding, arch, test, review, debug, quality, learning.
 - `--keyword <word>` — Filter by keyword within entries
 
-**File → Primary Role mapping:**
-| File | Role |
-|------|------|
-| coding-conventions.md | implement |
-| architecture-constraints.md | plan |
+**File → Primary Category mapping:**
+| File | Category |
+|------|----------|
+| coding-conventions.md | coding |
+| architecture-constraints.md | arch |
 | test-conventions.md | test |
 | review-standards.md | review |
-| debug-notes.md | analyze |
-| quality-rules.md | review |
-| learnings.md | implement |
-| tools.md | _(per-entry roles)_ |
+| debug-notes.md | debug |
+| quality-rules.md | quality |
+| learnings.md | learning |
 
 **Examples:**
 ```
-/spec-load --role implement             # coding全文 + 跨文件implement条目
-/spec-load --role review                # review-standards + quality-rules + 跨文件review条目
-/spec-load --role implement --keyword auth
+/spec-load --category coding            # coding全文 + 跨文件coding条目
+/spec-load --category review            # review-standards + quality-rules + 跨文件review条目
+/spec-load --category coding --keyword auth
 /spec-load --keyword auth
 ```
 
