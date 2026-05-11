@@ -47,7 +47,8 @@ Extract conclusions from related artifacts that may affect this debug session �
 
 1. **Codebase docs**: If `.workflow/codebase/ARCHITECTURE.md` exists, load module boundaries to scope impact analysis and inform hypothesis formation.
 2. **Wiki prior knowledge**: Run `maestro wiki search "<symptom keywords>" --json 2>/dev/null`. If results found, check for prior investigations on similar issues to avoid re-investigation.
-3. Both are optional — proceed without if unavailable.
+3. **Debug specs + tools**: Run `maestro spec load --category debug --keyword "<symptom keywords>"`. If tools found, extract known issues, workarounds, and root-cause notes to inform hypotheses.
+4. All are optional — proceed without if unavailable.
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:

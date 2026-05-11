@@ -17,7 +17,7 @@ Codify reusable business processes as knowhow documents with `tool: true` in `.w
 
 When to register: during planning to standardize a business process (e.g. payment reconciliation, OAuth integration steps); after execution to capture a validated procedure (e.g. database migration rollback); before testing to register verification methods for test agents (e.g. E2E checkout flow, API idempotency verification); during retrospective/harvest to extract reusable process knowledge from artifacts.
 
-Three modes: Extract (from code/docs), Generate (from description), Optimize (improve existing).
+Four modes: Extract (from code/docs), Generate (from description), Optimize (improve existing), Promote (existing knowhow → tool in place).
 Short processes (<10 steps) inline; long processes (>=10 steps) use ref mode with knowhow detail doc.
 </purpose>
 
@@ -34,6 +34,8 @@ $ARGUMENTS — Intent description
 /maestro-tools-register generate Stripe webhook idempotency verification
 /maestro-tools-register generate E2E checkout flow with payment gateway mock setup
 /maestro-tools-register optimize e2e-checkout tool
+/maestro-tools-register promote RCP-db-migration-rollback as test tool
+/maestro-tools-register promote knowhow-auth-api to coding tool
 ```
 </context>
 
@@ -44,6 +46,7 @@ $ARGUMENTS — Intent description
 Parse $ARGUMENTS to determine mode:
 - Contains "extract" → extract mode
 - Contains "optimize/improve" → optimize mode
+- Contains "promote" or references existing knowhow doc (path/ID) → promote mode
 - Other → generate mode
 - Empty → ask user with AskUserQuestion
 
@@ -61,16 +64,34 @@ Parse $ARGUMENTS to determine mode:
 - Load existing tool: `maestro spec load --category coding --keyword <name>`
 - Analyze improvement points (step splitting, prerequisites, error handling)
 
+**Promote mode** (existing knowhow → tool):
+- Locate document: `maestro wiki list --keyword <name>` or by path in `.workflow/knowhow/`
+- Read document, verify it contains actionable steps (numbered list or ## Steps section)
+- If no actionable steps, suggest extract mode instead
+- Determine category (Step 3) and summary ("Use when ...")
+- Update frontmatter via: `maestro wiki update <id> --frontmatter '{"tool": true, "category": "<cat>", "summary": "<summary>"}'`
+- Do NOT recreate the document — modify in place
+
 **For all modes** — identify the usage timing: when should an agent or user invoke this tool? This becomes the first line of the entry description (see Step 5).
 
 ### Step 3: Determine Category
 
-Infer applicable category from context, or ask user:
-- coding — execution tools (build, deploy, integrate)
-- test — testing tools (test flows, verification steps)
-- review — review tools (checklists, audit standards)
-- arch — planning tools (design flows, analysis steps)
-- debug — analysis tools (diagnostic flows, investigation steps)
+**Core principle**: `category` = **who consumes this tool** (which agent type discovers and uses it), not what the content is about.
+
+| Category | Consumer Agent | Decision Question | Signal Words |
+|---|---|---|---|
+| `coding` | code-developer, workflow-executor | 开发者实现时需要这个流程吗？ | build, deploy, integrate, configure, setup, migrate, api-contract |
+| `test` | tdd-developer, test-fix-agent | 测试者验证行为时需要这个流程吗？ | verify, validate, assert, e2e, regression, coverage, idempotency |
+| `review` | workflow-reviewer | 审查者需要这个作为 checklist 吗？ | audit, checklist, compliance, quality-gate, standard |
+| `arch` | workflow-planner | 规划者设计方案时需要这个吗？ | design, architecture, decompose, trade-off, migration-strategy |
+| `debug` | debug-explore-agent | 调试者排查问题时需要这个吗？ | diagnose, trace, investigate, root-cause, reproduce |
+
+**Multi-consumer split**: If content serves multiple consumers (e.g., API doc for both dev and test), split into separate documents:
+- API contract (what endpoints look like) → `category: coding` (AST-*, tool: false)
+- API verification steps (how to test) → `category: test` (RCP-*, tool: true)
+- Ask user when ambiguous: "This tool content serves both developers and testers. Split into separate documents?"
+
+**Ambiguous cases**: Choose the **primary consumer** — the agent that would fail without this knowledge.
 
 ### Step 4: Decide Inline vs Ref
 

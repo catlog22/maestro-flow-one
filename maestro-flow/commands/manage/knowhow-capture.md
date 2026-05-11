@@ -34,6 +34,9 @@ Arguments: $ARGUMENTS
 | `reference` | REF- | External doc / API quick-ref | source URL, key points, scenarios |
 | `decision` | DCS- | Design decision record | context, alternatives, rationale, consequences |
 | `tip` | TIP- | Quick note / reminder | content, tags |
+| `asset` | AST- | Code asset (API contract, data model) | assetType, codePaths, category |
+| `blueprint` | BLP- | Architecture design with code paths | codePaths, category |
+| `document` | DOC- | General long-form (fallback) | — |
 
 No arguments: auto-detect type or ask user via AskUserQuestion.
 
@@ -42,6 +45,9 @@ No arguments: auto-detect type or ask user via AskUserQuestion.
 - `--source <url>` — Source URL for references
 - `--tag tag1,tag2` — Categorization tags
 - `--title <title>` — Explicit title (auto-generated if omitted)
+- `--asset-type <type>` — Asset subtype: api-contract, data-model, prompt, config, etc.
+- `--code-paths <paths>` — Related source paths for asset/blueprint (comma-separated)
+- `--category <cat>` — Spec category for agent discovery (coding, arch, test, debug, review, learning)
 </context>
 
 <execution>
@@ -58,8 +64,11 @@ Parse first token as type. If ambiguous, AskUserQuestion with options:
 | `reference`, `ref`, `参考`, `引用` | reference |
 | `decision`, `dcs`, `决策`, `adr` | decision |
 | `tip`, `note`, `记录`, `快速` | tip |
+| `asset`, `ast`, `资产`, `契约` | asset |
+| `blueprint`, `blp`, `蓝图` | blueprint |
+| `document`, `doc`, `文档` | document |
 | No match, short text, `--tag` present | tip |
-| No arguments | AskUserQuestion (6 options) |
+| No arguments | AskUserQuestion (9 options) |
 
 ### Step 2: Generate Content by Type
 

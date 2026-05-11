@@ -40,6 +40,11 @@ Follow '~/.maestro/workflows/test.md' completely.
 
 **Command-specific extensions (not in workflow):**
 
+**Test tool discovery** (knowhow tools as scenario source):
+- Load registered test tools: `maestro spec load --category test --keyword <feature>`
+- If tools found, extract their steps as additional test scenarios marked `source: "tool"`
+- Each numbered step in a tool becomes a UAT test with its assertion as `expected` behavior
+
 **Review findings integration** (from related review artifacts):
 - Extract critical/high findings as additional test scenarios, marked `source: "review_finding"`
 - When review verdict is "BLOCK" and review-finding tests fail, auto-enter gap-fix loop

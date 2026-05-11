@@ -36,7 +36,8 @@ Scope routing, flags, resolution logic, output directory format, artifact regist
 
 1. **Codebase docs**: If `.workflow/codebase/doc-index.json` exists, read `ARCHITECTURE.md` for module boundaries. Pass as shared context to executor agents.
 2. **Wiki knowledge**: Run `maestro wiki search "<phase keywords>" --json 2>/dev/null`. If results found, extract top 5 entries as prior knowledge context for agents.
-3. Both are optional — proceed without if unavailable (log warning).
+3. **Coding specs + tools**: Run `maestro spec load --category coding` to load coding conventions AND discoverable knowhow tools (tool: true entries). Pass as specs context to all executor agents.
+4. All are optional — proceed without if unavailable (log warning).
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:

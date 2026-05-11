@@ -52,7 +52,8 @@ Extract conclusions from related artifacts that may affect this review. Pass as 
 
 1. **Codebase docs**: If `.workflow/codebase/ARCHITECTURE.md` exists, load component boundaries and layer rules. Pass as `codebase_context` to reviewer agents (especially architecture dimension).
 2. **Wiki constraints**: Run `maestro wiki search "architecture constraint" --json 2>/dev/null`. If results found, pass as `wiki_context` to reviewer agents for evaluating code against documented decisions.
-3. Both are optional — proceed without if unavailable.
+3. **Review specs + tools**: Run `maestro spec load --category review` to load review standards, checklists, AND discoverable knowhow tools. Pass as `specs_content` to all reviewer agents.
+4. All are optional — proceed without if unavailable.
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:
