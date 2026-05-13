@@ -21,7 +21,7 @@ Category-based loading: loads the category's primary doc in full + matching entr
 $ARGUMENTS -- optional flags and keyword
 
 **Flags:**
-- `--category <category>` — Load by category: primary category doc (full) + cross-file entries with matching category attr. Categories: coding, arch, test, review, debug, quality, learning.
+- `--category <category>` — Load by category: primary category doc (full) + cross-file entries with matching category attr. Categories: coding, arch, test, review, debug, learning, ui.
 - `--keyword <word>` — Filter by keyword within entries
 
 **File → Primary Category mapping:**
@@ -32,7 +32,8 @@ $ARGUMENTS -- optional flags and keyword
 | test-conventions.md | test |
 | review-standards.md | review |
 | debug-notes.md | debug |
-| quality-rules.md | quality |
+| ui-conventions.md | ui |
+| quality-rules.md | review |
 | learnings.md | learning |
 
 **Examples:**
