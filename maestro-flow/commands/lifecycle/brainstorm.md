@@ -69,7 +69,7 @@ Auto mode:
 - Project initialized, quick roadmap → Skill({ skill: "maestro-roadmap", args: "--from-brainstorm {session_id}" })
 - Need deeper analysis first → Skill({ skill: "maestro-analyze", args: "{topic}" })
 - `html-prototypes/` produced with 2+ files and user wants to browse → load `~/.maestro/workflows/brainstorm-visualize.md` and launch visualizer server (optional, user-triggered)
-- DESIGN.md established during Step 3.5 → suggest: "Run `/maestro-ui-craft <feature-description> --chain build` to build with the established design system"
+- DESIGN.md established during Step 3.5 → suggest: "Run `/maestro-impeccable <feature-description> --chain build` to build with the established design system"
 
 Single role mode:
 - More roles needed → Skill({ skill: "maestro-brainstorm", args: "{next_role} --session {session_id}" })
