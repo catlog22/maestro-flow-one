@@ -1,7 +1,7 @@
 ---
 name: maestro-impeccable
-description: Production-grade UI design with knowhow accumulation — 23 commands for build, evaluate, refine, enhance, fix
-argument-hint: "<command> [target] [--skip-harvest] [-y]"
+description: Production-grade UI design with knowhow accumulation — 24 commands + integrated design search for build, evaluate, refine, enhance, fix
+argument-hint: "<command> [target] [--skip-harvest] [-y] | search <query> [-d <domain>] [--design-system]"
 allowed-tools:
   - Read
   - Write
@@ -13,13 +13,17 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Replaces impeccable as the primary UI design entry point. 23 commands covering the full design lifecycle:
-Build (craft, shape, teach, document, extract), Evaluate (critique, audit), Refine (polish, bolder, quieter, distill, harden, onboard),
+Replaces impeccable as the primary UI design entry point. 24 commands covering the full design lifecycle:
+Build (craft, shape, teach, document, extract, explore), Evaluate (critique, audit), Refine (polish, bolder, quieter, distill, harden, onboard),
 Enhance (animate, colorize, typeset, layout, delight, overdrive), Fix (clarify, adapt, optimize), Iterate (live).
 
 Core innovation over impeccable: after each command execution, automatically harvests design decisions
 into `.workflow/knowhow/` (DCS-, AST-, TIP-, REF-) for cross-session accumulation. Other maestro commands
 consume this via `category: coding` auto-injection and keyword matching.
+
+Includes integrated `search` CLI subcommand for querying the UI/UX design knowledge base
+(BM25 search engine + 30+ CSV data files covering styles, colors, typography, UX guidelines, charts, stacks).
+Search is invoked directly via `maestro impeccable search`, not through the Skill dispatch.
 </purpose>
 
 <deferred_reading>
@@ -29,11 +33,11 @@ consume this via `category: coding` auto-injection and keyword matching.
 <context>
 $ARGUMENTS — sub-command + target + optional flags.
 
-**Sub-commands** (23):
+**Sub-commands** (24):
 
 | Category | Commands |
 |----------|----------|
-| Build | craft, shape, teach, document, extract |
+| Build | craft, shape, teach, document, extract, explore |
 | Evaluate | critique, audit |
 | Refine | polish, bolder, quieter, distill, harden, onboard |
 | Enhance | animate, colorize, typeset, layout, delight, overdrive |
@@ -51,7 +55,23 @@ and writes knowhow entries. DCS-/AST- types also get spec index entries for disc
 
 <execution>
 
-## 1. Invoke Skill
+## 1. Route
+
+If first argument is `search` → direct CLI dispatch (no Skill, no harvest):
+
+```bash
+maestro impeccable search "<query>" [options]
+```
+
+Options: `-d <domain>`, `-s <stack>`, `-n <max>`, `--design-system`, `-p <name>`, `-f <fmt>`, `--persist`, `--page <page>`, `-o <dir>`
+
+Domains: style, color, chart, landing, product, ux, typography, icons, react, web, google-fonts.
+Stacks: react, nextjs, vue, svelte, astro, swiftui, react-native, flutter, html-tailwind, shadcn, + more.
+
+Search uses `workflows/impeccable/ui-search/search.py` (BM25 engine + 30+ CSV knowledge files).
+Output goes to stdout. No Skill invocation, no harvest. Return after output.
+
+## 2. Invoke Skill (all other sub-commands)
 
 ```
 Skill({ skill: "maestro-impeccable", args: "$ARGUMENTS" })
@@ -60,7 +80,7 @@ Skill({ skill: "maestro-impeccable", args: "$ARGUMENTS" })
 The skill handles: context loading (spec load --category ui, with load-context fallback), register detection (brand/product),
 reference file loading, and command execution.
 
-## 2. Harvest
+## 3. Harvest
 
 After the skill completes, read `~/.maestro/workflows/impeccable.md` and follow the harvest workflow.
 
@@ -69,12 +89,29 @@ Skip harvest if:
 - Sub-command is `live` (interactive, no harvestable output)
 - Sub-command is unrecognized
 
+## 4. Post-Execution Routing
+
+After harvest (or skip), determine whether this command was invoked as part of a larger pipeline by checking conversation context (e.g., brainstorm Step 3.5, ui-craft chain step).
+
+**Pipeline context detected** (called via Skill from brainstorm, ui-craft, etc.):
+- Report command result (output, scores, artifacts produced) and **stop**
+- Do NOT suggest next-step commands — the calling flow owns what happens next
+
+**Standalone invocation** (user directly ran `/maestro-impeccable`):
+- Show next-step suggestions based on what was executed:
+  - `teach` → suggest `explore` or `shape`
+  - `explore` → suggest `shape` → `craft`
+  - `shape` → suggest `craft`
+  - `craft` → suggest `critique`
+  - `critique`/`audit` → suggest commands from findings
+  - Enhancement/fix commands → suggest `critique` to re-evaluate
+
 </execution>
 
 <error_codes>
 | Code | Severity | Description |
 |------|----------|-------------|
-| E001 | error | Invalid sub-command (not in 23 valid commands) |
+| E001 | error | Invalid sub-command (not in 24 valid commands) |
 | E002 | error | No intent or target specified |
 | W001 | warning | Harvest failed — design knowledge not captured (command still succeeded) |
 | W002 | warning | PRODUCT.md missing — skill will auto-trigger teach |

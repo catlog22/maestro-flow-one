@@ -1,7 +1,7 @@
 ---
 name: maestro-ui-craft
 description: Chain maestro-impeccable commands with intelligent routing and quality gate loops for automated UI production
-argument-hint: "<intent|target> [--chain build|improve|enhance|harden|live] [--enhance <cmd>] [--threshold <score>] [--max-loops <n>] [-y] [-c]"
+argument-hint: "<intent|target> [--chain build|improve|enhance|harden|live] [--enhance <cmd>] [--threshold <score>] [--max-loops <n>] [--skip-design-explore] [--skip-design] [--styles <N>] [--stack <stack>] [-y] [-c]"
 allowed-tools:
   - Read
   - Write
@@ -22,10 +22,19 @@ Core innovation: critique/audit scores drive automatic command selection and ite
 Impeccable has 23 commands across 6 categories — this command chains them into automated pipelines
 with quality gates that loop until design quality meets the threshold.
 
+Includes integrated design-explore: multi-variant design system generation (via ui-search BM25 engine + CSV knowledge base),
+HTML prototype rendering for visual comparison, interactive user review with mix support,
+and automatic bridge to impeccable's DESIGN.md format. Replaces the former maestro-ui-design command.
+
 Prerequisite: maestro-impeccable skill available (auto-discovered by harness).
 
 Session: `.workflow/.maestro/ui-craft-{YYYYMMDD-HHmmss}/status.json`
 </purpose>
+
+<deferred_reading>
+- [impeccable harvest workflow](~/.maestro/workflows/impeccable.md) — read after command execution for harvest logic
+- [design stage workflow](~/.maestro/workflows/impeccable/design.md) — read when S_DESIGN_EXPLORE or S_BRIDGE state entered
+</deferred_reading>
 
 <invariants>
 1. **Session before execution** — status.json created before any chain step runs
@@ -46,6 +55,9 @@ $ARGUMENTS — intent description or target path, with optional flags.
 - `--max-loops <n>` — Maximum quality gate iterations (default: 3)
 - `-c` / `--continue` — Resume previous ui-craft session
 - `-y` — Auto mode: auto-select at ambiguous routing, skip confirmations where impeccable allows
+- `--skip-design-explore` / `--skip-design` — Skip design-explore (prototype comparison) and bridge (use existing DESIGN.md or full shape interview)
+- `--styles <N>` — Number of design system variants to generate and compare (2-5, default 3). Only used in build chain design-explore step
+- `--stack <stack>` — Tech stack for supplementary guidelines (default: html-tailwind). Passed to ui-search
 </context>
 
 <chains>
@@ -54,13 +66,14 @@ $ARGUMENTS — intent description or target path, with optional flags.
 
 | Chain | Sequence | Gate Condition |
 |-------|----------|----------------|
-| **build** | teach? → shape → craft → **critique** → [refine loop] → audit → polish | critique ≥ threshold AND P0 == 0 |
+| **build** | teach? → **design_explore?** → shape → craft → **critique** → [refine loop] → audit → polish | critique ≥ threshold AND P0 == 0 |
 | **improve** | **critique** → [refine loop] → polish → audit | critique ≥ threshold AND P0 == 0 |
 | **enhance** | {cmd} → **critique** → polish (if needed) | critique ≥ threshold |
 | **harden** | harden → **audit** → polish | audit ≥ threshold×0.5 |
 | **live** | live | — (interactive, no gate) |
 
 - `teach?` — conditional: only if PRODUCT.md missing/placeholder
+- `design_explore?` — conditional: only if DESIGN.md missing AND `--skip-design-explore` not set. Delegates to `Skill("maestro-impeccable", "explore")` which handles variant generation, prototype rendering, visual comparison, user selection/mix, AND bridge to DESIGN.md internally
 - `[refine loop]` — quality gate loop: extract suggested commands from critique → execute → re-critique
 
 ### Intent → Chain Routing
@@ -68,6 +81,7 @@ $ARGUMENTS — intent description or target path, with optional flags.
 | Intent Pattern | Chain |
 |---------------|-------|
 | 新建, create, build, new, 从零, landing, feature, page | build |
+| 设计, design, 风格, style, 设计系统, design system, 视觉, theme | build |
 | 改进, improve, fix, 优化, iterate, better, 迭代 | improve |
 | 动画, 颜色, 排版, animate, color, type, bold, delight, enhance | enhance |
 | 生产, production, harden, 上线, ship, edge case, i18n | harden |
@@ -84,6 +98,7 @@ S_PARSE      — 解析参数、意图分类、chain 选择                PERSI
 S_RESUME     — 扫描已有 ui-craft session、恢复执行           PERSIST: —
 S_SETUP      — 加载 context、检查 PRODUCT.md                PERSIST: —
 S_CREATE     — 创建 session + status.json                    PERSIST: session (全量)
+S_DESIGN_EXPLORE — 委托 impeccable explore：多变体生成、原型对比、选型/混搭、自动 bridge 到 DESIGN.md  PERSIST: explore_completed, design_md_path
 S_CHAIN      — 按序执行 chain 步骤                           PERSIST: step progress, executed commands
 S_GATE       — 质量门控：解析评分、决策                       PERSIST: scores, loop count
 S_REFINE     — 执行自动选取的 refine 命令                    PERSIST: refine commands, loop state
@@ -109,9 +124,15 @@ S_CREATE:
   → S_CHAIN      DO: A_CREATE_SESSION
 
 S_CHAIN:
+  → S_DESIGN_EXPLORE  WHEN: current step is 'design_explore' AND DESIGN.md missing AND --skip-design-explore not set AND --skip-design not set
   → S_GATE       WHEN: current step is gate command (critique/audit)
+  → S_CHAIN      WHEN: step is design_explore but skip conditions met → advance
   → S_CHAIN      WHEN: step is normal command → execute → advance
   → S_REPORT     WHEN: all steps complete
+
+S_DESIGN_EXPLORE:
+  → S_CHAIN      WHEN: explore completed (DESIGN.md produced) → advance to shape
+  → S_CHAIN      WHEN: explore failed → W004 → advance to shape (full interview fallback)
 
 S_GATE:
   → S_CHAIN      WHEN: PASS (score ≥ threshold AND P0 == 0) → advance to next step
@@ -160,6 +181,15 @@ S_REPORT:
    ```
 3. Write status.json before executing any step
 
+### A_DESIGN_EXPLORE
+
+Delegate to impeccable explore as a black-box command. The explore command internally handles:
+variant generation, prototype rendering, visual comparison, user review, mix protocol, rejected variant harvest, bridge to DESIGN.md, and spec registration.
+
+1. Execute: `Skill({ skill: "maestro-impeccable", args: "explore --styles {styles_count}" })`
+2. On completion: verify `.workflow/impeccable/DESIGN.md` exists
+3. Update status.json: `explore_completed: true`, `design_md_path`
+
 ### A_FINAL_REPORT
 
 1. Read critique trend if available (impeccable's critique persists snapshots automatically)
@@ -205,11 +235,26 @@ Execute via: `Skill({ skill: "maestro-impeccable", args: "{command} {target}" })
 
 After each step: update status.json `current_step` and step `status`.
 
-**Rules:**
+**Step-specific logic:**
+
+### 4a. Design-explore step (build chain only)
+
+When current step is `design_explore`:
+
+1. Check if `.workflow/impeccable/DESIGN.md` already exists → skip, advance to shape
+2. Check if `--skip-design-explore` or `--skip-design` is set → skip, advance to shape
+3. Otherwise → execute A_DESIGN_EXPLORE:
+   - `Skill({ skill: "maestro-impeccable", args: "explore --styles {styles_count}" })`
+   - explore handles everything internally: variant generation, prototype rendering, visual comparison, user selection/mix, bridge to DESIGN.md, spec registration
+4. On completion → verify DESIGN.md exists, advance to shape
+5. On failure → W004, advance to shape (full interview fallback, no DESIGN.md)
+
+### 4c. Normal steps
+
 - `teach`, `shape`, `craft` are interactive — do NOT suppress their user gates
 - After `teach` completes → re-run context loader for fresh PRODUCT.md
 - After `craft` completes → the build exists, ready for evaluation
-- Gate steps (critique/audit) → transition to quality gate logic
+- Gate steps (critique/audit) → transition to quality gate logic (Section 5)
 
 ## 5. Quality Gate
 
@@ -335,6 +380,8 @@ These are structural/interactive — never picked by the refine loop:
 | overdrive | Requires explicit user vision |
 | critique | Gate command, not a fix |
 | audit | Gate command, not a fix |
+| design | Design system generation (setup) |
+| bridge | Format bridging (setup) |
 
 </quality_gate_routing>
 
@@ -349,6 +396,11 @@ These are structural/interactive — never picked by the refine loop:
 | W001 | warning | PRODUCT.md missing, prepending teach to chain |
 | W002 | warning | Max quality gate loops exceeded, forcing continue |
 | W003 | warning | Could not parse score from critique/audit output |
+| E006 | error | Python 3 not available for design system generation |
+| E007 | error | ui-search scripts not found at expected path |
+| W004 | warning | Design system generation failed, skipping design+bridge, falling back to shape full interview |
+| W005 | warning | Bridge transformation failed, continuing without DESIGN.md |
+| W008 | warning | Node.js not available for prototype rendering, falling back to text-only variant comparison |
 </error_codes>
 
 <success_criteria>
