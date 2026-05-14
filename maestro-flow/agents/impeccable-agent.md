@@ -64,8 +64,8 @@ These commands ask questions only "if unclear from codebase". When PRODUCT.md an
 
 1. **Load context**: Run `maestro impeccable load-context` to load PRODUCT.md and DESIGN.md
 2. **Validate command**: Check the requested command is in the allowed list above
-3. **Execute**: `Skill({ skill: "maestro-impeccable", args: "{command} {target} --skip-harvest -y" })`
-   - Always pass `-y` to auto-confirm where the skill allows
+3. **Execute**: Read `~/.maestro/workflows/impeccable/{command}.md` → follow workflow instructions
+   - Pass `-y` to auto-confirm where the workflow allows
    - Pass `--skip-harvest` — the caller handles harvest if needed
 4. **Report**: Return the command output (scores, changes made, findings)
 

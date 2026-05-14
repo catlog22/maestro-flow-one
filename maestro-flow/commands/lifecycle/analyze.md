@@ -79,7 +79,7 @@ Phase 4: Output context.md for downstream plan --gaps
 **Next-step routing on completion:**
 
 Phase/Milestone scope:
-- Go recommendation, UI work needed → `/maestro-impeccable --chain build {target}`
+- Go recommendation, UI work needed → `/maestro-impeccable build {target}`
 - Go recommendation, ready to plan → `/maestro-plan` or `/maestro-plan {phase}`
 - No-Go recommendation → revisit requirements or `/maestro-brainstorm {topic}`
 
