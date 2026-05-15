@@ -1,6 +1,6 @@
 ---
 name: quality-debug
-description: Debug with parallel hypotheses and root cause analysis
+description: Use when bugs, test failures, or unexpected behavior need systematic root cause investigation
 argument-hint: "[issue description] [--from-uat <phase>] [--parallel]"
 allowed-tools:
   - Read

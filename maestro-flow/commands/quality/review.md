@@ -1,6 +1,6 @@
 ---
 name: quality-review
-description: Tiered code review with severity classification
+description: Use after execution to evaluate code quality across correctness, security, performance, and architecture
 argument-hint: "<phase> [--level quick|standard|deep] [--dimensions security,architecture,...] [--skip-specs]"
 allowed-tools:
   - Read
@@ -87,6 +87,20 @@ Report format and next-step routing by verdict defined in workflow review.md Rep
 - PASS → `/quality-test {phase}`
 - WARN → `/quality-test {phase}` (proceed with caveats)
 - BLOCK → `/maestro-plan {phase} --gaps` (fix critical findings first)
+
+**Completion status:**
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS|NEEDS_RETRY
+CONCERNS: {description if applicable}
+NEXT: /quality-refactor
+--- END STATUS ---
+```
+
+Status mapping:
+- **DONE** — PASS verdict, no critical findings → NEXT: /quality-refactor
+- **DONE_WITH_CONCERNS** — WARN verdict, issues found but non-blocking → NEXT: /maestro-verify
+- **NEEDS_RETRY** — BLOCK verdict, critical findings require fix first
 </execution>
 
 <error_codes>

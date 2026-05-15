@@ -1,6 +1,6 @@
 ---
 name: quality-retrospective
-description: Phase retrospective with insight routing to specs and knowhow
+description: Use after completing a phase to extract lessons, patterns, and improvement opportunities
 argument-hint: "[phase|N..M] [--lens technical|process|quality|decision] [--all] [--no-route] [--compare N] [-y]"
 allowed-tools:
   - Read

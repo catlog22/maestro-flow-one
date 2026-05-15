@@ -1,6 +1,6 @@
 ---
 name: maestro-impeccable
-description: Production-grade UI design — 24 commands + chain orchestration with quality gates + design search
+description: Use when designing, auditing, polishing, or improving frontend UI — websites, dashboards, landing pages, components
 argument-hint: "<command|chain|intent> [target] [flags]"
 allowed-tools:
   - Read

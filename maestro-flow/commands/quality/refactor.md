@@ -1,6 +1,6 @@
 ---
 name: quality-refactor
-description: Reduce tech debt with reflection-driven iteration
+description: Use when accumulated tech debt needs systematic identification and safe reduction
 argument-hint: "[<scope>]"
 allowed-tools:
   - Read

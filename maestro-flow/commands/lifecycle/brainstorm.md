@@ -1,6 +1,6 @@
 ---
 name: maestro-brainstorm
-description: Brainstorm with auto pipeline or single-role analysis
+description: Use when exploring ideas, evaluating approaches, or needing multi-perspective analysis before implementation
 argument-hint: "[topic|role-name] [--yes] [--count N] [--session ID] [--update] [--skip-questions] [--include-questions] [--style-skill PKG]"
 allowed-tools:
   - Read

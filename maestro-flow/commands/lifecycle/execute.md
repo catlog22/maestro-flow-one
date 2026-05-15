@@ -1,6 +1,6 @@
 ---
 name: maestro-execute
-description: Execute plan with parallel waves and atomic commits
+description: Use when a confirmed plan is ready for implementation
 argument-hint: "[phase] [--auto-commit] [--method agent|cli|auto] [--executor <tool>] [--dir <path>] [-y]"
 allowed-tools:
   - Read
@@ -96,6 +96,15 @@ Next steps:
   /maestro-verify              -- Verify execution results
   /maestro-verify --dir {dir}  -- Verify specific plan
   /manage-status               -- View project dashboard
+```
+
+**Completion status:**
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS|NEEDS_RETRY
+CONCERNS: {failed_count} tasks failed (if any)
+NEXT: /maestro-verify
+--- END STATUS ---
 ```
 
 If failed tasks exist, suggest /quality-debug for investigation.

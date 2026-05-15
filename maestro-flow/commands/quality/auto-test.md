@@ -1,6 +1,6 @@
 ---
 name: quality-auto-test
-description: Auto-generate and run tests from specs or coverage gaps
+description: Use when test coverage needs automated expansion or existing tests need iterative convergence
 argument-hint: "<phase> [-y] [-c N] [--max-iter <N>] [--layer <L0-L3>] [--strategy <name>] [--dry-run] [--re-run]"
 allowed-tools:
   - spawn_agents_on_csv

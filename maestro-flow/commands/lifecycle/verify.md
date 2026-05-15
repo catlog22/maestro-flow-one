@@ -1,6 +1,6 @@
 ---
 name: maestro-verify
-description: Verify goals with must-have checks and test coverage validation
+description: Use after execution to verify goals are actually achieved with evidence-based structural checks
 argument-hint: "[phase] [--skip-tests] [--skip-antipattern] [--dir <path>]"
 allowed-tools:
   - Read
@@ -70,6 +70,20 @@ On confirm → `Skill("spec-add", "<category> <content>")`.
 
 **Gap-fix closure loop:**
 Gaps found → maestro-plan --gaps → maestro-execute → maestro-verify (re-run)
+
+**Completion status:**
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS|NEEDS_RETRY
+CONCERNS: {description if applicable}
+NEXT: /quality-review
+--- END STATUS ---
+```
+
+Status mapping:
+- **DONE** — All checks pass, no gaps → NEXT: /quality-review
+- **DONE_WITH_CONCERNS** — Gaps found (must-have failures or anti-pattern blockers) → NEXT: /maestro-execute (after /maestro-plan --gaps)
+- **NEEDS_RETRY** — Verification could not complete (missing artifacts, corrupt data)
 </execution>
 
 <error_codes>

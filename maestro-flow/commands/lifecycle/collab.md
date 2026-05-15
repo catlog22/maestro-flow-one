@@ -1,6 +1,6 @@
 ---
 name: maestro-collab
-description: Multi-CLI collaborative analysis -- fan-out to multiple CLI tools, cross-verify, synthesize
+description: Use when a question needs cross-verification from multiple CLI tools or diverse analytical perspectives
 argument-hint: "\"<requirement>\" [--tools gemini,qwen,claude] [--mode analysis|write] [--rule <template>] [-y]"
 allowed-tools:
   - Read

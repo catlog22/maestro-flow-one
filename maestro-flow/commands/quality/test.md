@@ -1,6 +1,6 @@
 ---
 name: quality-test
-description: Conversational UAT with auto-diagnosis and gap closure
+description: Use when implementation needs user acceptance testing with interactive verification and gap closure
 argument-hint: "[phase] [--smoke] [--auto-fix]"
 allowed-tools:
   - Read

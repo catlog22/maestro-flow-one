@@ -1,7 +1,7 @@
 ---
 name: maestro-plan
-description: Plan phase execution with exploration and verification
-argument-hint: "[phase] [--collab] [--spec SPEC-xxx] [-y] [--gaps] [--dir <path>] [--revise [instructions]] [--check <plan-dir>]"
+description: Use when creating, revising, or verifying an execution plan for a phase or task
+argument-hint: "[phase] [--collab] [--spec SPEC-xxx] [-y] [--gaps] [--tdd] [--dir <path>] [--revise [instructions]] [--check <plan-dir>]"
 allowed-tools:
   - Read
   - Write
@@ -121,6 +121,19 @@ Next steps:
   /maestro-execute --dir {dir}  -- Execute specific plan
   /maestro-plan {phase}         -- Re-plan with modifications
 ```
+
+**Completion status:**
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|NEEDS_CONTEXT
+CONCERNS: {description if applicable}
+NEXT: /maestro-execute
+--- END STATUS ---
+```
+
+Status mapping:
+- **DONE** — Plan created/revised and confirmed → NEXT: /maestro-execute
+- **NEEDS_CONTEXT** — Ambiguous requirements, insufficient context to produce plan
 
 ### Mode: Revise / Check
 
