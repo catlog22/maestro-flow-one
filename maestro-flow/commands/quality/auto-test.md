@@ -1,9 +1,8 @@
 ---
 name: quality-auto-test
 description: Use when test coverage needs automated expansion or existing tests need iterative convergence
-argument-hint: "<phase> [-y] [-c N] [--max-iter <N>] [--layer <L0-L3>] [--strategy <name>] [--dry-run] [--re-run]"
+argument-hint: "<phase> [-y] [-c N] [--max-iter N] [--layer L0|L1|L2|L3] [--dry-run] [--re-run]"
 allowed-tools:
-  - spawn_agents_on_csv
   - Read
   - Write
   - Edit

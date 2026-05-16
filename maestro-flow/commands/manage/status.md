@@ -1,6 +1,7 @@
 ---
 name: manage-status
 description: Show project dashboard with progress and next steps
+argument-hint: ""
 allowed-tools:
   - Read
   - Bash

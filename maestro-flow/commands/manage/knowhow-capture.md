@@ -1,7 +1,7 @@
 ---
 name: manage-knowhow-capture
 description: Capture reusable knowledge as templates, recipes, or tips
-argument-hint: "[type] [description] [--lang <lang>] [--source <url>] [--tag tag1,tag2]"
+argument-hint: "[<type>] [<description>] [--lang <lang>] [--source <url>] [--tag t1,t2]"
 allowed-tools:
   - Read
   - Write
@@ -46,6 +46,8 @@ $ARGUMENTS — type token + description + optional flags.
 
 <execution>
 Follow '~/.maestro/workflows/knowhow.md' completely.
+
+**Tags language rule**: Tags must match content language. Chinese content → Chinese tags (如 `认证,令牌,刷新`). English content → English tags. Mixed → bilingual.
 
 **Type-specific content rules**:
 

@@ -1,7 +1,7 @@
 ---
 name: manage-wiki
 description: Manage wiki graph — health, cleanup, search, stats
-argument-hint: "[health|search|cleanup|stats] [options]"
+argument-hint: "<subcommand: health|search|cleanup|stats> [query] [--fix] [--dry-run]"
 allowed-tools:
   - Read
   - Write

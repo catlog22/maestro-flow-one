@@ -1,7 +1,7 @@
 ---
 name: maestro-impeccable
 description: Use when designing, auditing, polishing, or improving frontend UI — websites, dashboards, landing pages, components
-argument-hint: "<command|chain|intent> [target] [flags]"
+argument-hint: "<command|intent> [target] [flags] — 可选 chain: build|redesign|improve|enhance|launch|harden|foundation|live"
 allowed-tools:
   - Read
   - Write

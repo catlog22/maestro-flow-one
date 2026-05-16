@@ -1,7 +1,7 @@
 ---
 name: maestro-tools-execute
 description: Load and execute tool specs by category or name
-argument-hint: "[tool-name | --category <category>]"
+argument-hint: "[<tool-name> | --category <category>] [--list]"
 allowed-tools:
   - Read
   - Write

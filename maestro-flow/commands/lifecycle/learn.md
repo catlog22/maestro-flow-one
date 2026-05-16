@@ -1,7 +1,7 @@
 ---
 name: maestro-learn
 description: Route learning intent to learn-* commands
-argument-hint: "\"intent text\" [-y] [--dry-run] [--chain <name>]"
+argument-hint: "<intent> [-y] [--dry-run] [--chain <name>]"
 allowed-tools:
   - Read
   - Write

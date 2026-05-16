@@ -1,7 +1,7 @@
 ---
 name: manage-learn
 description: Capture and search learning insights and tips
-argument-hint: "[<text>|tip <text>|list|search|show <id>] [--category ...] [--tag t1,t2] [--phase N] [--confidence ...]"
+argument-hint: "[<text> | tip <text> | list | search | show <id>] [--category <cat>] [--tag t1,t2] [--phase N]"
 allowed-tools:
   - Read
   - Write

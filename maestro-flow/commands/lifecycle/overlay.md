@@ -1,7 +1,7 @@
 ---
 name: maestro-overlay
 description: Create or edit command overlays from natural language
-argument-hint: "<intent>"
+argument-hint: "<intent> — 描述要添加的规则或步骤，如 'always verify after execute'"
 allowed-tools:
   - Read
   - Write

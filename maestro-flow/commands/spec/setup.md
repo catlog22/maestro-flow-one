@@ -19,9 +19,6 @@ All output lands in `.workflow/specs/`.
 @~/.maestro/workflows/specs-setup.md
 </required_reading>
 
-<deferred_reading>
-</deferred_reading>
-
 <context>
 $ARGUMENTS (no arguments expected)
 

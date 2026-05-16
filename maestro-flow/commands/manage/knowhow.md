@@ -1,7 +1,7 @@
 ---
 name: manage-knowhow
 description: Manage knowhow entries (workflow and system)
-argument-hint: "[list|search|view|edit|delete|prune] [query|id|file] [--store workflow|system|all] [--tag tag] [--type compact|tip]"
+argument-hint: "<subcommand: list|search|view|edit|delete|prune> [query|id] [--store workflow|system|all] [--tag <tag>] [--type compact|tip]"
 allowed-tools:
   - Read
   - Write

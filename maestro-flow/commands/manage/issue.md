@@ -1,7 +1,7 @@
 ---
 name: manage-issue
 description: Create, query, update, close, and link issues
-argument-hint: "<create|list|status|update|close|link> [options]"
+argument-hint: "<subcommand: create|list|status|update|close|link> [--title text] [--severity S] [--status S] [--resolution text]"
 allowed-tools:
   - Read
   - Write

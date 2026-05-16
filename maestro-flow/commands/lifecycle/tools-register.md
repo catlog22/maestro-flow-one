@@ -1,7 +1,7 @@
 ---
 name: maestro-tools-register
 description: Register tool specs - extract, generate, or optimize
-argument-hint: "[description]"
+argument-hint: "[<description>] [--extract <path>] [--optimize <name>]"
 allowed-tools:
   - Read
   - Write
