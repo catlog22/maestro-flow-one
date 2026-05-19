@@ -25,6 +25,12 @@
       "evaluates": "state.json",
       "verdict_prompt": "检查是否有下一个 milestone",
       "structural": true
+    },
+    "post-goal-audit": {
+      "evaluates": "goal-checklist.md + per-subgoal evidence (verification.json|review.json|uat.md|test path)",
+      "verdict_prompt": "审计子目标: 逐个对照 done_when 判定 met/unmet, 输出 STATUS(all_met|has_unmet) 与 UNMET=[{id,gap,target_phase}]",
+      "fix_loop": ["maestro-plan --gaps", "maestro-execute", "maestro-verify", "decision:post-goal-audit"],
+      "goal_gate": true
     }
   },
   "templates": {

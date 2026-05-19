@@ -138,6 +138,55 @@ If chain selected: -> Step 4
 
 ---
 
+## Step 3.5: Task Decomposition (broad lifecycle intents)
+
+Shares the decomposition contract with maestro-ralph `A_DECOMPOSE_TASKS` — reference that spec; do not duplicate.
+
+```
+Classify intent breadth:
+  broad   = 重构/全面/重写/重做/整体/迁移 · overhaul/migrate/rewrite/revamp
+  narrow  = single file/function/bug, "fix X", "add Y to Z"
+  other   = medium
+
+Skip decomposition (-> Step 4 directly) WHEN:
+  narrow intent  OR  single-command chain  OR  chain ∈ {status, init, quick}
+
+Else (broad MUST clarify even if auto_confirm; medium clarify unless auto_confirm):
+  AskUserQuestion ≤3 rounds (options pre-filled from intent + quick Glob/Grep of target module):
+    1. Scope        -> in_scope / out_of_scope
+    2. Constraints  -> constraints + execution_criteria (compat/API/perf/test bar)
+    3. Done         -> definition_of_done
+
+  Derive:
+    execution_criteria  = 3-6 imperative rules every step obeys
+    task_decomposition  = outcome sub-goals; each:
+      { id:"G1", goal, boundary, done_when, evidence, lifecycle:[...], status:"pending" }
+      RULE: done_when objectively verifiable, mapped to a ralph evidence artifact
+            (verification.json | review.json | uat.md | <test path>)
+
+  Write {session_dir}/goal-checklist.md (template below) with ALL_GOALS_DONE sentinel.
+  Stage additive block + goal_checklist_path for Step 4.
+  Emit the /goal bind prompt:
+    📋 任务分解完成。复制下面一行设定目标(推荐)：
+    /goal 当 {session_dir}/goal-checklist.md 子目标全 [x] 且含 ALL_GOALS_DONE 时达成；
+          否则按执行准则继续推进且不越边界契约
+```
+
+**goal-checklist.md template:**
+```markdown
+# Flow Goal Checklist — {session_id}
+> Intent: {intent}
+## 执行准则 / Execution Criteria
+- {criterion}
+## 边界契约 / Boundary Contract
+- In scope / Out of scope / Constraints / Definition of Done
+## 子目标 / Sub-goals
+- [ ] G1: {goal} — done when: {done_when} (evidence: {evidence})
+<!-- executor flips [ ]→[x] when evidence confirms; appends ALL_GOALS_DONE when all [x] -->
+```
+
+---
+
 ## Step 4: Build Session
 
 ### 4.1: Create session from template
@@ -147,8 +196,21 @@ session_id = "flow-{YYYYMMDD-HHmmss}"
 session_dir = .workflow/.maestro/{session_id}/
 
 Build steps[] from selected chain template.
+
+If Step 3.5 produced a decomposition:
+  - Add additive block to status.json (OPTIONAL keys; absent = old behavior;
+    never remove/rename existing fields — status JSON is schema-additive + step-dynamic):
+      boundary_contract, execution_criteria, task_decomposition, goal_checklist_path
+  - Each step gains optional "goal_ref": null
+  - Append a decision step
+      { "cmd":"decision:post-goal-audit", "type":"decision",
+        "decision":"post-goal-audit", "retry_count":0, "max_retries":2 }
+    as the FINAL node — after the last evidence-producing step (verify/review/test),
+    before a milestone-complete/close-out step if the chain ends with one
+    (audit needs evidence artifacts to exist)
+
 Write status.json.
-Display chain steps, confirm (or auto if -y).
+Display chain steps (+ Sub-goals: {n} if decomposed), confirm (or auto if -y).
 ```
 
 Fall through to Phase 2.

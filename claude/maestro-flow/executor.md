@@ -72,7 +72,13 @@ artifact_dir = .workflow/scratch/{artifact.path}/
 Fallback: glob .workflow/scratch/*-P{phase}-*/ sorted by date DESC
 ```
 
-#### 3.3: Structural vs Quality-gate
+#### 3.3: Route by decision class
+
+```
+decision_type == "post-milestone"   -> Structural (evaluate directly)
+decision_type == "post-goal-audit"  -> Goal-gate (audit sub-goals, grow steps)
+otherwise                            -> Quality-gate (delegate analyzer)
+```
 
 **Structural decisions (post-milestone)** -- evaluate directly:
 
@@ -88,6 +94,42 @@ post-milestone:
   If none:
     Display: post-milestone: all milestones complete
     -> proceed (mark done, continue)
+```
+
+**Goal-gate decision (post-goal-audit)** -- shares contract with maestro-ralph `A_GOAL_AUDIT_EVALUATE`:
+
+```
+Read session.task_decomposition + session.goal_checklist_path
+For each sub-goal status != "done": resolve its evidence artifact under {artifact_dir}
+
+Bash({
+  command: `maestro delegate "PURPOSE: 审计子目标达成, 决定是否补充执行步骤
+TASK: 逐个读取未完成子目标 evidence | 对照 done_when 判定 met/unmet | 给出 unmet 差距与 target_phase
+MODE: analysis
+CONTEXT: @{goal_checklist_path} @{evidence files} | 执行准则: {execution_criteria} | 边界: {boundary_contract}
+EXPECTED: ---VERDICT--- STATUS: all_met | has_unmet / UNMET: [{id,gap,target_phase}] ---END---
+CONSTRAINTS: 只评估不修改 | 严格按 done_when | 不越 boundary_contract" --role analyze --mode analysis`,
+  run_in_background: true
+})
+STOP -- wait for callback.
+
+On callback:
+  For each met sub-goal -> set task_decomposition[i].status="done" + flip [ ]→[x] in goal-checklist.md
+  STATUS == all_met:
+    Append line `ALL_GOALS_DONE` to goal-checklist.md
+    Mark decision completed, write status.json
+    -> Step 3.8 (continue; satisfies user /goal Stop hook)
+  STATUS == has_unmet:
+    For each unmet sub-goal G{n} (grouped by target_phase), insert before this decision node:
+      maestro-plan {target_phase} --gaps "G{n}: {gap}"   [internal] [goal_ref: G{n}]
+      maestro-execute {target_phase}                      [external] [goal_ref: G{n}]
+      maestro-verify {target_phase}                       [internal] [goal_ref: G{n}]
+    Re-append: decision:post-goal-audit {retry+1}          [decision]
+    Reindex steps, increment retry_count, write status.json
+    Display: Decision: post-goal-audit -> {k} unmet, +{N} steps inserted (G{ids})
+    -> Step 3.8 (continue)
+  GUARD: retry_count >= max_retries AND still unmet ->
+    insert quality-debug "{unmet gaps}" [internal]; set session.status="paused"; End.
 ```
 
 **Quality-gate decisions** -- delegate to external analyzer:
