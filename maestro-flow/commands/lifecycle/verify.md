@@ -19,7 +19,7 @@ Verify execution results through three complementary methods:
 3. **Nyquist test coverage validation** — requirement-to-test mapping with gap classification
 
 Supports dual-level verification:
-- **Single plan**: `verify --dir scratch/plan-xxx` — verifies one plan, writes `verification.json` into plan dir
+- **Single plan**: `verify --dir scratch/{YYYYMMDD}-plan-xxx` — verifies one plan, writes `verification.json` into plan dir
 - **Milestone**: `verify` (no args) — aggregates all execute artifacts for current milestone into `scratch/{YYYYMMDD}-verify-M{N}-{slug}/milestone-verification.json`
 
 Registers VRF artifact in state.json on completion.
