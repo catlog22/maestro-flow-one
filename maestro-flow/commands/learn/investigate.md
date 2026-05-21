@@ -28,9 +28,9 @@ $ARGUMENTS — question text and optional flags.
 - `.workflow/knowhow/KNW-investigate-{slug}/evidence.ndjson` — structured evidence (one JSON line per item)
 - `.workflow/knowhow/KNW-investigate-{slug}/understanding.md` — evolving understanding
 - `.workflow/knowhow/KNW-investigate-{slug}/report.md` — final report
-- `specs/learnings.md` — appended `<spec-entry>` blocks
+- `.workflow/specs/learnings.md` — appended `<spec-entry>` blocks
 
-**Storage read**: source files in scope + `maestro wiki search` + `specs/learnings.md` + `debug-notes.md` + `codebase/architecture.md`
+**Storage read**: source files in scope + `maestro wiki search` + `.workflow/specs/learnings.md` + `debug-notes.md` + `codebase/architecture.md`
 </context>
 
 <state_machine>
@@ -43,7 +43,7 @@ S_HYPOTHESIZE    — 生成假设列表                                PERSIST: 
 S_CLI_EXPLORE    — CLI 辅助探索（可选）                         PERSIST: evidence.ndjson (append)
 S_TEST           — 逐假设测试                                  PERSIST: evidence.ndjson + understanding.md
 S_ESCALATE       — 3-strike 升级                               PERSIST: —
-S_REPORT         — 综合报告 + persist                          PERSIST: report.md + specs/learnings.md
+S_REPORT         — 综合报告 + persist                          PERSIST: report.md + .workflow/specs/learnings.md
 </states>
 
 <transitions>
@@ -55,7 +55,7 @@ S_EVIDENCE:
   → S_PATTERN     DO: A_COLLECT_EVIDENCE
 
 S_PATTERN:
-  → S_HYPOTHESIZE DO: match evidence against debug-notes.md + specs/learnings.md patterns
+  → S_HYPOTHESIZE DO: match evidence against debug-notes.md + .workflow/specs/learnings.md patterns
 
 S_HYPOTHESIZE:
   → S_CLI_EXPLORE WHEN: CLI tools enabled AND hypotheses non-trivial    DO: A_FORM_HYPOTHESES
@@ -83,7 +83,7 @@ S_REPORT:
 ### A_FRAME_QUESTION
 
 1. Parse question, generate slug, create KNW-investigate-{slug}/
-2. Search prior knowledge: `maestro wiki search "<question>"` + search specs/learnings.md + read debug-notes.md
+2. Search prior knowledge: `maestro wiki search "<question>"` + search .workflow/specs/learnings.md + read debug-notes.md
 3. Write initial understanding.md (question, prior knowledge summary, scope, timestamp)
 
 ### A_COLLECT_EVIDENCE
@@ -124,7 +124,7 @@ For each hypothesis (rank order):
 ### A_SYNTHESIZE_REPORT
 
 Write report.md: Answer (or INCONCLUSIVE), Evidence Trail table, Hypotheses Tested table, Key Learnings, Open Questions.
-Append to specs/learnings.md: confirmed → roles="implement", disproved → roles="analyze" (gotcha).
+Append to .workflow/specs/learnings.md: confirmed → roles="implement", disproved → roles="analyze" (gotcha).
 
 </actions>
 

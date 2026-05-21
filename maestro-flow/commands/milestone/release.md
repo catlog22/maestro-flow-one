@@ -44,7 +44,7 @@ $ARGUMENTS -- optional explicit version string and flags.
 </context>
 
 <execution>
-Follow '~/.maestro/workflows/release.md' completely.
+Follow '~/.maestro/workflows/milestone-release.md' completely.
 
 **High-level flow:**
 1. Validate preconditions (milestone completed, clean tree, audit PASS)

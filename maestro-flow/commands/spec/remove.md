@@ -1,7 +1,7 @@
 ---
 name: spec-remove
 description: Remove spec entry by ID
-argument-hint: "<entry-id>"
+argument-hint: "<entry-id> [--cascade]"
 allowed-tools:
   - Read
   - Write
@@ -26,6 +26,9 @@ $ARGUMENTS -- expects `<entry-id>` (e.g., `spec-learnings-003`, `spec-coding-con
 **Entry ID format**: `spec-{file-stem}-{NNN}` — the sub-node ID assigned by WikiIndexer when indexing `<spec-entry>` blocks.
 
 **Discovery**: Use `maestro wiki list --type spec --json` or `/spec-load --keyword <term>` to find entry IDs.
+
+**Flags:**
+- `--cascade` — When the target spec is a ref-type entry (created via `spec-add --ref` and linked to a knowhow document), also delete the referenced knowhow file. Without this flag, ref-type removal leaves an orphan knowhow file.
 </context>
 
 <execution>
@@ -47,5 +50,6 @@ Follow '~/.maestro/workflows/specs-remove.md' completely.
 - [ ] User confirmed removal (unless -y flag)
 - [ ] Entry removed from container file via `maestro wiki remove-entry`
 - [ ] Wiki index auto-updated
-- [ ] Confirmation displayed with removed entry details
+- [ ] If `--cascade` and entry has a `ref` attribute: referenced knowhow file deleted, orphan avoided
+- [ ] Confirmation displayed with removed entry details (and cascaded knowhow path if applicable)
 </success_criteria>

@@ -46,7 +46,7 @@ After successful refactoring, ask user once: "Record refactoring pattern as codi
 
 **Next-step routing on completion:**
 - All tests pass → `/quality-sync` (update codebase docs)
-- Test failures after refactor → `/quality-debug {scope}`
+- Test failures after refactor → `/quality-debug "test failures after refactor in {scope}"`
 - No test suite available → `/quality-auto-test {phase}`
 </execution>
 

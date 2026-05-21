@@ -38,6 +38,12 @@ $ARGUMENTS -- phase number for micro mode, topic text for macro/adhoc mode, no a
 - **Macro mode** (text argument): Explore impact surface of a topic/requirement. Produces coarse-grained context with `scope_verdict` to route next step. Use before roadmap or for standalone analysis.
 - **Micro mode** (numeric argument): Phase-level deep analysis within an existing roadmap. Produces fine-grained context for plan consumption. `analyze 1` = Phase 1 of current milestone.
 
+**Disambiguation rule (mode selection):**
+- First positional arg matches `^\d+$` (pure digits, e.g. `1`, `42`) → **micro mode** (treat as phase number)
+- First positional arg is non-numeric text (e.g. `auth-refactor`, `improve search`) → **macro mode** (treat as topic)
+- No positional arg → milestone-wide micro mode (when roadmap present) else macro fallback
+- Mixed input like `"1 phase"` is treated as text → macro mode (only bare numerics trigger micro)
+
 **Flags:**
 - `-y` / `--yes`: Auto mode — skip interactive scoping, use recommended defaults, auto-deepen
 - `-c` / `--continue`: Resume from existing session (auto-detect session folder + discussion.md)
@@ -54,14 +60,15 @@ Scope routing, output directory format, artifact registration schema, and output
 <interview_protocol>
 Interview the user relentlessly until shared understanding is reached. Active only in interactive mode; skip when `-y/--yes`, `-c/--continue`, or input is already specific (explicit phase number or unambiguous topic).
 
-- One decision per turn via AskUserQuestion with 2–4 options + a (Recommended) default; every question must include a `Proceed now` option so the user can end the interview at any time.
-- Never ask what code can verify — resolve via `state.json`, `roadmap.md`, `issues.jsonl`, `maestro spec load`, `maestro wiki search`, Grep, or Read.
+- One decision per turn via AskUserQuestion with 2–4 options + a (Recommended) default. The user controls termination — keep interviewing until convergence; they can interrupt naturally or via `Other` at any time.
+- Search-first when uncertain: before asking, resolve via `state.json`, `roadmap.md`, `issues.jsonl`, `maestro spec load`, `maestro wiki search`, Grep, Read, or — for open-ended multi-file scans — spawn `Agent(subagent_type: Explore)` / `maestro delegate ... --role explore`. Never ask what code or memory can verify; never bounce your own ambiguity back to the user — search first, then ask only what truly needs human judgment.
+- Writeback cadence: each settled decision is immediately appended/updated in `discussion.md` (top table) and mirrored into `context.md` "Interview Decisions". Do NOT batch writeback to the end — partial decisions must already be on disk before the next question.
 - Walk the decision dependency tree strictly: scope → depth → dimensions → Go/No-Go threshold. Do not open the next branch until the current one is settled.
 - Scope guard: only ask about decisions owned by `analyze`. Do not prejudge plan/execute concerns.
 
 Decision points: scope (phase / topic / milestone-wide / adhoc / --gaps) → depth (quick / standard / deep) → dimensions (which of the 6 to keep) → Go/No-Go threshold.
 
-Exit: on `Proceed now` or when all decision points are settled, write the table below to the top of `discussion.md` and mirror it into `context.md` under an `Interview Decisions` section:
+Exit: when all decision points are settled (or user explicitly signals to proceed), finalize session metadata. The decision table (populated incrementally during interview) uses this schema:
 `| # | Decision | Choice | Source (user / code / default) |`
 </interview_protocol>
 

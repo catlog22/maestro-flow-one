@@ -17,9 +17,9 @@ You produce a set of analysis files for one role in a brainstorm session, organi
 | Field | Required | Notes |
 |---|---|---|
 | `role_name` | yes | kebab-case slug, e.g. `system-architect` |
-| `role_template_path` | yes | `~/.maestro/templates/planning-roles/{role}.md` |
-| `guidance_path` | yes | path to `guidance-specification.md` |
-| `output_dir` | yes | absolute path to role folder — `{session_dir}/{role}/` |
+| `role_template_path` | yes | **absolute** path to `planning-roles/{role}.md` (orchestrator MUST expand `~/`) |
+| `guidance_path` | yes | **absolute** path to `guidance-specification.md` |
+| `output_dir` | yes | **absolute** path to role folder — `{session_dir}/{role}/`. If you receive a relative path or a literal `{output_dir}` placeholder, fail fast with `TASK BLOCKED: output_dir is not absolute`. |
 | `feature_list` | optional | F-id + slug + title rows; if missing, fall back to non-feature organization |
 | `design_research` | optional | external research markdown to integrate as evidence |
 | `project_specs` | optional | pre-loaded `maestro spec load` output |
@@ -28,7 +28,9 @@ You produce a set of analysis files for one role in a brainstorm session, organi
 
 ## Output Contract
 
-Write files to `output_dir/`. Do NOT write files anywhere else.
+Write files to `output_dir/` using the Write tool. Do NOT write files anywhere else. Do NOT return analysis as chat text — files on disk are the only valid deliverable. After writing, verify with Glob that `analysis.md` exists; if any Write call fails (e.g. relative path rejected), fail fast with `TASK BLOCKED`.
+
+**Authority note**: This Output Contract is authoritative for file layout. The role template at `role_template_path` may contain a legacy "## Brainstorming Analysis Structure" section describing a single-file layout — ignore it for file structure. Use the role template ONLY to source §3 subsection headings (via its "## MUST-Have Sections (Brainstorming)" block when present).
 
 ### File Structure
 

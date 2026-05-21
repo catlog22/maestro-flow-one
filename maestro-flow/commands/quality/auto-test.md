@@ -40,13 +40,13 @@ Phase or task: $ARGUMENTS (required — phase number)
 
 **Intelligent routing** (auto-detected from project state):
 
-| Priority | Condition | Route | Equivalent to |
-|----------|-----------|-------|---------------|
+| Priority | Condition | Route | Reference skill |
+|----------|-----------|-------|-----------------|
 | 1 | Active session exists (state.json status=running) | Resume | — |
 | 2 | --re-run flag + previous failures | Re-run | — |
-| 3 | Spec package exists (REQ-*.md) | spec | quality-business-test |
-| 4 | Nyquist gaps exist (verification.json) | gap | quality-test-gen |
-| 5 | Default | code | quality-integration-test |
+| 3 | Spec package exists (REQ-*.md) | spec | quality-business-test (separate skill) |
+| 4 | Nyquist gaps exist (verification.json) | gap | quality-test-gen (separate skill) |
+| 5 | Default | code | quality-integration-test (separate skill) |
 
 Flags, artifact context resolution, and output formats defined in workflow auto-test.md.
 

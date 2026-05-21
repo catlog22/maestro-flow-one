@@ -12,7 +12,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Guided reading: walk through content section-by-section using forcing questions to extract patterns, identify assumptions, and build an understanding map. Findings persist to `specs/learnings.md` as `<spec-entry>` blocks.
+Guided reading: walk through content section-by-section using forcing questions to extract patterns, identify assumptions, and build an understanding map. Findings persist to `.workflow/specs/learnings.md` as `<spec-entry>` blocks.
 </purpose>
 
 <context>
@@ -30,8 +30,8 @@ $ARGUMENTS — target and optional flags.
 - `--depth deep`: every function, every branch, every assumption
 - `--save-wiki`: create wiki note entry with reading notes
 
-**Storage read**: target file + wiki forward/backlinks + `coding-conventions.md` + `specs/learnings.md` (dedup)
-**Storage write**: `.workflow/knowhow/KNW-follow-{slug}-{date}.md` + append `specs/learnings.md`
+**Storage read**: target file + wiki forward/backlinks + `coding-conventions.md` + `.workflow/specs/learnings.md` (dedup)
+**Storage write**: `.workflow/knowhow/KNW-follow-{slug}-{date}.md` + append `.workflow/specs/learnings.md`
 </context>
 
 <state_machine>
@@ -64,7 +64,7 @@ S_EXTRACT:
   → S_PERSIST     DO: A_EXTRACT_PATTERNS
 
 S_PERSIST:
-  → END           DO: write KNW-follow + append specs/learnings.md [+ wiki note if --save-wiki]
+  → END           DO: write KNW-follow + append .workflow/specs/learnings.md [+ wiki note if --save-wiki]
 
 </transitions>
 

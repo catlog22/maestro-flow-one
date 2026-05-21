@@ -74,6 +74,8 @@ responsive-design.md, spatial-design.md, typography.md, ux-writing.md
 
 ## Chains
 
+Chain step names below reuse Command Routing names but resolve through the chain runner. To avoid ambiguity with Direct command invocation, internal display, todo items, and session status records always tag chain steps with the `impeccable:` prefix (e.g. `impeccable:craft`, `impeccable:critique`). The bare names in this table refer to the workflow file at `~/.maestro/workflows/impeccable/{name}.md` that the chain step reads.
+
 | Chain | Steps | Scenario |
 |-------|-------|----------|
 | build | teach? → explore? → shape → craft → critique → [refine] → audit → polish | New from scratch |
@@ -181,17 +183,17 @@ Before reading any command workflow:
 ## Chain Execution
 
 1. Prerequisites ✓
-2. **Display chain preview**: parse chain definition, output full step preview:
+2. **Display chain preview**: parse chain definition, output full step preview (chain steps prefixed `impeccable:` to disambiguate from Direct commands):
    ```
    ── Chain: build ──────────────────────────
-    1. teach        (conditional: PRODUCT.md missing)
-    2. explore      (conditional: DESIGN.md missing)
-    3. shape
-    4. craft
-    5. critique     ◆ quality gate (threshold: 26/40)
-    6. [refine]     ↺ auto-fix loop (max: 3)
-    7. audit        ◆ quality gate (threshold: 14/20)
-    8. polish
+    1. impeccable:teach        (conditional: PRODUCT.md missing)
+    2. impeccable:explore      (conditional: DESIGN.md missing)
+    3. impeccable:shape
+    4. impeccable:craft
+    5. impeccable:critique     ◆ quality gate (threshold: 26/40)
+    6. impeccable:[refine]     ↺ auto-fix loop (max: 3)
+    7. impeccable:audit        ◆ quality gate (threshold: 14/20)
+    8. impeccable:polish
    ─────────────────────────────────────────
    Target: {target}
    ```
@@ -205,9 +207,9 @@ Before reading any command workflow:
      "gate_history": [], "loop_count": 0, "status": "running" }
    ```
 4. **TodoWrite init**: create todo items for all chain steps
-   - One item per step, format: `[chain] step N: {command} — {description}`
+   - One item per step, format: `[chain] step N: impeccable:{command} — {description}` (use `impeccable:` prefix to disambiguate from Direct command items)
    - If conditional step is skipped, immediately mark completed
-   - Quality gate steps include threshold: `[chain] step 5: critique ◆ gate ≥26/40`
+   - Quality gate steps include threshold: `[chain] step 5: impeccable:critique ◆ gate ≥26/40`
 5. For each step:
    - Read `~/.maestro/workflows/impeccable/{command}.md` → execute
    - **Step start**: TodoWrite marks current step in_progress

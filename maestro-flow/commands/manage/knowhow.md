@@ -53,7 +53,7 @@ Follow '~/.maestro/workflows/knowhow.md' Part A (KnowHow Management) completely.
 <error_codes>
 | Code | Severity | Description | Stage |
 |------|----------|-------------|-------|
-| E001 | error | No memory stores found — run `/manage-knowhow-capture` or create MEMORY.md | resolve_paths |
+| E001 | error | No memory stores found — for workflow store run `/manage-knowhow-capture`; for system store create `~/.claude/projects/{project}/memory/MEMORY.md` manually | resolve_paths |
 | E002 | error | Entry ID or filename not found | execute_view, execute_delete |
 | E003 | error | Prune requires at least one filter (--tag, --type, --before, --after) | execute_prune |
 | E004 | error | Cannot delete MEMORY.md — use `edit` subcommand instead | execute_delete |

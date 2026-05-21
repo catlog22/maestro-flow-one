@@ -17,7 +17,7 @@ Structured second-opinion on code, decisions, or plans. Three modes:
 - **challenge**: single adversarial agent — break assumptions, propose alternatives
 - **consult**: interactive Q&A — agent studies target, answers your questions
 
-Findings persist to `specs/learnings.md` as `<spec-entry>` blocks.
+Findings persist to `.workflow/specs/learnings.md` as `<spec-entry>` blocks.
 </purpose>
 
 <context>
@@ -45,7 +45,7 @@ S_RESOLVE    — 解析 target                          PERSIST: —
 S_CONTEXT    — 加载 specs/wiki 上下文                PERSIST: —
 S_EXECUTE    — 按 mode 执行分析                      PERSIST: —
 S_SYNTHESIZE — 综合观点、生成报告                     PERSIST: outputs
-S_PERSIST    — 写文件、append specs/learnings.md      PERSIST: knowhow files
+S_PERSIST    — 写文件、append .workflow/specs/learnings.md      PERSIST: knowhow files
 </states>
 
 <transitions>
@@ -66,7 +66,7 @@ S_SYNTHESIZE:
   → S_PERSIST     DO: merge perspectives → agreements, disagreements, verdict, top 3 recommendations
 
 S_PERSIST:
-  → END           DO: write KNW-opinion + append <spec-entry> blocks to specs/learnings.md
+  → END           DO: write KNW-opinion + append <spec-entry> blocks to .workflow/specs/learnings.md
 
 </transitions>
 
@@ -112,7 +112,7 @@ Interactive loop:
 <success_criteria>
 - [ ] Mode executed: review (3 parallel agents) / challenge (adversarial) / consult (interactive Q&A)
 - [ ] Synthesis with agreements, disagreements, verdict
-- [ ] Report written + findings appended to specs/learnings.md
+- [ ] Report written + findings appended to .workflow/specs/learnings.md
 </success_criteria>
 
 <next_step_routing>

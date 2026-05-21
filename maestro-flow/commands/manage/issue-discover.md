@@ -46,7 +46,7 @@ $ARGUMENTS -- optional. Parse first token to determine mode.
 - `--depth=standard|deep` -- exploration depth (by-prompt only, default: `standard`)
 
 **State files:**
-- `.workflow/issues/issues.jsonl` -- issues appended here
+- `.workflow/issues/issues.jsonl` -- issues appended here (set `source: "discover"` on each row so concurrent writers like `manage-harvest` with `source: "harvest"` can be distinguished and deduplicated)
 - `.workflow/issues/discoveries/{SESSION_ID}/` -- session artifacts
 
 ### Pre-load specs

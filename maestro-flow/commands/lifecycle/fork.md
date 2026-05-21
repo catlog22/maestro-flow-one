@@ -19,7 +19,7 @@ Since `.workflow/` is gitignored, this command explicitly copies project context
 
 Also supports `--sync` mode to pull latest main branch changes and shared artifacts into an active worktree (prevents source and artifact drift for long-lived worktrees).
 
-Produces `.workflow/worktrees.json` registry in the main worktree and `.workflow/worktree-scope.json` marker in the worktree.
+Produces `.workflow/worktrees.json` registry in the main worktree and `.workflow/worktree-scope.json` marker in the worktree, and writes a scoped `state.json` inside the worktree containing only the forked milestone's artifacts.
 </purpose>
 
 <required_reading>

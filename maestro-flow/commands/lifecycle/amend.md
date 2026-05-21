@@ -148,6 +148,7 @@ On validation failure: fix JSON, retry (max 2).
 | Code | Condition | Recovery |
 |------|-----------|----------|
 | E001 | No signals from any source | Verify artifact paths or provide description |
+| E002 | Signal source path invalid or unreadable | Check `--from-*` path; ensure artifact exists |
 | E003 | All signals are code bugs, not command gaps | Use /maestro-quick or /maestro-plan --gaps |
 | E004 | Overlay validation failed after 2 retries | Review JSON manually |
 | W001 | Some signals skipped (code bugs) | Route to appropriate fix command |

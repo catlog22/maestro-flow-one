@@ -14,7 +14,7 @@ allowed-tools:
 <purpose>
 Unified retrospective combining git activity analysis and decision quality evaluation. Works on raw git history and wiki/spec data. Two lenses (git, decision), usable independently or together.
 
-All insights persist to `specs/learnings.md` as `<spec-entry>` blocks.
+All insights persist to `.workflow/specs/learnings.md` as `<spec-entry>` blocks.
 </purpose>
 
 <context>
@@ -28,9 +28,9 @@ $ARGUMENTS — lens selection and scope flags.
 **Storage write**:
 - `.workflow/knowhow/KNW-retro-{date}.md` — unified report
 - `.workflow/knowhow/KNW-retro-{date}.json` — structured metrics
-- `specs/learnings.md` — appended `<spec-entry>` blocks (source: retro-git / retro-decision)
+- `.workflow/specs/learnings.md` — appended `<spec-entry>` blocks (source: retro-git / retro-decision)
 
-**Storage read**: git history, `.workflow/state.json`, prior `KNW-retro-*.json`, `specs/learnings.md`, wiki specs, `architecture-constraints.md`, phase context files
+**Storage read**: git history, `.workflow/state.json`, prior `KNW-retro-*.json`, `.workflow/specs/learnings.md`, wiki specs, `architecture-constraints.md`, phase context files
 </context>
 
 <state_machine>
@@ -40,7 +40,7 @@ S_PARSE       — 解析 lens + flags                           PERSIST: —
 S_GIT         — git 活动分析（lens=git/all 时）              PERSIST: metrics
 S_DECISION    — 决策质量评估（lens=decision/all 时）         PERSIST: evaluations
 S_REPORT      — 生成统一报告                                 PERSIST: .md + .json
-S_PERSIST     — 写 spec-entry 块                             PERSIST: specs/learnings.md
+S_PERSIST     — 写 spec-entry 块                             PERSIST: .workflow/specs/learnings.md
 </states>
 
 <transitions>
@@ -60,7 +60,7 @@ S_REPORT:
   → S_PERSIST     DO: write KNW-retro-{date}.md + .json
 
 S_PERSIST:
-  → END           DO: append insights to specs/learnings.md via `maestro spec add learning`
+  → END           DO: append insights to .workflow/specs/learnings.md via `maestro spec add learning`
   RULE: INS-id = hash(lens + metric_or_decision_id + date) for cross-session stability
 
 </transitions>
@@ -102,7 +102,7 @@ maestro wiki search "decision" --json
 maestro wiki list --type spec --json
 git log --oneline --all --grep="decision\|chose\|decided" -20
 ```
-Plus: architecture-constraints.md, phase context Locked/Deferred sections, specs/learnings.md.
+Plus: architecture-constraints.md, phase context Locked/Deferred sections, .workflow/specs/learnings.md.
 Apply --phase/--tag/--id filters.
 
 **Build registry** per decision: id, title, source, date, rationale, alternatives, phase, implementation_evidence [file paths].
@@ -146,7 +146,7 @@ Apply --phase/--tag/--id filters.
 - [ ] Git lens: metrics computed (commits, LOC, test ratio, churn, sessions), insights distilled
 - [ ] Decision lens: decisions collected, 3 agents evaluated in parallel, lifecycle classified
 - [ ] Unified report + structured JSON written
-- [ ] specs/learnings.md appended with stable INS-ids
+- [ ] .workflow/specs/learnings.md appended with stable INS-ids
 </success_criteria>
 
 <next_step_routing>

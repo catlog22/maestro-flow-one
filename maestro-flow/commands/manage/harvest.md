@@ -47,6 +47,7 @@ Follow '~/.maestro/workflows/harvest.md' Stages 1-8 in order.
 1. **Read-only until Stage 6** — extraction and classification happen in-memory.
 2. **Dedup before write** — check harvest-log.jsonl and existing stores before each write.
 3. **Never modify source artifacts** — harvest is purely extractive.
+4. **Dedup contract with parallel writers** — when appending to `issues.jsonl`, set `source: "harvest"` on each row so concurrent writers (e.g. `manage-issue-discover` with `source: "discover"`) can be distinguished and deduplicated.
 
 Extraction patterns, classification rules, routing infrastructure, and fragment ID scheme defined in workflow harvest.md.
 

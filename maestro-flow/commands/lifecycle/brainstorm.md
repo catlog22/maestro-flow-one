@@ -30,7 +30,7 @@ $ARGUMENTS -- topic text for auto mode, or role name for single role mode.
 
 **Auto mode**: topic text (e.g., "Build real-time collaboration platform") triggers full pipeline.
 **Single role mode**: valid role name (e.g., "system-architect") runs one role analysis.
-**All output** goes to `.workflow/scratch/{YYYYMMDD}-brainstorm-{slug}/`.
+**All output** goes to `.workflow/scratch/brainstorm-{slug}-{YYYYMMDD}/` (orchestrator MUST resolve this to an absolute path before passing to sub-agents).
 **Artifact registration**: On completion, registers artifact (type=brainstorm) in state.json.
 **Output boundary**: ALL file writes MUST target `{output_dir}/` or `.workflow/state.json` only. NEVER modify source code or files outside these paths.
 **Produced files**: `guidance-specification.md`, `design-research.md` (optional), `{role}/analysis.md` + `{role}/analysis-F-*.md` + `{role}/findings-*.md` (per selected role).
@@ -62,14 +62,15 @@ $ARGUMENTS -- topic text for auto mode, or role name for single role mode.
 <interview_protocol>
 Interview the user relentlessly until shared understanding is reached. Active only in interactive mode; skip when `--yes/-y`, `--skip-questions`, `--session` (existing session), or input is already specific.
 
-- One decision per turn via AskUserQuestion with 2–4 options + a (Recommended) default; every question must include a `Proceed now` option.
-- Never ask what code can verify — resolve via `state.json`, the session directory, `maestro spec load`, or `maestro wiki search`.
+- One decision per turn via AskUserQuestion with 2–4 options + a (Recommended) default. The user controls termination — keep interviewing until convergence; they can interrupt naturally or via `Other` at any time.
+- Search-first when uncertain: before asking, resolve via `state.json`, the session directory, `maestro spec load`, `maestro wiki search`, Glob/Grep/Read, or — for open-ended multi-file scans — spawn `Agent(subagent_type: Explore)` / `maestro delegate ... --role explore`. Never ask what code or memory can verify; never bounce your own ambiguity back to the user — search first, then ask only what truly needs human judgment.
+- Writeback cadence: each time a decision settles, immediately append/update its row in `guidance-specification.md` §11 (create the section if absent). Do NOT batch writeback to the end — partial decisions must already be on disk before the next question.
 - Branch jumps allowed: the user may switch freely between mode / role / upstream / sub-pipeline branches; sequence is not enforced, but every decision point must end with a definite answer.
 - Scope guard: only ask about decisions owned by `brainstorm`. Do not pre-resolve roadmap/plan choices.
 
 Decision points: mode (auto / single-role / review-only) / role selection and `--count` / `--from` upstream source / whether to enable design-research and the DESIGN.md sub-pipeline.
 
-Exit: on consensus or `Proceed now`, write the table below into `guidance-specification.md` §11 and session metadata:
+Exit: on consensus or explicit user signal to proceed, finalize session metadata. The §11 table (already populated incrementally) uses this schema:
 `| # | Decision | Choice | Source (user / code / default) |`
 </interview_protocol>
 
