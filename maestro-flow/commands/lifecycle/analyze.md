@@ -32,12 +32,17 @@ Use `--gaps` for issue-focused root cause analysis (replaces manage-issue-analyz
 </deferred_reading>
 
 <context>
-$ARGUMENTS -- phase number for milestone-scoped, topic text for adhoc/standalone mode, no args for milestone-wide.
+$ARGUMENTS -- phase number for micro mode, topic text for macro/adhoc mode, no args for milestone-wide.
+
+**Dual-layer mode:**
+- **Macro mode** (text argument): Explore impact surface of a topic/requirement. Produces coarse-grained context with `scope_verdict` to route next step. Use before roadmap or for standalone analysis.
+- **Micro mode** (numeric argument): Phase-level deep analysis within an existing roadmap. Produces fine-grained context for plan consumption. `analyze 1` = Phase 1 of current milestone.
 
 **Flags:**
 - `-y` / `--yes`: Auto mode — skip interactive scoping, use recommended defaults, auto-deepen
 - `-c` / `--continue`: Resume from existing session (auto-detect session folder + discussion.md)
 - `-q` / `--quick`: Quick mode — skip exploration + scoring, go straight to decision extraction (context.md only)
+- `--from <source>`: Load upstream context package (brainstorm:ID, blueprint:BLP-xxx, @file, or path)
 - `--gaps [ISS-ID]`: Issue root cause analysis mode. If ISS-ID provided, analyze single issue. If omitted, analyze all open/registered issues from issues.jsonl.
 
 Scope routing, output directory format, artifact registration schema, and output artifact listing are defined in workflow analyze.md (Scope Routing and Output Structure sections).
@@ -45,6 +50,20 @@ Scope routing, output directory format, artifact registration schema, and output
 ### Role Knowledge
 `maestro wiki list --category debug` → select relevant → `maestro wiki load`
 </context>
+
+<interview_protocol>
+Interview the user relentlessly until shared understanding is reached. Active only in interactive mode; skip when `-y/--yes`, `-c/--continue`, or input is already specific (explicit phase number or unambiguous topic).
+
+- One decision per turn via AskUserQuestion with 2–4 options + a (Recommended) default; every question must include a `Proceed now` option so the user can end the interview at any time.
+- Never ask what code can verify — resolve via `state.json`, `roadmap.md`, `issues.jsonl`, `maestro spec load`, `maestro wiki search`, Grep, or Read.
+- Walk the decision dependency tree strictly: scope → depth → dimensions → Go/No-Go threshold. Do not open the next branch until the current one is settled.
+- Scope guard: only ask about decisions owned by `analyze`. Do not prejudge plan/execute concerns.
+
+Decision points: scope (phase / topic / milestone-wide / adhoc / --gaps) → depth (quick / standard / deep) → dimensions (which of the 6 to keep) → Go/No-Go threshold.
+
+Exit: on `Proceed now` or when all decision points are settled, write the table below to the top of `discussion.md` and mirror it into `context.md` under an `Interview Decisions` section:
+`| # | Decision | Choice | Source (user / code / default) |`
+</interview_protocol>
 
 <execution>
 Follow '~/.maestro/workflows/analyze.md' completely.
@@ -76,15 +95,21 @@ Phase 4: Output context.md for downstream plan --gaps
 
 **Handoff:** context.md is consumed by maestro-plan (loads Locked/Free/Deferred decisions). In --gaps mode, context.md contains issue root causes for `plan --gaps` consumption.
 
+**scope_verdict** (added to context.md in Step 6 Synthesis for macro/adhoc/standalone scopes):
+- `large` (3+ independent subsystems or hard serial dependencies) → suggest `/maestro-roadmap --from analyze:ANL-xxx`
+- `medium` (1-2 subsystems, parallelizable) → suggest `/maestro-plan --from analyze:ANL-xxx`
+- `small` (single-file or few-file change) → suggest `/maestro-plan --from analyze:ANL-xxx`
+
 **Next-step routing on completion:**
 
-Phase/Milestone scope:
+Phase/Milestone scope (micro mode):
 - Go recommendation, UI work needed → `/maestro-impeccable build {target}`
 - Go recommendation, ready to plan → `/maestro-plan` or `/maestro-plan {phase}`
 - No-Go recommendation → revisit requirements or `/maestro-brainstorm {topic}`
 
-Adhoc/Standalone scope:
-- Ready to plan → `/maestro-plan --dir {scratch_dir}`
+Macro/Adhoc/Standalone scope:
+- scope_verdict = large → `/maestro-roadmap --from analyze:ANL-xxx`
+- scope_verdict = medium/small → `/maestro-plan --from analyze:ANL-xxx`
 - Need more exploration → `/maestro-analyze {topic} -c`
 
 Gaps scope:
@@ -123,6 +148,7 @@ Gaps mode:
 - [ ] context.md written with aggregated root causes for plan --gaps
 
 Both modes (full + quick):
+- [ ] Interactive mode: interview decision table written to `discussion.md` and mirrored into `context.md` "Interview Decisions"
 - [ ] context.md written with all decisions classified as Locked/Free/Deferred
 - [ ] Gray areas identified through phase-specific analysis
 - [ ] Decision Recording Protocol applied to all decisions

@@ -1,7 +1,7 @@
 ---
 name: maestro-plan
 description: Use when creating, revising, or verifying an execution plan for a phase or task
-argument-hint: "[phase] [--collab] [--spec SPEC-xxx] [-y] [--gaps] [--tdd] [--dir <path>] [--revise [instructions]] [--check <plan-dir>]"
+argument-hint: "[phase] [--collab] [--spec SPEC-xxx] [-y] [--gaps] [--tdd] [--dir <path>] [--from <source>] [--revise [instructions]] [--check <plan-dir>]"
 allowed-tools:
   - Read
   - Write
@@ -39,12 +39,22 @@ $ARGUMENTS — phase number, or no args for milestone-wide planning, with option
 Scope routing, base flags (`--collab`, `--spec`, `-y`, `--gaps`, `--dir`), output directory format, and artifact registration are defined in workflow plan.md.
 
 **Command-level flags** (extensions beyond workflow base):
+- `--from <source>`: Load upstream context directly (bypasses roadmap requirement):
+  - `analyze:ANL-xxx` → CONTEXT_DIR = artifact path, scope = "standalone"
+  - `blueprint:BLP-xxx` → CONTEXT_DIR = blueprint path, scope = "standalone"
+  - `@file` or `path/` → load context-package.json from path
 - `--revise [instructions]` -- See workflow plan.md § Revise Mode
 - `--check <plan-dir>` -- See workflow plan.md § Check Mode
 
-**Upstream context:**
-- Reads `context.md` from prior analyze artifact (auto-discovered from state.json or via --dir)
-- Reads `conclusions.json` if available (implementation_scope seeds task generation)
+**Upstream context (resolution priority):**
+1. `--from analyze:ANL-xxx` → uses analyze conclusions.implementation_scope directly
+2. `--from blueprint:BLP-xxx` → uses blueprint requirements + architecture
+3. `--dir <path>` → explicit context directory (unchanged)
+4. Numeric arg → scope = "phase", resolve from roadmap (unchanged)
+5. No args + roadmap → scope = "milestone" (unchanged)
+6. No args + no roadmap → search state.json for latest analyze artifact, fallback standalone
+
+**Ad-hoc milestone (D-008):** When scope resolves to "standalone" and `current_milestone == null`, plan auto-creates an adhoc milestone (`type: "adhoc"`) in state.json before proceeding. This ensures downstream milestone-audit/complete have a valid milestone context. See workflow plan.md § "Ad-hoc Milestone Auto-Creation".
 
 ### Role Knowledge
 `maestro wiki list --category arch` → select relevant → `maestro wiki load`

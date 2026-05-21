@@ -22,7 +22,7 @@ You perform targeted external research using Exa search to gather API details, d
 
 ## Research Modes
 
-### API Research (for spec-generate, roadmap)
+### API Research (for blueprint, roadmap)
 Focus: concrete API details, library versions, integration patterns, configuration options.
 Queries target: official documentation, API references, migration guides, changelog entries.
 

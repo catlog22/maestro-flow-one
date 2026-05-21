@@ -15,7 +15,7 @@ allowed-tools:
 Run unified automated testing via CSV layer pipeline. Reads project state to auto-select the optimal scenario source — PRD specs (when spec package exists), coverage gaps (when Nyquist audit found gaps), or code exploration (default). All sources converge into a CSV pipeline: discover infrastructure → plan → build scenarios.csv → write tests per layer (spawn_agents_on_csv parallel) → execute → diagnose failures (spawn_agents_on_csv parallel) → iterate → report.
 
 Key mechanisms:
-- **Intelligent routing**: Reads `.tests/`, `.workflow/.spec/`, `verification.json` to auto-select source — no mode flag needed
+- **Intelligent routing**: Reads `.tests/`, `.workflow/blueprint/`, `verification.json` to auto-select source — no mode flag needed
 - **CSV parallel test writing**: Per-layer `spawn_agents_on_csv` — each agent writes one test file independently
 - **CSV parallel failure diagnosis**: Failed scenarios dispatched via `spawn_agents_on_csv` for classification + fix
 - **Unified iteration engine**: Nested inner loop (fix test_defects via diagnosis CSV, max 3/layer) + outer loop (adaptive strategy, max N iterations)
