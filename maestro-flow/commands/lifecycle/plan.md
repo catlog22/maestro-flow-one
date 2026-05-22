@@ -134,18 +134,19 @@ Next steps:
   /maestro-plan {phase}         -- Re-plan with modifications
 ```
 
-**Completion status:**
+**Completion (when invoked from ralph):**
+End the step by calling the CLI (no `--- COMPLETION STATUS ---` text block):
 ```
---- COMPLETION STATUS ---
-STATUS: DONE|NEEDS_CONTEXT
-CONCERNS: {description if applicable}
-NEXT: /maestro-execute
---- END STATUS ---
+maestro ralph complete <idx> --status DONE [--evidence scratch/{YYYYMMDD}-plan-P{N}-{slug}/plan.json]
 ```
 
-Status mapping:
-- **DONE** — Plan created/revised and confirmed → NEXT: /maestro-execute
-- **NEEDS_CONTEXT** — Ambiguous requirements, insufficient context to produce plan
+STATUS verdicts (CLI-enforced enum):
+- **DONE** — Plan created/revised and confirmed → next step picks up automatically
+- **DONE_WITH_CONCERNS** — Plan produced but with explicit caveats; pass `--concerns "..."`
+- **NEEDS_RETRY** — Plan failed (tooling error, transient issue); ralph will retry
+- **BLOCKED** — External hard blocker (e.g., upstream artifact missing, dependency unavailable); pass `--reason "..."`
+
+> Ambiguous requirements are NOT a completion status — resolve them in-place via `AskUserQuestion` during planning (≤3 rounds), then proceed to DONE. `NEEDS_CONTEXT` has been removed; context shortage is handled by the harness's automatic compaction.
 
 ### Mode: Revise / Check
 
