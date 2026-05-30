@@ -73,6 +73,10 @@ If exit code is 1, present warnings and ask whether to proceed.
 
 Follow '~/.maestro/workflows/plan.md' completely.
 
+### P3 Agent Constraint (MANDATORY)
+
+Main flow **MUST** spawn a planner agent (Agent tool) for P3 planning — inline planning by main flow is FORBIDDEN. The agent produces both `plan.json` and `.task/TASK-*.json` files. Main flow only passes context and validates output.
+
 ### Codebase Docs Loading (P1 addition)
 
 During P1 Context Collection, after loading context files, load codebase documentation if available:

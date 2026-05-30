@@ -92,9 +92,10 @@ When invoked with `quick` flag:
   "type": "feature",
   "priority": "medium",
   "effort": "medium",
-  "action": "Implement",
+  "action": "<concrete action with exact values: function signatures, config keys, import paths>",
   "scope": "<module path>",
   "focus_paths": ["src/tools/"],
+  "read_first": ["src/tools/existing-tool.ts", "src/types/tool.ts"],
   "depends_on": [],
   "parallel_group": null,
   "convergence": {
@@ -164,6 +165,8 @@ These rules prevent over-splitting that wastes tokens on unnecessary agent spawn
 - Each task must be substantial (15-60 min of work); group related changes, avoid file-per-task
 - Each task must have convergence.criteria (min 2 testable conditions)
 - convergence.criteria must be specific and testable (not "works correctly")
+- Each task must have `read_first[]` — files the executor MUST read before implementation (the file being modified + source-of-truth files)
+- `action` must contain concrete values (function signatures, config keys, import paths), not just a verb like "Implement"
 - files must use array format `[{path, action, target, change}]`
 - Wave ordering must respect dependencies (no task before its dependency)
 - Task descriptions must be clear enough for the executor to implement without ambiguity

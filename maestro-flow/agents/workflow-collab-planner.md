@@ -42,9 +42,10 @@ You are a collaborative planner that works within a pre-allocated task ID range.
   "type": "feature",
   "priority": "medium",
   "effort": "medium",
-  "action": "Implement",
+  "action": "<concrete action with exact values: function signatures, config keys, import paths>",
   "scope": "<module path>",
   "focus_paths": [],
+  "read_first": ["src/module/existing.ts", "src/types/shared.ts"],
   "depends_on": [],
   "parallel_group": null,
   "convergence": {
@@ -116,6 +117,8 @@ You are a collaborative planner that works within a pre-allocated task ID range.
 - Task files must use `convergence.criteria` (array of testable strings), not `done_when`
 - files must use `[{path, action, target, change}]` format, not `["path"]`
 - Each task must have convergence.criteria with min 2 testable conditions
+- Each task must have `read_first[]` — files the executor MUST read before implementation
+- `action` must contain concrete values (function signatures, config keys, import paths), not just a verb
 - Task definitions follow the same schema as workflow-planner output
 - If you discover scope that belongs to another planner's range, note it in plan-note.md
 - Do not modify other planners' task files

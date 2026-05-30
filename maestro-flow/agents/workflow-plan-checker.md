@@ -30,7 +30,9 @@ You validate the quality of execution plans before they proceed to implementatio
    - Each criterion must reference a concrete artifact, output, or behavior
    - Criteria should be sufficient to prove the task is complete
 7. **Check files array** -- Verify each task's `files[]` array is consistent with its description
-8. **Report** -- Write check report with issues or approval
+8. **Check read_first** -- Verify each task has `read_first[]` containing: the file being modified + source-of-truth files. Missing or empty `read_first` is a critical issue.
+9. **Check action concreteness** -- Verify each task's `action` contains concrete values (function signatures, config keys, import paths), not vague verbs like "Implement" or references like "align X with Y"
+10. **Report** -- Write check report with issues or approval
 
 ### Revision Loop (max 3 rounds)
 - If issues found: write report with specific issues and suggested fixes
@@ -71,6 +73,14 @@ Check report written to the output location above:
 
 ## Files Array Consistency
 - TASK-006: description mentions "update config" but files[] does not include any config file
+
+## Read First Completeness
+- TASK-001 read_first: Missing — must include src/auth.ts (file being modified) + src/types/auth.ts (type definitions)
+- TASK-003 read_first: Has target file but missing source-of-truth reference
+
+## Action Concreteness
+- TASK-002 action: Too vague ("Implement auth") — should include: "Add verifyToken(token: string): Promise<AuthPayload> to src/auth.ts, import from jsonwebtoken"
+- TASK-005 action: Contains "align with existing pattern" — must specify the exact target state
 
 ## Summary
 <Overall assessment>

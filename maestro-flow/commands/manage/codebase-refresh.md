@@ -32,6 +32,7 @@ $ARGUMENTS -- optional flags.
 - `.workflow/` -- must be initialized
 - `.workflow/codebase/` -- must contain existing docs (from prior rebuild)
 - `.workflow/codebase/doc-index.json` -- documentation index with timestamps
+- `.workflow/codebase/knowledge-graph.json` -- Knowledge Graph (optional, for KG impact analysis)
 - `.workflow/state.json` -- contains `codebase_last_rebuilt` timestamp
 </context>
 
@@ -50,6 +51,8 @@ Follow '~/.maestro/workflows/codebase-refresh.md' completely.
 <success_criteria>
 - [ ] Changed files detected via git diff since last refresh
 - [ ] Affected documentation entries identified from doc-index.json
+- [ ] KG impact analysis run (if knowledge-graph.json exists): `maestro kg diff-wiki --json`
+- [ ] Affected wiki entries flagged with warnings (if any)
 - [ ] Only affected docs refreshed (selective mapper re-run)
 - [ ] doc-index.json timestamps updated per affected entry
 - [ ] state.json updated with codebase_last_refreshed timestamp
