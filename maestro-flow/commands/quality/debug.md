@@ -45,9 +45,9 @@ Extract conclusions from related artifacts that may affect this debug session �
 
 ### Pre-load (optional, proceed without)
 - Codebase docs: `.workflow/codebase/ARCHITECTURE.md` → module boundaries
-- Wiki: `maestro wiki search "<symptom keywords>" --json` → prior investigations
+- Wiki: `maestro search "<symptom keywords>" --json` → prior investigations
 - Specs: `maestro spec load --category debug --keyword "<symptom>"` → known issues/workarounds
-- Role knowledge: `maestro wiki list --category debug` → select relevant → `maestro wiki load`
+- Role knowledge: `maestro search --category debug` → select relevant → `maestro wiki load`
 
 **Output**: `DEBUG_DIR = .workflow/scratch/{YYYYMMDD}-debug-P{N}-{slug}/` (P{N} = phase number when phase-scoped; omit for standalone). Output directory rules defined in workflow debug.md Step 4.
 </context>
@@ -81,13 +81,13 @@ Append to state.json.artifacts[]:
 | Non-obvious fix / workaround | "Record as learning?" | spec-add learning |
 | Root cause = architectural boundary violation | "Update architecture-constraints.md?" | spec-add arch |
 
-On confirm → `Skill("spec-add", "<category> <content>")`.
+On confirm → `Skill("spec-add", "<category> <content> --description \"<summary>\"")`.
 
 **Next-step routing on completion:**
 - Root cause found, fix needed → `/maestro-plan {phase} --gaps`
 - Root cause found (from UAT), auto-fix → `/quality-test {phase} --auto-fix`
 - Inconclusive, need more info → `/quality-debug {issue} -c` (resume session)
-- Standalone fix already applied → `/maestro-verify {phase}`
+- Standalone fix already applied → `/maestro-execute {phase}`
 </execution>
 
 <error_codes>

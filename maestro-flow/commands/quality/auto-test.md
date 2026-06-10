@@ -55,7 +55,7 @@ Flags, artifact context resolution, and output formats defined in workflow auto-
 1. **Test specs + tools**: Run `maestro spec load --category test` to load test conventions (framework, patterns, naming). Apply to all generated tests.
 2. **Coding specs**: Run `maestro spec load --category coding` to understand coding patterns for accurate test targeting.
 3. **Role Knowledge**:
-   - Browse: `maestro wiki list --category test`
+   - Browse: `maestro search --category test`
    - Load task-relevant entries: `maestro wiki load <id1> [id2...]`
 4. All are optional — proceed without if unavailable.
 </context>
@@ -91,13 +91,13 @@ Append to state.json.artifacts[]:
 ```
 
 **Next-step routing on completion:**
-- Converged (>=95%) → `/maestro-verify {phase}`
+- Converged (>=95%) → `/quality-review {phase}`
 - All requirements verified (spec source) → `/maestro-milestone-audit`
 - Bugs discovered → `/quality-debug --from-uat {phase}`
 - Max iter, >80% → `/quality-test {phase}` for manual UAT
 - Max iter, <80% → `/quality-debug {phase}`
 - Coverage still low → `/quality-auto-test {phase} --layer {missing}`
-- Re-run all pass → `/maestro-verify {phase}`
+- Re-run all pass → `/quality-review {phase}`
 - Single pass, all pass → `/quality-test {phase}`
 </execution>
 

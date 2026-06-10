@@ -33,7 +33,7 @@ If not provided, prompt user for scope.
 1. **Coding specs**: Run `maestro spec load --category coding` to load coding conventions. Apply conventions to all refactored code.
 2. **Review specs**: Run `maestro spec load --category review` to load review standards. Use as quality gate for refactored code.
 3. **Role Knowledge**:
-   - Browse: `maestro wiki list --category coding`
+   - Browse: `maestro search --category coding`
    - Identify task-relevant entries, then load: `maestro wiki load <id1> [id2...]`
 4. All are optional — proceed without if unavailable.
 </context>
@@ -42,7 +42,7 @@ If not provided, prompt user for scope.
 Follow '~/.maestro/workflows/refactor.md' completely.
 
 **Knowledge inquiry on completion:**
-After successful refactoring, ask user once: "Record refactoring pattern as coding convention?" If yes, persist via `Skill("spec-add", "coding \"<title>\" \"<pattern>\" --keywords <kw1>,<kw2>")`.
+After successful refactoring, ask user once: "Record refactoring pattern as coding convention?" If yes, persist via `Skill("spec-add", "coding \"<title>\" \"<pattern>\" --keywords <kw1>,<kw2> --description \"<summary>\"")`.
 
 **Next-step routing on completion:**
 - All tests pass → `/quality-sync` (update codebase docs)

@@ -41,8 +41,8 @@ Follow '~/.maestro/workflows/test.md' completely.
 **Command-specific extensions (not in workflow):**
 
 **Knowledge context loading** (before test design):
-- Wiki search: `maestro wiki search "<phase/feature keywords>" --json` → prior test strategies, recipes, decisions
-- Role knowledge: `maestro wiki list --category test` → select relevant → `maestro wiki load <id>`
+- Wiki search: `maestro search "<phase/feature keywords>" --json` → prior test strategies, recipes, decisions
+- Role knowledge: `maestro search --category test` → select relevant → `maestro wiki load <id>`
 - Specs + tools: `maestro spec load --category test` → test conventions + discoverable knowhow tools
 
 **Test tool discovery** (knowhow tools as scenario source):
@@ -77,7 +77,7 @@ Append to state.json.artifacts[]:
 
 **Next-step routing on completion:**
 - All tests pass → `/maestro-milestone-audit`
-- Issues found, --auto-fix ran and succeeded → `/maestro-verify {phase}`
+- Issues found, --auto-fix ran and succeeded → `/maestro-execute {phase}`
 - Issues found, --auto-fix ran but gaps remain → `/quality-debug --from-uat {phase}`
 - Issues found, manual fix needed → `/quality-debug --from-uat {phase}`
 - Coverage below threshold → `/quality-auto-test {phase}`
@@ -88,7 +88,7 @@ Append to state.json.artifacts[]:
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
 | E001 | error | Phase or task target required (no active sessions) | Prompt user for phase number |
-| E002 | error | Phase not verified yet (no verification.json) | Suggest `/maestro-verify` first |
+| E002 | error | Phase not verified yet (no verification.json) | Suggest `/maestro-execute` first (verification is built-in) |
 | E003 | error | Smoke test failed (app won't start) | Suggest `/quality-debug` |
 | W001 | warning | One or more test scenarios failed | Auto-diagnose, suggest fix options |
 | W002 | warning | Coverage below threshold | Suggest `/quality-auto-test` |

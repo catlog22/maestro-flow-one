@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Run multi-dimensional code review on a completed phase's changed files. Answers the question "is this code good?" -- complementing maestro-verify ("is the goal met?") and quality-test ("does it work for users?"). Three review levels (quick/standard/deep) scale with task depth, auto-detected from file count. Level definitions, dimension lists, deep-dive rules, and issue creation thresholds defined in workflow review.md.
+Run multi-dimensional code review on a completed phase's changed files. Answers the question "is this code good?" -- complementing maestro-execute's built-in verification ("is the goal met?") and quality-test ("does it work for users?"). Three review levels (quick/standard/deep) scale with task depth, auto-detected from file count. Level definitions, dimension lists, deep-dive rules, and issue creation thresholds defined in workflow review.md.
 </purpose>
 
 <required_reading>
@@ -50,9 +50,9 @@ Extract conclusions from related artifacts that may affect this review. Pass as 
 
 ### Pre-load (optional, proceed without)
 - Codebase docs: `.workflow/codebase/ARCHITECTURE.md` → component boundaries, layer rules
-- Wiki constraints: `maestro wiki search "architecture constraint" --json` → documented decisions
+- Wiki constraints: `maestro search "architecture constraint" --json` → documented decisions
 - Specs: `maestro spec load --category review` → review standards, checklists, knowhow tools
-- Role knowledge: `maestro wiki list --category review` → select relevant → `maestro wiki load`
+- Role knowledge: `maestro search --category review` → select relevant → `maestro wiki load`
 
 **Output**: `REVIEW_DIR = .workflow/scratch/{YYYYMMDD}-review-P{N}-{slug}/` (P{N} = phase number, enables directory-level identification as state.json fallback)
 </context>
@@ -99,7 +99,7 @@ NEXT: /quality-refactor
 
 Status mapping:
 - **DONE** — PASS verdict, no critical findings → NEXT: /quality-refactor
-- **DONE_WITH_CONCERNS** — WARN verdict, issues found but non-blocking → NEXT: /maestro-verify
+- **DONE_WITH_CONCERNS** — WARN verdict, issues found but non-blocking → NEXT: /quality-test
 - **NEEDS_RETRY** — BLOCK verdict, critical findings require fix first
 </execution>
 

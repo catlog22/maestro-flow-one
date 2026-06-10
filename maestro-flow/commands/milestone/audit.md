@@ -22,7 +22,7 @@ Audit milestone completion using the artifact registry. Checks:
 Data source: `state.json.artifacts[]` filtered by current milestone.
 Produces audit report at `.workflow/milestones/{milestone}/audit-report.md`.
 
-Pipeline position: downstream of maestro-verify (all phases verified), upstream of maestro-milestone-complete.
+Pipeline position: downstream of maestro-execute (which includes verification), upstream of maestro-milestone-complete.
 </purpose>
 
 <required_reading>
@@ -49,7 +49,7 @@ Milestone: $ARGUMENTS (optional -- defaults to current_milestone from state.json
 
 ### Role Knowledge
 
-1. Browse: `maestro wiki list --category review`
+1. Browse: `maestro search --category review`
 2. Select entries relevant to milestone integration audit
 3. Load: `maestro wiki load <id1> [id2...]`
 </context>
@@ -58,6 +58,38 @@ Milestone: $ARGUMENTS (optional -- defaults to current_milestone from state.json
 Follow '~/.maestro/workflows/milestone-audit.md' completely.
 
 Audit checklist steps (phase coverage, ad-hoc completeness, execution completeness, cross-artifact integration) are defined in workflow `milestone-audit.md`.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Load → Phase Coverage Check**
+- REQUIRED: state.json loaded with artifacts[] filtered by target milestone.
+- REQUIRED: Milestone phases identified from roadmap (standard) or milestone_obj.phases (adhoc).
+- BLOCKED if no execute artifacts found: error E003.
+
+**GATE 2: Phase Coverage → Integration Check**
+- REQUIRED: Every phase checked for artifact chain completeness (ANL→PLN→EXC for standard, PLN→EXC for adhoc).
+- REQUIRED: Execution completeness verified — all tasks in executed plans checked for status.
+- Do NOT skip incomplete chains — each gap MUST be logged in audit report.
+
+**GATE 3: Integration Check → Report**
+- REQUIRED: Cross-artifact integration check completed (shared interfaces, data contracts, configuration consistency).
+- REQUIRED: Clear PASS/FAIL verdict determined with evidence for each check.
+
+### Artifact Verification (before completion)
+
+```
+REQUIRED_ARTIFACTS = [
+  ".workflow/milestones/{milestone}/audit-report.md"  // Clear PASS/FAIL verdict
+]
+```
+If missing: DO NOT report completion. Write the audit report first.
+
+### Evidence Requirement
+
+Every audit check result MUST cite what was examined and what was found:
+- PASS: "Phase 1 chain complete: ANL-001 → PLN-001 → EXC-001, all tasks completed"
+- FAIL: "Phase 2 missing EXC artifact — PLN-002 exists but no execution found"
+- Do NOT mark checks as PASS without verifying the actual artifact exists and contains expected content.
 </execution>
 
 <completion>

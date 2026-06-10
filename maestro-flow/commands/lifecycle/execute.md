@@ -17,7 +17,7 @@ Execute all tasks in a plan using wave-based parallel execution with dependency-
 
 Invoked after /maestro-plan produces a confirmed plan. When called without args on a milestone, finds all pending plans and executes them sequentially.
 
-Pipeline position: upstream from maestro-plan (consumes confirmed plan), downstream to maestro-verify.
+Pipeline position: upstream from maestro-plan (consumes confirmed plan). Verification is built-in (E2.7).
 </purpose>
 
 <required_reading>
@@ -56,13 +56,13 @@ Full resolution logic, output directory format, artifact registration schema, an
 ### Pre-load context (before task execution)
 
 1. **Codebase docs**: If `.workflow/codebase/doc-index.json` exists, read `ARCHITECTURE.md` for module boundaries. Pass as shared context to executor agents.
-2. **Wiki knowledge**: Run `maestro wiki search "<phase keywords>" --json 2>/dev/null`. If results found, extract top 5 entries as prior knowledge context for agents.
+2. **Wiki knowledge**: Run `maestro search "<phase keywords>" --json 2>/dev/null`. If results found, extract top 5 entries as prior knowledge context for agents.
 3. **Coding specs + tools**: Run `maestro spec load --category coding` to load coding conventions AND discoverable knowhow tools (tool: true entries). Pass as specs context to all executor agents.
 4. **UI specs (conditional)**: If any task involves frontend/UI work (task scope/description contains keywords like component, page, style, layout, CSS, HTML, frontend; or focus_paths in `src/components/`, `src/pages/`, `src/styles/`, `src/ui/`), also run `maestro spec load --category ui` and include in agent context.
 5. All are optional — proceed without if unavailable (log warning).
 
 ### Role Knowledge
-`maestro wiki list --category coding` → select relevant → `maestro wiki load`
+`maestro search --category coding` → select relevant → `maestro wiki load`
 </context>
 
 <execution>
@@ -76,6 +76,29 @@ If exit code is 1, present warnings and ask whether to proceed.
 
 Follow '~/.maestro/workflows/execute.md' completely.
 
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Plan Load → Task Execution**
+- REQUIRED: plan.json found and parsed with valid task definitions.
+- REQUIRED: `.task/TASK-*.json` files exist for all tasks in plan.
+- BLOCKED if no pending tasks: error E004.
+
+**GATE 2: Per-Task Execution → Summary**
+- REQUIRED: Each completed task has `.summaries/TASK-{NNN}-summary.md` written with concrete evidence (files changed, tests run, verification results).
+- REQUIRED: `.task/TASK-{NNN}.json` status updated to completed|blocked.
+- Do NOT silently skip failed tasks — mark as blocked with reason.
+
+**GATE 3: All Tasks → Completion**
+- REQUIRED: All waves executed in dependency order.
+- REQUIRED: EXC artifact registered in state.json.
+
+### Evidence Requirement
+
+Task summaries MUST include:
+- Files actually modified (not just planned targets)
+- Convergence criteria verification results (pass/fail with evidence)
+- Any deviations from the plan with rationale
+
 ### Post-task Knowledge Inquiry
 
 After each task completion, check triggers:
@@ -86,7 +109,8 @@ After each task completion, check triggers:
 | retry_count >= 2 | "Document fix pattern?" | spec-add debug |
 | Summary contains design rationale ("chose X because") | "Record as knowhow?" | spec-add learning |
 
-On confirm → `Skill("spec-add", "<category> <content>")`.
+On confirm → `Skill("spec-add", "<category> <content> --description \"<summary>\"")`.
+Include `--description` with a one-line summary for search result display.
 
 ### Issue Status Sync
 
@@ -134,8 +158,7 @@ Status verdicts:
 
 | Condition | Suggestion |
 |-----------|-----------|
-| All tasks completed successfully | `/maestro-verify` |
-| Specific plan needs verification | `/maestro-verify --dir {dir}` |
+| All tasks completed successfully | `/quality-review` |
 | Failed tasks exist | `/quality-debug` |
 | View project dashboard | `/manage-status` |
 </completion>

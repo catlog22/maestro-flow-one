@@ -31,8 +31,24 @@ Flags (`-m`, `--force`, `--dry-run`, `--no-cleanup`, `--continue`), merge sequen
 <execution>
 Follow '~/.maestro/workflows/merge.md' completely.
 
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Pre-merge → Git Merge**
+- REQUIRED: Registry health check completed (stale entries cleaned or flagged).
+- REQUIRED: Pre-merge rebase successful (worktree has latest main).
+- BLOCKED if rebase has conflicts: resolve in worktree first (W003).
+
+**GATE 2: Git Merge → Artifact Sync**
+- REQUIRED: Git merge completed without conflicts (or conflicts resolved via --continue).
+- Do NOT sync artifacts until git merge succeeds — prevents partial state corruption.
+
+**GATE 3: Artifact Sync → Completion**
+- REQUIRED: All scratch artifacts synced to main `.workflow/scratch/`.
+- REQUIRED: `state.json.artifacts[]` reconciled (worktree entries merged into main).
+- REQUIRED: Worktree cleaned up (unless --no-cleanup).
+
 **Knowledge inquiry on completion:**
-After successful merge, ask user once: "Record milestone learnings?" If yes, persist via `Skill("spec-add", "learning \"<title>\" \"<insight>\" --keywords <kw1>,<kw2>")`.
+After successful merge, ask user once: "Record milestone learnings?" If yes, persist via `Skill("spec-add", "learning \"<title>\" \"<insight>\" --keywords <kw1>,<kw2> --description \"<summary>\"")`.
 
 **Next-step routing on completion:**
 - View dashboard → Skill({ skill: "manage-status" })

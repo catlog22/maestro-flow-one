@@ -33,13 +33,25 @@ Parse for:
 1. **Coding specs + tools**: Run `maestro spec load --category coding` to load coding conventions and discoverable tools. Apply to implementation.
 2. **UI specs (conditional)**: If the task involves frontend/UI work (description contains component, page, style, layout, CSS, HTML, frontend), also run `maestro spec load --category ui`.
 3. **Role Knowledge**:
-   - Browse: `maestro wiki list --category coding`
+   - Browse: `maestro search --category coding`
    - Load task-relevant entries: `maestro wiki load <id1> [id2...]`
 3. All are optional — proceed without if unavailable.
 </context>
 
 <execution>
 Follow '~/.maestro/workflows/quick.md' completely.
+
+### Artifact Verification (before completion)
+
+```
+REQUIRED_ARTIFACTS = [
+  "plan.json",                              // Task definitions
+  ".summaries/TASK-*-summary.md" (per task)  // Execution results
+]
+```
+If any artifact is missing: DO NOT report completion. Complete the missing step first.
+
+Task summaries MUST include concrete evidence of completion (files changed, tests run, commands executed) — not just "task completed successfully."
 
 **Next-step routing on completion:**
 - Task done, --full verification passed → /manage-status

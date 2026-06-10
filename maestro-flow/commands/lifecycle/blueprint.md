@@ -64,7 +64,7 @@ maestro-analyze → maestro-roadmap → maestro-plan
 ### Pre-load
 
 1. **Specs**: `maestro spec load --category arch` — load architecture constraints for Phase 4 decisions
-2. **Wiki search**: `maestro wiki search "{topic keywords}" --json` → prior knowledge context
+2. **Wiki search**: `maestro search "{topic keywords}" --json` → prior knowledge context
 3. All optional — proceed without if unavailable
 </context>
 
@@ -90,6 +90,41 @@ P0: Spec Study → P1: Discovery → P1.5: Req Expansion → P2: Product Brief �
 
 P6 gate: Pass (>=80%) → Handoff | Review (60-79%) → Handoff w/caveats | Fail (<60%) → P6.5 Auto-Fix (max 2 iter) → re-check
 
+### Phase Gates (MANDATORY, BLOCKING)
+
+Each phase produces artifacts that are prerequisites for the next. Do NOT advance past a gate without verifying the prior phase's output exists.
+
+**GATE P0 → P1**: `blueprint-config.json` created with session metadata.
+**GATE P1 → P1.5**: Discovery context gathered (codebase patterns, upstream context loaded).
+**GATE P1.5 → P2**: Requirements expanded from discovery findings.
+**GATE P2 → P3**: `product-brief.md` written with vision, goals, scope, multi-perspective synthesis.
+**GATE P3 → P4**: `requirements/` directory with `_index.md` + individual `REQ-*.md` + `NFR-*.md` files. All requirements have RFC 2119 keywords and acceptance criteria.
+**GATE P4 → P5**: `architecture/` directory with `_index.md` + individual `ADR-*.md` files.
+**GATE P5 → P6**: `epics/` directory with `_index.md` + individual `EPIC-*.md` files. Cross-Epic dependency map present.
+**GATE P6**: Readiness score computed. Pass (≥80%) or Review (≥60%) required for handoff.
+
+### Artifact Verification (before completion)
+
+```
+REQUIRED_ARTIFACTS = [
+  "blueprint-config.json",        // P0
+  "product-brief.md",             // P2
+  "glossary.json",                // P2 (≥5 terms)
+  "requirements/_index.md",       // P3
+  "architecture/_index.md",       // P4
+  "epics/_index.md",              // P5
+  "readiness-report.md",          // P6
+  "blueprint-summary.md",         // P6
+  "context-package.json"          // P6
+]
+```
+If any artifact is missing: DO NOT report completion. Go back and produce it.
+
+### Evidence Requirement
+
+Architecture Decision Records (ADR-*.md) MUST cite evidence for each decision:
+- Valid: code analysis, requirement traceability (REQ-xxx), upstream context, CLI analysis output
+- INVALID: generic rationale without reference to project-specific constraints
 </execution>
 
 <completion>

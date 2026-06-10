@@ -71,11 +71,11 @@ Output directory format, artifact registration schema, and output artifact listi
 
 1. **Codebase docs**: IF `.workflow/codebase/doc-index.json` exists → Read ARCHITECTURE.md for module boundaries
 2. **Specs**: `maestro spec load --category arch` — load architecture constraints
-3. **Wiki search**: `maestro wiki search "{topic keywords}" --json` → top 5-10 entries as prior knowledge
+3. **Wiki search**: `maestro search "{topic keywords}" --json` → top 5-10 entries as prior knowledge
 4. All optional — proceed without if unavailable (log warning)
 
 ### Role Knowledge
-`maestro wiki list --category debug` → select relevant → `maestro wiki load`
+`maestro search --category debug` → select relevant → `maestro wiki load`
 </context>
 
 <interview_protocol>
@@ -92,6 +92,57 @@ Follows @~/.maestro/workflows/interview-mechanics.md standard.
 
 <execution>
 Follow '~/.maestro/workflows/analyze.md' completely.
+
+### Core Principle: Evidence-Backed Decisions
+
+Every decision produced by this command MUST be traceable to independently gathered evidence. Manual file reading (Read/Grep by the orchestrator) is preparation, NOT evidence. Evidence comes from:
+- cli-explore-agent output (code anchors, call chains, data flows)
+- maestro delegate CLI analysis output (multi-perspective findings)
+- User-provided input (domain knowledge, constraints, corrections)
+
+A decision without at least one CLI/agent-sourced evidence item is LOW CONFIDENCE and MUST be flagged as such.
+
+### Standard Mode Phase Gates (when `-q` and `--gaps` are BOTH absent)
+
+These gates are MANDATORY and BLOCKING. Do NOT advance past a gate until ALL conditions are met. Do NOT substitute manual Read/Grep for agent/CLI exploration.
+
+**GATE 1: Step 4 → Step 5** (Exploration → Discussion)
+- REQUIRED: cli-explore-agent spawned and completed (Step 4.1). Output written to `exploration-codebase.json` with ≥1 code anchor.
+- REQUIRED: At least one maestro delegate CLI call completed (Step 4.2). Output aggregated into `explorations.json` or `perspectives.json`.
+- REQUIRED: Baseline confidence scoring recorded in discussion.md (Step 4.6).
+- BLOCKED if any missing: complete Step 4 before proceeding.
+
+**GATE 2: Step 5 → Step 6** (Discussion → Scoring)
+- REQUIRED: discussion.md contains ≥1 interactive round with user feedback (Step 5.3).
+- REQUIRED: Confidence re-scored ≥1 time with delta shown (Step 5.8).
+- REQUIRED: Pressure pass completed ≥1 time (Step 5.9).
+- BLOCKED if any missing: continue discussion rounds.
+
+**GATE 3: Step 6 → Step 7** (Scoring → Synthesis)
+- REQUIRED: analysis.md written with all 6 dimensions scored.
+- REQUIRED: Each dimension score cites evidence from exploration-codebase.json or explorations.json — NOT from orchestrator's manual file reading.
+- BLOCKED if any missing: complete scoring first.
+
+**GATE 4: Step 7 → Step 8** (Synthesis → Decision Extraction)
+- REQUIRED: conclusions.json written with recommendations and decision trail.
+- REQUIRED: Intent Coverage Matrix shows no unresolved ❌ items (or user-confirmed deferrals).
+- BLOCKED if any missing: complete synthesis first.
+
+### Artifact Verification
+
+Before writing the completion report (Step 9), verify ALL expected artifacts exist in OUTPUT_DIR:
+```
+FULL_MODE_REQUIRED = [
+  "discussion.md",           // Step 3+5
+  "exploration-codebase.json", // Step 4.1
+  "explorations.json" OR "perspectives.json", // Step 4.3
+  "analysis.md",             // Step 6
+  "conclusions.json",        // Step 7
+  "context.md",              // Step 8
+  "context-package.json"     // Step 8.6
+]
+```
+If any artifact is missing: DO NOT report completion. Go back and produce the missing artifact.
 
 ### --gaps Mode (Issue Root Cause Analysis)
 

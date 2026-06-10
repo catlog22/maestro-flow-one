@@ -65,7 +65,7 @@ Parse $ARGUMENTS to determine mode:
 - Analyze improvement points (step splitting, prerequisites, error handling)
 
 **Promote mode** (existing knowhow → tool):
-- Locate document: `maestro wiki list --keyword <name>` or by path in `.workflow/knowhow/`
+- Locate document: `maestro search "<name>" --type knowhow` or by path in `.workflow/knowhow/`
 - Read document, verify it contains actionable steps (numbered list or ## Steps section)
 - If no actionable steps, suggest extract mode instead
 - Determine category (Step 3) and summary ("Use when ...")
@@ -128,7 +128,7 @@ summary: "Use when <timing>. <scope description>"
 **Optionally register spec ref entry** for index discoverability:
 ```bash
 maestro spec add <category> "<title>" "Use when <timing>. <scope summary>" --keywords "<csv>" \
-  --ref "knowhow/RCP-<slug>.md" --knowhow-type recipe
+  --description "<one-line summary>" --ref "knowhow/RCP-<slug>.md" --knowhow-type recipe
 ```
 
 ### Step 6: Verify

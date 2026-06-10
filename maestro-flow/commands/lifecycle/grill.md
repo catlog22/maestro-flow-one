@@ -50,7 +50,7 @@ $ARGUMENTS -- topic/plan text for interactive mode, or --from source for upstrea
 ### Pre-load
 
 1. **Specs**: `maestro spec load --category arch` — load architecture constraints
-2. **Wiki search**: `maestro wiki search "{topic keywords}"` → load relevant entries before grilling
+2. **Wiki search**: `maestro search "{topic keywords}"` → load relevant entries before grilling
 3. All optional — proceed without if unavailable
 </context>
 
@@ -71,6 +71,43 @@ Follows @~/.maestro/workflows/interview-mechanics.md standard.
 
 <execution>
 Follow '~/.maestro/workflows/grill.md' completely.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Setup → Branch Walking** (Step 1 → Step 2)
+- REQUIRED: Topic parsed and output directory created.
+- REQUIRED: Initial codebase scan completed — at least one code reference identified for grounding.
+- BLOCKED if missing: cannot grill without code reality baseline.
+
+**GATE 2: Branch Walking → Synthesis** (Step 2 → Step 3)
+- REQUIRED: All depth-selected branches walked (shallow=3, standard=5, deep=8).
+- REQUIRED: Each branch has ≥2 Q&A pairs with evidence (code reference or explicit user input).
+- REQUIRED: Every locked decision has evidence — NOT just orchestrator inference.
+- BLOCKED if branches incomplete: continue walking before synthesizing.
+
+**GATE 3: Synthesis → Completion** (Step 3 → Report)
+- REQUIRED: `grill-report.md` written with Branch Log table + all Q&A entries + synthesis section.
+- REQUIRED: `terminology.md` written with ≥5 terms.
+- REQUIRED: `context-package.json` generated.
+- BLOCKED if any artifact missing: produce it before reporting completion.
+
+### Evidence Requirement
+
+Grill questions MUST reference specific code when challenging the user's proposal:
+- Valid: "The codebase uses `{symbol}` at `{file:line}` — your proposal calls it `{term}`. Which wins?"
+- INVALID: Generic questions without code grounding (e.g., "How would you handle errors?")
+- If codebase scan failed (W001): flag ALL subsequent locked decisions as LOW CONFIDENCE.
+
+### Artifact Verification (before completion)
+
+```
+REQUIRED_ARTIFACTS = [
+  "grill-report.md",        // Branch Log + Q&A + synthesis
+  "terminology.md",         // ≥5 terms with code refs
+  "context-package.json"    // Schema "context-package/1.0"
+]
+```
+If any missing: DO NOT report completion. Go back and produce the missing artifact.
 </execution>
 
 <completion>

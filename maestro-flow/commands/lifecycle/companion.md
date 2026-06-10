@@ -114,7 +114,7 @@ Display loaded rules summary (entry count + key rule names).
 maestro knowhow list --store workflow
 
 # With --task: search relevant entries
-maestro knowhow search "<task_keyword>"
+maestro search --type knowhow "<task_keyword>"
 ```
 
 Display available knowhow entries (ID + title). Hint: `maestro wiki load <id>` for details.
@@ -127,7 +127,7 @@ ls .workflow/codebase/doc-index.json
 
 - Exists → display "Codebase docs ready, last updated: {timestamp}"
 - Missing → suggest `/manage-codebase-rebuild`
-- Stale (>7 days) → suggest `/manage-codebase-refresh`
+- Stale (>7 days) → suggest `/quality-sync`
 
 ### 4. Create companion document
 
@@ -341,7 +341,7 @@ Mid-task commands:
   /maestro-companion note "finding or decision"
   /maestro-companion note --file src/auth.ts "changed token validation"
   /spec-load --keyword <keyword>
-  maestro wiki search "<query>"
+  maestro search "<query>"
 ```
 
 ---
@@ -470,7 +470,7 @@ Clear `.workflow/.scratchpad/.companion-active`.
 
 ```
 Knowledge accumulation reminders:
-  Reusable pattern found?        /spec-add <category> "title" "content"
+  Reusable pattern found?        /spec-add <category> "title" "content" --description "summary"
   Solved a complex problem?      /manage-knowhow-capture recipe "description"
   Made an architecture decision? /manage-knowhow-capture decision "description"
   Discovered a useful trick?     /manage-knowhow-capture tip "content"

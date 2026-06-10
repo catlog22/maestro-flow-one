@@ -57,7 +57,7 @@ $ARGUMENTS -- topic text for auto mode, or role name for single role mode.
 
 ### Role Knowledge
 1. Browse accumulated knowledge for this role:
-   `maestro wiki list --category arch`
+   `maestro search --category arch`
 2. Analyze the index, identify entries relevant to the current task
 3. Load selected documents:
    `maestro wiki load <id1> [id2] [id3...]`
@@ -77,6 +77,45 @@ Follows @~/.maestro/workflows/interview-mechanics.md standard.
 
 <execution>
 Follow '~/.maestro/workflows/brainstorm.md' completely.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+These gates apply to Auto mode (full pipeline). Do NOT advance past a gate until ALL conditions are met.
+
+**GATE 1: Framework → Role Analysis** (Step 1 → Step 3)
+- REQUIRED: `guidance-specification.md` written with §10 feature decomposition and RFC 2119 keywords.
+- REQUIRED: Role selection completed (interactive or auto-default).
+- BLOCKED if missing: complete framework generation before spawning role agents.
+
+**GATE 2: Role Analysis → Cross-Role Review** (Step 3 → Step 4.5)
+- REQUIRED: Every selected role has `{role}/analysis.md` with §2 Decision Digest (4 tables).
+- REQUIRED: Per-feature files `{role}/analysis-F-*.md` written for each feature in §10.
+- BLOCKED if missing: complete all role analyses before spawning cross-role-reviewer.
+
+**GATE 3: Cross-Role Review → Completion** (Step 4.5 → Report)
+- REQUIRED: Cross-role-reviewer output received with `patch_targets[]`.
+- REQUIRED: If findings > 0, resolutions applied via Edit AND logged in `guidance-specification.md` §12.
+- REQUIRED: If findings == 0, final report explicitly states "No cross-role issues detected".
+- BLOCKED if missing: complete review synthesis before reporting.
+
+### Artifact Verification (before completion report)
+
+```
+AUTO_MODE_REQUIRED = [
+  "guidance-specification.md",            // Step 1
+  "{role}/analysis.md" (per selected role), // Step 3
+  "{role}/analysis-F-*.md" (per feature),   // Step 3
+]
+```
+If any artifact is missing: DO NOT report completion. Go back and produce the missing artifact.
+
+### Evidence Requirement
+
+Role analysis findings in `{role}/analysis.md` §2 Decision Digest MUST cite concrete evidence:
+- Code references (file:line), API endpoints, data models from the codebase
+- User-provided constraints from interview
+- Cross-role references to other role analyses
+Decisions without evidence are flagged LOW CONFIDENCE.
 </execution>
 
 <completion>

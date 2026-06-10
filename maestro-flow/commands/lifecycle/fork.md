@@ -42,6 +42,30 @@ Follow '~/.maestro/workflows/fork.md' completely.
 
 Fork and sync algorithm steps are defined in workflow `fork.md`.
 
+### Phase Gates (MANDATORY, BLOCKING)
+
+**Fork mode:**
+
+**GATE 1: Validation → Worktree Creation**
+- REQUIRED: Milestone resolved from state.json.milestones[].
+- REQUIRED: No existing active worktree for this milestone (E008).
+- REQUIRED: Not running inside a worktree (E003).
+
+**GATE 2: Worktree Creation → Artifact Copy**
+- REQUIRED: Git worktree created with branch (`milestone/{slug}`).
+- REQUIRED: Shared `.workflow/` files copied (project.md, roadmap.md, config.json, specs/).
+
+**GATE 3: Artifact Copy → Completion**
+- REQUIRED: `worktree-scope.json` written with milestone scope.
+- REQUIRED: Scoped `state.json` written (only this milestone's artifacts).
+- REQUIRED: `worktrees.json` registry updated in main worktree.
+
+**Sync mode:**
+
+**GATE: Sync → Completion**
+- REQUIRED: Git merge main into worktree branch completed.
+- REQUIRED: Shared artifacts re-copied.
+
 **Next-step routing on completion:**
 
 Fork mode:

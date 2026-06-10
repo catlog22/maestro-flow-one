@@ -58,6 +58,24 @@ Follows @~/.maestro/workflows/interview-mechanics.md standard.
 <execution>
 Follow '~/.maestro/workflows/milestone-release.md' completely.
 
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Validation → Version Bump**
+- REQUIRED: Current milestone completed (audit PASS + milestone-complete run). E001 if not.
+- REQUIRED: Working tree clean (no uncommitted changes). E003 if dirty.
+
+**GATE 2: Version Bump → Changelog**
+- REQUIRED: Target version computed and greater than previous (E005 if not).
+- REQUIRED: Version manifest file(s) identified and accessible.
+
+**GATE 3: Changelog → Tag/Push**
+- REQUIRED: CHANGELOG.md entry written with milestone summary + grouped changes.
+- REQUIRED: Release commit created with conventional message.
+
+**GATE 4: Tag → Completion**
+- REQUIRED: Annotated git tag created (unless --no-tag).
+- REQUIRED: state.json updated with last_release_version + last_release_at.
+
 **High-level flow:**
 1. Validate preconditions (milestone completed, clean tree, audit PASS)
 2. Resolve target version from `<version>` or `--bump` against current manifest

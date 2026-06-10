@@ -1,7 +1,7 @@
 ---
 name: maestro-update
 description: Detect version, preview changes, apply workflow upgrades
-argument-hint: "[--dry-run] [--force]"
+argument-hint: "[--dry-run] [--force] [--setup-only]"
 allowed-tools:
   - Read
   - Write
@@ -12,9 +12,13 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Detect the current `.workflow/` schema version, show available migrations, and interactively apply them step-by-step. Uses a migration registry that supports incremental version upgrades (e.g., 1.0 → 2.0 → 3.0).
+Version router — detect current version, run schema migration to latest, then follow the version-specific smart upgrade workflow.
 
-Each migration step is previewed before execution. The user confirms each step in a loop.
+Migration scripts live in two layers:
+- **Schema** (`src/migrations/`): code-level state.json transforms, auto-chained by registry
+- **Workflow** (`~/.maestro/workflows/updates/`): version-specific upgrade guides with environment setup
+
+Schema migrations handle the mechanical version bump. Workflow docs handle the smart part — what the user needs to know, configure, or verify for that version. The router runs schema first, then loads the matching workflow doc.
 </purpose>
 
 <context>
@@ -22,131 +26,80 @@ $ARGUMENTS — optional flags.
 
 **Flags:**
 - `--dry-run` -- Preview migration plan without executing
-- `--force` -- Skip confirmation prompts (apply all pending migrations)
+- `--force` -- Skip confirmation prompts
+- `--setup-only` -- Skip schema migration, run only the setup for current version
 
-**Migration registry:** `src/migrations/`
-- Each migration is a standalone file (e.g., `v1-to-v2.ts`) exporting a `MigrationDef`
-- All migrations are registered via `src/migrations/index.ts`
-- Registry auto-chains: detects current version → walks chain → applies in order
-- To add a new migration: create `src/migrations/v{N}-to-v{N+1}.ts`, register in `index.ts`
+**Version source:** `.workflow/state.json` → `version` field
 
-**CLI runner:** `src/migrations/run.ts`
-- Executable entrypoint: `npx tsx src/migrations/run.ts [root] [--dry-run] [--force] [--json]`
-- Outputs JSON (with `--json`) or human-readable text
+**Workflow docs:** `~/.maestro/workflows/updates/`
+- `update-v{TO}-setup.md` — post-migration setup for version {TO}
 
-**State version source:** `.workflow/state.json` → `version` field
+**Schema registry:** `src/migrations/` — handles all intermediate version bumps automatically
 </context>
 
 <execution>
 
-### Step 1: Detect Current State
+### Step 1: Detect Version
 
 ```
-1. Read .workflow/state.json
-2. Extract version field (default "1.0" if missing)
-3. Display:
-
-   === Maestro Workflow Update ===
-   Project:  {project_name}
-   Version:  {version}
-   Location: {.workflow/ path}
+1. Read .workflow/state.json → extract version (default "1.0" if missing)
+2. Display:
+   === Maestro Update ===
+   Current version: v{version}
 ```
 
-### Step 2: Dry-Run Preview
+IF `--setup-only`:
+  → Glob: ~/.maestro/workflows/updates/update-v{version}-setup.md
+  → IF exists: follow that document completely, then EXIT
+  → IF not exists: display "No setup script for v{version}" → EXIT
 
-Run the migration CLI in dry-run + JSON mode to get the full plan:
-
-```bash
-npx tsx src/migrations/run.ts "$(pwd)" --dry-run --json
-```
-
-Parse the JSON output. If status is `up-to-date`:
-```
-Already up to date (v{version})
-```
-→ EXIT
-
-Otherwise display the migration plan:
-```
-Pending Migrations ({N} step(s)):
-
-  1. [v{from} → v{to}] {name}
-     {description}
-
-  2. [v{from} → v{to}] {name}
-     {description}
-```
-
-If `--dry-run` flag was passed by user → display plan and EXIT.
-
-### Step 3: Interactive Confirmation Loop
-
-For each migration step (unless `--force`):
+### Step 2: Check for Updates
 
 ```
-LOOP for step_index = 1 to N:
+1. Run: npx tsx src/migrations/run.ts "$(pwd)" --dry-run --json
+2. Parse JSON output
+3. IF status = "up-to-date":
+     Display "Already up to date (v{version})"
+     → Glob: ~/.maestro/workflows/updates/update-v{version}-setup.md
+     → IF exists: AskUserQuestion "Run setup for v{version}?" → load and follow
+     → EXIT
 
-  Display:
-    --- Step {step_index}/{N}: {name} ---
-    Version: v{from} → v{to}
-
-    Changes:
-      {description, indented}
-
-  IF NOT --force:
-    AskUserQuestion: "Apply this migration?"
-    Options: [yes / skip / abort]
-
-    - "yes"   → proceed to Step 4 (execute)
-    - "skip"  → WARN "Skipping may break the migration chain"
-                 continue to next step
-    - "abort" → display summary of what was applied so far → EXIT
-
-  IF --force:
-    → proceed to Step 4 (execute)
+4. Display target:
+   Update available: v{current} → v{target}
+   Schema migrations: {N} step(s) (handled automatically)
 ```
 
-### Step 4: Execute Single Migration
+IF `--dry-run` → display info and EXIT.
+
+### Step 3: Execute
 
 ```
-1. Create backup:
-   Bash: cp .workflow/state.json .workflow/state.json.backup-v{from}-{timestamp}
+1. Confirm (unless --force):
+   AskUserQuestion: "Upgrade v{current} → v{target}?"
+   Options: [执行 / 取消]
 
-2. Run migration:
+2. Create backup:
+   Bash: cp .workflow/state.json .workflow/state.json.backup-v{current}-{timestamp}
+
+3. Run schema migration (handles all intermediate steps automatically):
    Bash: npx tsx src/migrations/run.ts "$(pwd)" --json
-   
-   NOTE: The runner executes ALL pending migrations. For step-by-step control,
-   read state.json, call the migration function directly, or use the runner
-   which stops on first failure.
+   Parse result, display changes.
 
-3. Parse result JSON and display:
+4. IF failed → display backup restore command → EXIT
 
-   {status_icon} Step {N} completed: {name}
-   Summary: {summary}
-   Changes:
-     - {change_1}
-     - {change_2}
-     - ...
+5. Load version-specific setup:
+   Read: ~/.maestro/workflows/updates/update-v{target}-setup.md
+   IF exists → follow completely (hooks, deps, knowledge system config)
 
-4. If failed:
-   Display: "Migration failed: {summary}"
-   Display: "Backup available at: {backup_path}"
-   Display: "Restore with: cp {backup_path} .workflow/state.json"
-   → EXIT
-
-5. Continue loop to next step
+6. Display: "v{current} → v{target}: done"
 ```
 
-### Step 5: Summary
-
-After all steps completed (or user aborted):
+### Step 4: Summary
 
 ```
-=== Migration Complete ===
-Applied: {applied_count} / {total_count} migration(s)
-Skipped: {skipped_count}
-Version: v{original} → v{final}
-Backup:  .workflow/state.json.backup-v{original}-{timestamp}
+=== Update Complete ===
+Version: v{current} → v{target}
+Backup:  .workflow/state.json.backup-v{current}-{timestamp}
 
 Next steps:
   /manage-status  -- Verify project state
@@ -155,22 +108,12 @@ Next steps:
 
 </execution>
 
-<error_codes>
-| Code | Severity | Condition | Recovery |
-|------|----------|-----------|----------|
-| E001 | error | .workflow/state.json not found | Run /maestro-init first |
-| E002 | error | state.json parse error | Check file for corruption |
-| E003 | error | Migration function failed | Restore from backup |
-| W001 | warning | Skipped migration may break version chain | Re-run /maestro-update later |
-| W002 | warning | tsx not available | Install tsx: npm i -D tsx |
-</error_codes>
-
 <success_criteria>
 - [ ] Current version detected from state.json
-- [ ] Dry-run preview shows full migration plan without execution
-- [ ] Each step confirmed interactively (unless --force)
-- [ ] Backup created before each migration
-- [ ] Migration executed and result displayed with change list
-- [ ] Abort stops cleanly with partial summary
-- [ ] Summary shows applied/skipped counts and version change
+- [ ] Schema migrations run automatically (no manual intermediate steps)
+- [ ] Backup created before migration
+- [ ] Version-specific setup doc loaded and followed (if exists)
+- [ ] --setup-only runs only setup for current version
+- [ ] --dry-run previews without executing
+- [ ] Summary shows version change and backup path
 </success_criteria>

@@ -253,3 +253,16 @@ When findings lack explicit suggested command:
 | Personality, memorability | delight |
 
 Never auto-select: teach, shape, craft, live, document, extract, overdrive, critique, audit.
+
+## Chain Phase Gates (MANDATORY for chain mode)
+
+**GATE: Quality Gate Step → Next Step**
+- REQUIRED: Score parsed from critique/audit output (not assumed or estimated).
+- REQUIRED: P0 count extracted from findings — P0 == 0 required for pass.
+- REQUIRED: If gate fails, refine commands executed and re-gate attempted.
+- Do NOT skip quality gate steps or mark as "passed" without parsing actual score.
+
+**GATE: Chain → Completion**
+- REQUIRED: All non-skipped steps executed (TodoWrite all completed).
+- REQUIRED: status.json updated with `status: "completed"` and final scores.
+- REQUIRED: If any step failed: documented in status.json with reason.

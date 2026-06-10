@@ -59,6 +59,17 @@ Follows @~/.maestro/workflows/interview-mechanics.md standard.
 2. Validate `--from` source is accessible if provided
 
 Follow '~/.maestro/workflows/init.md' completely.
+
+### Artifact Verification (before completion)
+
+```
+REQUIRED_ARTIFACTS = [
+  ".workflow/project.md",    // Core Value, Requirements, Key Decisions
+  ".workflow/state.json",    // artifacts[], initialized to idle state
+  ".workflow/config.json"    // Workflow configuration
+]
+```
+If any artifact is missing: DO NOT report completion. Write the missing file first.
 </execution>
 
 <completion>

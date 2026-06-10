@@ -56,6 +56,26 @@ If specs not initialized, continue without — the workflow still produces valid
 Route to `~/.maestro/workflows/ui-codify.md` and follow completely.
 
 The workflow orchestrates 4 phases with deferred loading of phase-specific workflow files. Each phase reads its workflow file only when execution reaches that phase.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE Phase 1 → Phase 2**: Source path validated, file discovery completed. design-tokens.json generated.
+**GATE Phase 2 → Phase 3**: layout-templates.json generated with component patterns.
+**GATE Phase 3 → Phase 4**: preview.html + preview.css generated as interactive showcase.
+**GATE Phase 4 → Completion**: knowhow-manifest.json created. codify-to-knowhow called and completed.
+
+### Artifact Verification (before completion)
+
+```
+REQUIRED_ARTIFACTS = [
+  "design-tokens.json",      // Phase 1
+  "layout-templates.json",   // Phase 2
+  "preview.html",            // Phase 3
+  "preview.css",             // Phase 3
+  "knowhow-manifest.json"    // Phase 4
+]
+```
+If any artifact is missing: DO NOT report completion.
 </execution>
 
 <error_codes>

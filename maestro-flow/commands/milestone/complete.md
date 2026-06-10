@@ -46,6 +46,24 @@ Follow '~/.maestro/workflows/milestone-complete.md' completely.
 
 Archive flow steps (validation, directory archival, artifact history, knowhow extraction, state advancement, cleanup) are defined in workflow `milestone-complete.md`.
 
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Validation → Archival**
+- REQUIRED: Audit report verified as PASS (E002 if not).
+- REQUIRED: No incomplete artifacts remain (E003 if any).
+
+**GATE 2: Archival → Knowhow Extraction**
+- REQUIRED: Scratch artifacts moved to `milestones/{M}/artifacts/`.
+- REQUIRED: Artifact entries archived to milestone_history in state.json.
+
+**GATE 3: Knowhow Extraction → State Advancement**
+- REQUIRED: Knowhow extraction attempted (may produce 0 entries — W001).
+- REQUIRED: `project.md` Context updated with milestone summary.
+
+**GATE 4: State Advancement → Completion**
+- REQUIRED: state.json updated — next milestone as current (standard) or current_milestone=null (adhoc).
+- REQUIRED: Roadmap snapshot saved (standard only).
+
 ### Knowledge Promotion Inquiry
 
 After knowhow extraction (step 4), scan `learnings.md` for promotion candidates:
@@ -56,7 +74,7 @@ After knowhow extraction (step 4), scan `learnings.md` for promotion candidates:
 2. **Convention drift detection**: Compare executed task summaries against `coding-conventions.md` and `architecture-constraints.md`:
    → Ask: "Were any established conventions bypassed during this milestone? Should conventions be updated?"
 
-3. **Wiki island check**: Auto-trigger `wiki-connect --fix` to link newly extracted knowledge.
+3. **Wiki island check**: Auto-trigger `manage-wiki connect --fix` to link newly extracted knowledge.
 
 If user confirms promotion, invoke `Skill({ skill: "spec-add", args: "<category> <content>" })` with promoted content, preserving original date and source traceability.
 
