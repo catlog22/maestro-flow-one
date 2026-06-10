@@ -23,7 +23,7 @@ Auto-indexed by WikiIndexer (type=knowhow), searchable via `maestro search --typ
 <context>
 $ARGUMENTS — type token + description + optional flags.
 
-**Flags**: `--lang <lang>`, `--source <url>`, `--tag tag1,tag2`, `--title <title>`, `--asset-type <type>`, `--code-paths <paths>`, `--category <cat>`
+**Flags**: `--lang <lang>`, `--source <url>`, `--tag tag1,tag2`, `--title <title>`, `--description <desc>`, `--asset-type <type>`, `--code-paths <paths>`, `--category <cat>`
 
 **Type routing** (first token match):
 
@@ -42,11 +42,13 @@ $ARGUMENTS — type token + description + optional flags.
 | Short text + `--tag` | tip | TIP- | — |
 | No args | — | — | AskUserQuestion (10 options) |
 
-**Output**: `.workflow/knowhow/{PREFIX}-{YYYYMMDD}-{HHMM}.md` with YAML frontmatter (title, type, category, created, tags, source, lang, status)
+**Output**: `.workflow/knowhow/{PREFIX}-{YYYYMMDD}-{slug}.md` with YAML frontmatter (title, description, type, category, created, tags, source, lang, status)
 </context>
 
 <execution>
 Follow '~/.maestro/workflows/knowhow.md' completely.
+
+**Description rule**: Every entry MUST have a `description` field in frontmatter — a one-line summary (under 120 chars) for search results. WikiIndexer uses priority chain: `description > content[:240]`. Use `--description` flag value if provided; otherwise auto-generate from content.
 
 **Tags language rule**: Tags must match content language. Chinese content → Chinese tags (如 `认证,令牌,刷新`). English content → English tags. Mixed → bilingual.
 
