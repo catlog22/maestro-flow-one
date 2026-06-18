@@ -13,7 +13,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Execute small, ad-hoc tasks with workflow guarantees (atomic commits, state tracking) using a shortened pipeline. Invoked for tasks that are well-understood and do not require full phase-level planning. Produces scratch task directory with plan, execution results, and optional verification. Flags --discuss and --full enable additional pipeline stages.
+Execute small, ad-hoc tasks with workflow guarantees (atomic commits, state tracking) via a shortened pipeline.
+Flags --discuss and --full enable additional pipeline stages.
 </purpose>
 
 <required_reading>
@@ -53,12 +54,17 @@ If any artifact is missing: DO NOT report completion. Complete the missing step 
 
 Task summaries MUST include concrete evidence of completion (files changed, tests run, commands executed) — not just "task completed successfully."
 
-**Next-step routing on completion:**
-- Task done, --full verification passed → /manage-status
-- Task done, verification found gaps → /quality-debug {issue}
-- Task done, want to sync docs → /quality-sync
-- Need a full phase workflow instead → /maestro-plan {phase}
 </execution>
+
+<completion>
+### Next-step routing
+| Condition | Suggestion |
+|-----------|-----------|
+| Task done, --full verification passed | `/manage-status` |
+| Task done, verification found gaps | `/quality-debug {issue}` |
+| Task done, want to sync docs | `/quality-sync` |
+| Need a full phase workflow instead | `/maestro-plan {phase}` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

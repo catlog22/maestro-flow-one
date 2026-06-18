@@ -13,16 +13,8 @@ allowed-tools:
 ---
 
 <purpose>
-Audit milestone completion using the artifact registry. Checks:
-1. Phase coverage — every phase in roadmap has plan + execute artifacts (completed)
-2. Ad-hoc completeness — all adhoc artifacts are completed (or explicitly skipped)
-3. Execution completeness — all tasks in executed plans are completed
-4. Cross-artifact integration — interfaces, data contracts, configuration consistency
-
-Data source: `state.json.artifacts[]` filtered by current milestone.
-Produces audit report at `.workflow/milestones/{milestone}/audit-report.md`.
-
-Pipeline position: downstream of maestro-execute (which includes verification), upstream of maestro-milestone-complete.
+Audit milestone for phase coverage, execution completeness, and integration gaps.
+Produces audit-report.md with PASS/FAIL verdict.
 </purpose>
 
 <required_reading>
@@ -69,11 +61,13 @@ Audit checklist steps (phase coverage, ad-hoc completeness, execution completene
 **GATE 2: Phase Coverage → Integration Check**
 - REQUIRED: Every phase checked for artifact chain completeness (ANL→PLN→EXC for standard, PLN→EXC for adhoc).
 - REQUIRED: Execution completeness verified — all tasks in executed plans checked for status.
+- BLOCKED if missing: phase coverage check incomplete — do not proceed to integration check with unchecked phases.
 - Do NOT skip incomplete chains — each gap MUST be logged in audit report.
 
 **GATE 3: Integration Check → Report**
 - REQUIRED: Cross-artifact integration check completed (shared interfaces, data contracts, configuration consistency).
 - REQUIRED: Clear PASS/FAIL verdict determined with evidence for each check.
+- BLOCKED if missing: integration check not completed — do not write report without cross-artifact verification.
 
 ### Artifact Verification (before completion)
 

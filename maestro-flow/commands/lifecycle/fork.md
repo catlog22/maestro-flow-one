@@ -13,13 +13,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Create a git worktree for an entire milestone, enabling inter-milestone parallel development. The worktree scope is milestone-level — all scratch artifacts for that milestone are owned by the worktree.
-
-Since `.workflow/` is gitignored, this command explicitly copies project context and existing milestone scratch artifacts into the worktree. Per-phase parallelism within a milestone is NOT supported.
-
-Also supports `--sync` mode to pull latest main branch changes and shared artifacts into an active worktree (prevents source and artifact drift for long-lived worktrees).
-
-Produces `.workflow/worktrees.json` registry in the main worktree and `.workflow/worktree-scope.json` marker in the worktree, and writes a scoped `state.json` inside the worktree containing only the forked milestone's artifacts.
+Create or sync a milestone-level git worktree for parallel development.
+Supports `--sync` mode to pull latest main changes into an active worktree.
 </purpose>
 
 <required_reading>
@@ -50,33 +45,39 @@ Fork and sync algorithm steps are defined in workflow `fork.md`.
 - REQUIRED: Milestone resolved from state.json.milestones[].
 - REQUIRED: No existing active worktree for this milestone (E008).
 - REQUIRED: Not running inside a worktree (E003).
+- BLOCKED if: milestone not found (E006), already forked (E008), or running inside worktree (E003).
 
 **GATE 2: Worktree Creation → Artifact Copy**
 - REQUIRED: Git worktree created with branch (`milestone/{slug}`).
 - REQUIRED: Shared `.workflow/` files copied (project.md, roadmap.md, config.json, specs/).
+- BLOCKED if missing: worktree creation failed or shared files not copied — do not proceed to artifact scoping.
 
 **GATE 3: Artifact Copy → Completion**
 - REQUIRED: `worktree-scope.json` written with milestone scope.
 - REQUIRED: Scoped `state.json` written (only this milestone's artifacts).
 - REQUIRED: `worktrees.json` registry updated in main worktree.
+- BLOCKED if missing: scope marker, scoped state, or registry update absent — worktree is unusable without these.
 
 **Sync mode:**
 
 **GATE: Sync → Completion**
 - REQUIRED: Git merge main into worktree branch completed.
 - REQUIRED: Shared artifacts re-copied.
+- BLOCKED if: merge has unresolved conflicts or shared artifacts failed to copy.
 
-**Next-step routing on completion:**
-
-Fork mode:
-- Enter worktree → `cd {wt.path} && /maestro-analyze`
-- Automated → `maestro delegate "run full lifecycle for milestone" --cd {wt.path} --mode write`
-- Status → Skill({ skill: "manage-status" })
-
-Sync mode:
-- Sync complete → resume work in worktree
-- Conflicts found → resolve manually, then retry
 </execution>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Fork complete | `cd {wt.path} && /maestro-analyze` |
+| Fork + automated | `maestro delegate "run full lifecycle for milestone" --cd {wt.path} --mode write` |
+| Fork + status check | Skill({ skill: "manage-status" }) |
+| Sync complete | Resume work in worktree |
+| Sync conflicts found | Resolve manually, then retry |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

@@ -13,11 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-对称于 `manage-harvest`（写入入口）的知识淘汰入口。harvest 负责把 artifact 抽取为 spec/wiki/issue；audit 负责审查这三大存储中已积累的条目，识别矛盾、失效、老化、孤儿，并通过 keep/deprecate/delete 三态决策清理。
-
-覆盖 8 大场景类、28 子场景（显性/隐性矛盾、失效老化、元数据质量、Maestro 特化、时间线产物 T1-T6、knowhow 漂移、artifact 残留），定义见 workflow knowledge-audit.md。
-
-**闭环**：harvest 写入 → audit 审查 → 三态淘汰；与 `harvest --prune`（物理 GC）互补：audit 做语义层判定，且删除未抽取的 artifact 前反向触发 harvest 抢救。
+审查 spec/knowhow/artifact 存储，识别矛盾/失效/孤儿，通过 keep/deprecate/delete 三态清理。对称于 `manage-harvest`（写入入口）。
 </purpose>
 
 <required_reading>
@@ -42,20 +38,41 @@ Flag 全集、scope 对应的扫描路径、Stage 步骤、检测算法定义在
 <execution>
 Follow `~/.maestro/workflows/knowledge-audit.md` Stages 1-8 in order.
 
-**Key invariants:**
-1. **Backup before mutate** — Stage 6 必须把待变更文件打包到 `.workflow/.trash/knowledge-audit-{timestamp}/`，备份失败禁止 Stage 7。
-2. **Deprecate over delete** — 文本存储（spec/knowhow）首选注入 `status="deprecated"` 保留历史；只有 artifact 物理残留才走 delete/purge。
-3. **Purge requires double confirmation** — `--purge` 仅作用于 artifact scope，且 Stage 5 必须显式 `[y/N]` 二次确认 + 输入 artifact id。
-4. **Rescue before delete** — 删除未抽取的 artifact 前（`harvest-log.jsonl` 无记录），强制提示 "是否先 `/manage-harvest`？"。
+### Phase Gates (MANDATORY, BLOCKING)
 
-Scope 路径、8 类检测算法、三态决策面板、报告 schema 定义在 workflow knowledge-audit.md。
+**GATE 1: Load → Detect** (Stages 1-2 → Stage 4)
+- REQUIRED: Scope 解析通过，互斥标志校验完成。
+- REQUIRED: 三存储按 scope 加载完成。
+- BLOCKED if scope 非法或存储不可读: E001/E002。
 
-**Next-step routing on completion:**
-- 复审淘汰记录 → `.workflow/.knowledge-audit/audit-report-{date}.md`
-- 抢救未抽取 artifact → `/manage-harvest <artifact-id>`
-- 验证 spec 现状 → `/spec-load --role implement`
-- 周期巡检 → 每 milestone 结束跑 `--scope all --report`
+**GATE 2: Detect → Decision** (Stage 4 → Stage 5)
+- REQUIRED: Finding 池按 P0/P1/P2 分级输出。
+- REQUIRED: 未 harvest 的 artifact 删除前触发抢救确认（W002）。
+- BLOCKED if finding 为空: 无需淘汰，直接输出报告。
+
+**GATE 3: Decision → Mutate** (Stage 5 → Stage 6-7)
+- REQUIRED: Backup tarball 生成于 `.workflow/.trash/knowledge-audit-{timestamp}/`。
+- REQUIRED: 备份成功后方可执行变更。
+- REQUIRED: `--purge` 需双重确认（仅 artifact scope）。
+- BLOCKED if 备份失败: E005，禁止执行变更。
+
+### Execution Constraints
+
+- **Deprecate over delete**: 文本存储首选 `status="deprecated"`，保留历史。
+- **Purge 仅 artifact**: `--purge` 不作用于 spec/knowhow。
+- **Rescue before delete**: 未抽取 artifact 删除前强制提示先 `/manage-harvest`。
 </execution>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| 复审淘汰记录 | 查看 `audit-report-{date}.md` |
+| 抢救未抽取 artifact | `/manage-harvest <artifact-id>` |
+| 验证 spec 现状 | `/spec-load --role implement` |
+| 周期巡检 | `--scope all --report` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

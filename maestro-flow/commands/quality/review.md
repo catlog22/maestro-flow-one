@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Run multi-dimensional code review on a completed phase's changed files. Answers the question "is this code good?" -- complementing maestro-execute's built-in verification ("is the goal met?") and quality-test ("does it work for users?"). Three review levels (quick/standard/deep) scale with task depth, auto-detected from file count. Level definitions, dimension lists, deep-dive rules, and issue creation thresholds defined in workflow review.md.
+Multi-dimensional code review on a phase's changed files. Three levels (quick/standard/deep), auto-detected from file count. Level and dimension details in workflow review.md.
 </purpose>
 
 <required_reading>
@@ -46,8 +46,6 @@ Each artifact's type determines its outputs at `.workflow/{a.path}/`:
 - **debug** → understanding.md, evidence.ndjson (confirmed root causes)
 - **test** → uat.md, .tests/ (user-observable gaps)
 
-Extract conclusions from related artifacts that may affect this review. Pass as prior quality context to reviewer agents — avoid redundant work, focus on gaps and regressions.
-
 ### Pre-load (optional, proceed without)
 - Codebase docs: `.workflow/codebase/ARCHITECTURE.md` → component boundaries, layer rules
 - Wiki constraints: `maestro search "architecture constraint" --json` → documented decisions
@@ -59,6 +57,22 @@ Extract conclusions from related artifacts that may affect this review. Pass as 
 
 <execution>
 Follow '~/.maestro/workflows/review.md' completely.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Setup → Review**
+- REQUIRED: Phase resolved and changed files collected from task summaries. E001/E002 if missing.
+- REQUIRED: Review level determined (explicit flag or auto-detected from file count).
+- BLOCKED if no changed files: E004.
+
+**GATE 2: Review → Aggregation**
+- REQUIRED: All dimension reviews executed (inline for quick, parallel agents for standard/deep).
+- REQUIRED: Deep-dive completed if triggered (standard: auto, deep: forced).
+
+**GATE 3: Aggregation → Completion**
+- REQUIRED: review.json written with findings, severity distribution, and verdict.
+- REQUIRED: Issues auto-created based on level thresholds.
+- REQUIRED: index.json updated with review status.
 
 **Output writes to REVIEW_DIR** (not EXEC_DIR):
 - `REVIEW_DIR/review.json` — findings, severity distribution, verdict
@@ -81,27 +95,40 @@ Append to state.json.artifacts[]:
 }
 ```
 
-Report format and next-step routing by verdict defined in workflow review.md Report Format and Next Step Routing sections.
+Report format defined in workflow review.md Report Format section.
+</execution>
 
-**Next-step routing summary:**
-- PASS → `/quality-test {phase}`
-- WARN → `/quality-test {phase}` (proceed with caveats)
-- BLOCK → `/maestro-plan {phase} --gaps` (fix critical findings first)
+<completion>
+### Standalone report
 
-**Completion status:**
 ```
 --- COMPLETION STATUS ---
 STATUS: DONE|DONE_WITH_CONCERNS|NEEDS_RETRY
 CONCERNS: {description if applicable}
-NEXT: /quality-refactor
 --- END STATUS ---
 ```
 
 Status mapping:
-- **DONE** — PASS verdict, no critical findings → NEXT: /quality-refactor
-- **DONE_WITH_CONCERNS** — WARN verdict, issues found but non-blocking → NEXT: /quality-test
+- **DONE** — PASS verdict, no critical findings
+- **DONE_WITH_CONCERNS** — WARN verdict, issues found but non-blocking
 - **NEEDS_RETRY** — BLOCK verdict, critical findings require fix first
-</execution>
+
+### Ralph-invoked completion
+
+End the step by calling the CLI (no text block output):
+```
+maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
+```
+
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| PASS verdict | `/quality-test {phase}` |
+| WARN verdict (non-blocking issues) | `/quality-test {phase}` (proceed with caveats) |
+| BLOCK verdict (critical findings) | `/maestro-plan {phase} --gaps` (fix first) |
+| Want code cleanup | `/quality-refactor {phase}` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

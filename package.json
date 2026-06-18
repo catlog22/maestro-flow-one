@@ -1,6 +1,6 @@
 {
   "name": "maestro-flow-one",
-  "version": "0.2.34",
+  "version": "0.2.35",
   "description": "All Maestro workflow commands as a single Claude Code skill — intent routing, decision gates, minimal closed-loop chains",
   "bin": {
     "maestro-flow": "bin/maestro-flow.js"

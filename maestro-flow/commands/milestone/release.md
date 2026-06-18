@@ -14,9 +14,9 @@ allowed-tools:
 ---
 
 <purpose>
-Package a completed milestone into a releasable version. Bumps the project version (e.g. `package.json`, `pyproject.toml`, or language-specific manifest), generates or appends a changelog entry from phase/milestone summaries and git log, creates an annotated git tag, and optionally pushes to the remote. Runs after `/maestro-milestone-complete` has archived the milestone; serves as the final delivery step in the SDLC loop.
+Package a completed milestone into a releasable version: version bump → changelog → tag → push.
 
-Pipeline position: downstream of `/maestro-milestone-complete` (consumes archived milestone + audit verdict). Terminal command — no downstream consumer.
+Pipeline position: downstream of `/maestro-milestone-complete`. Terminal command.
 </purpose>
 
 <required_reading>
@@ -76,16 +76,7 @@ Follow '~/.maestro/workflows/milestone-release.md' completely.
 - REQUIRED: Annotated git tag created (unless --no-tag).
 - REQUIRED: state.json updated with last_release_version + last_release_at.
 
-**High-level flow:**
-1. Validate preconditions (milestone completed, clean tree, audit PASS)
-2. Resolve target version from `<version>` or `--bump` against current manifest
-3. Collect changes since last release tag: milestone summary + phase summaries + git log between tags
-4. Generate `CHANGELOG.md` entry (grouped by phase / change type)
-5. Write version to manifest file(s) + commit with message `chore(release): v{version}`
-6. Create annotated git tag `v{version}` with release notes body (unless `--no-tag`)
-7. Push commit + tag to remote (unless `--no-push`)
-
-For `--dry-run`, print the computed version, changelog diff, and tag name without side effects.
+For `--dry-run`: print computed version, changelog diff, and tag name without side effects.
 </execution>
 
 <completion>

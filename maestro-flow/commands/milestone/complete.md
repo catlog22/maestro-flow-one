@@ -13,13 +13,8 @@ allowed-tools:
 ---
 
 <purpose>
-Mark a milestone as complete after its audit has passed. Performs 6-step archival:
-validation → directory archival → artifact history → knowhow extraction → state advancement → cleanup.
-
-Produces `milestones/{M}/artifacts/` archive and `specs/learnings.md` knowhow entries.
-Supports two milestone types: standard (advances to next milestone) and adhoc (self-contained, sets idle).
-
-Pipeline position: downstream of `maestro-milestone-audit` (requires PASS verdict). Upstream of `maestro-milestone-release` (cut a release) or next milestone planning (`maestro-analyze` / `maestro-plan`).
+Archive passed milestone: validate, archive artifacts, extract knowhow, advance state.
+Requires audit PASS; produces milestone archive and learnings.
 </purpose>
 
 <required_reading>
@@ -51,18 +46,22 @@ Archive flow steps (validation, directory archival, artifact history, knowhow ex
 **GATE 1: Validation → Archival**
 - REQUIRED: Audit report verified as PASS (E002 if not).
 - REQUIRED: No incomplete artifacts remain (E003 if any).
+- BLOCKED if: audit not passed (E002) or incomplete artifacts remain (E003) — cannot archive unvalidated milestone.
 
 **GATE 2: Archival → Knowhow Extraction**
 - REQUIRED: Scratch artifacts moved to `milestones/{M}/artifacts/`.
 - REQUIRED: Artifact entries archived to milestone_history in state.json.
+- BLOCKED if missing: artifacts not moved or history not updated — knowhow extraction needs archived artifacts as input.
 
 **GATE 3: Knowhow Extraction → State Advancement**
 - REQUIRED: Knowhow extraction attempted (may produce 0 entries — W001).
 - REQUIRED: `project.md` Context updated with milestone summary.
+- BLOCKED if missing: knowhow extraction not attempted or project.md not updated — state advancement requires completed knowledge capture.
 
 **GATE 4: State Advancement → Completion**
 - REQUIRED: state.json updated — next milestone as current (standard) or current_milestone=null (adhoc).
 - REQUIRED: Roadmap snapshot saved (standard only).
+- BLOCKED if missing: state.json not advanced — project remains stuck on completed milestone.
 
 ### Knowledge Promotion Inquiry
 

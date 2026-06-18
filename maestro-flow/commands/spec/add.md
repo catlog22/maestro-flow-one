@@ -10,10 +10,7 @@ allowed-tools:
   - Grep
 ---
 <purpose>
-Add a knowledge entry to the specs system using `<spec-entry>` closed-tag format.
-Each category maps 1:1 to a single target file — no dual-write.
-Supports 4 scopes: project (default), global, team, personal.
-Entries use `category` attribute to declare which category they belong to.
+Add `<spec-entry>` to specs by category. 4 scopes: project (default), global, team, personal.
 </purpose>
 
 <required_reading>
@@ -66,5 +63,15 @@ Follow '~/.maestro/workflows/specs-add.md' completely.
 - [ ] Entry written in `<spec-entry>` closed-tag format
 - [ ] Entry appended to correct target file for scope
 - [ ] Confirmation report displayed with scope, path, keywords
-- [ ] Next step: `maestro spec load --scope <scope> --keyword {keyword}` to verify
+- [ ] Next step routed
 </success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Verify entry added | `maestro spec load --scope <scope> --keyword {keyword}` |
+| Add more entries | `/spec-add <category>` |
+| View all specs | `/spec-load --category <category>` |
+</completion>

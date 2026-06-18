@@ -12,12 +12,8 @@ allowed-tools:
 ---
 
 <purpose>
-单链推荐：解析 intent + project state → 路由表评分 → 推荐**单个原子命令** → 确认后通过 `Skill()` 执行。
-
-与 `/maestro` / `/maestro-ralph` 区别：
-- 不创建 session、不构建 chain、不写 status.json
-- 始终只推 1 个 top pick，最多列 2-3 个备选
-- 适用场景：意图清晰且单步即可完成；或需要定向推荐时
+解析 intent + project state → 路由表评分 → 推荐单个原子命令 → 确认后 `Skill()` 执行。
+不创建 session、不构建 chain、不写 status.json。
 </purpose>
 
 <context>

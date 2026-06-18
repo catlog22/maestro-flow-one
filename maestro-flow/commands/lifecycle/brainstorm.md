@@ -12,9 +12,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Unified brainstorming combining interactive framework generation, multi-role parallel analysis, cross-role review, and resolution writeback. Two modes: Auto (full pipeline: guidance-specification → parallel {role}/ multi-file analysis → cross-role-reviewer compares Decision Digests for conflicts/gaps/synergies → user-confirmed resolutions patched into role files + logged in guidance §12) and Single Role (individual role analysis for an existing session). Outputs structured artifacts in `.workflow/scratch/{YYYYMMDD}-brainstorm-{slug}/` ready for downstream planning (roadmap / analyze / blueprint consume `guidance-specification.md`).
+Multi-role brainstorming with cross-role conflict resolution. Auto mode: guidance-specification → parallel role analysis → cross-role review → resolution writeback. Single role mode: individual role analysis for existing session.
 
-Pipeline position: downstream of maestro-grill (optional stress-test). Upstream of maestro-roadmap, maestro-analyze, and maestro-blueprint (all consume brainstorm output).
+Pipeline: grill (optional) → **brainstorm** → roadmap / analyze / blueprint.
 </purpose>
 
 <required_reading>
@@ -56,12 +56,8 @@ $ARGUMENTS -- topic text for auto mode, or role name for single role mode.
 2. Optional — proceed without if unavailable.
 
 ### Role Knowledge
-1. Browse accumulated knowledge for this role:
-   `maestro search --category arch`
-2. Analyze the index, identify entries relevant to the current task
-3. Load selected documents:
-   `maestro wiki load <id1> [id2] [id3...]`
-4. Review loaded knowledge before proceeding
+1. `maestro search --category arch` → identify relevant entries
+2. `maestro wiki load <id1> [id2...]` → load selected documents
 </context>
 
 <interview_protocol>

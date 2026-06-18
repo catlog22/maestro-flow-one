@@ -13,12 +13,8 @@ allowed-tools:
   - Agent
 ---
 <purpose>
-Codify reusable business processes as knowhow documents with `tool: true` in `.workflow/knowhow/`. Once registered, tools are auto-discovered by `spec load --category` and spec-injector — plan agents pick up design/architecture flows, test agents pick up verification methods, implement agents pick up execution steps.
-
-When to register: during planning to standardize a business process (e.g. payment reconciliation, OAuth integration steps); after execution to capture a validated procedure (e.g. database migration rollback); before testing to register verification methods for test agents (e.g. E2E checkout flow, API idempotency verification); during retrospective/harvest to extract reusable process knowledge from artifacts.
-
-Four modes: Extract (from code/docs), Generate (from description), Optimize (improve existing), Promote (existing knowhow → tool in place).
-Short processes (<10 steps) inline; long processes (>=10 steps) use ref mode with knowhow detail doc.
+Codify reusable business processes as knowhow documents with `tool: true` in `.workflow/knowhow/`.
+Four modes: Extract, Generate, Optimize, Promote. Short processes inline; long use ref mode.
 </purpose>
 
 <required_reading>
@@ -155,3 +151,12 @@ maestro spec add <category> "<title>" "Use when <timing>. <scope summary>" --key
 - [ ] Long processes use ref mode with knowhow file created
 - [ ] Ref knowhow YAML includes `summary` with usage timing
 </success_criteria>
+
+<completion>
+### Next-step routing
+| Condition | Suggestion |
+|-----------|-----------|
+| Tool registered, want to test | `/maestro-tools-execute <name>` |
+| Want to register another | `/maestro-tools-register` |
+| Tool for test agents | `/spec-load --category test` to verify discovery |
+</completion>

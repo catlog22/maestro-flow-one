@@ -13,29 +13,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Parallel accelerator layer for maestro commands. Routes user intent to pre-built Workflow scripts
-that leverage `parallel()` / `pipeline()` for multi-agent concurrent execution.
-
-Complements maestro-ralph (sequential decision chain) — ralph manages state + decisions,
-swarm-workflow provides parallel compute bursts within individual steps.
-
-Scripts: `~/.maestro/workflows/swarm/wf-*.js`
-
-| Script | Accelerates | Adversarial Pattern |
-|--------|-------------|---------------------|
-| `wf-analyze` | maestro-analyze | explore → 6-dim scoring → **skeptic cross-verify** → **3-way advocacy (go/no-go/conditional) + referee** |
-| `wf-brainstorm` | maestro-brainstorm | multi-role analysis → **3-specialist cross-review** → **3-proposal competition** → **arbitrator** |
-| `wf-review` | quality-review | 6-dim scan → **3-vote adversarial verify (prosecutor/defense/judge)** → **3-perspective report + arbitrated verdict** |
-| `wf-verify` | maestro-execute (verification gate) | 3-layer + antipattern + convergence → **prosecutor vs defender debate** → **judge verdict** |
-| `wf-grill` | maestro-grill | explore → parallel branch stress → **meta-skeptic challenge** → **3-vote verdict (optimist/pessimist/realist)** |
-| `wf-plan` | maestro-plan | parallel context → **3-strategy competing proposals** → **judge panel scoring** → **3-critic adversarial check** |
-| `wf-execute` | maestro-execute | wave-based parallel execution → **adversarial convergence spot-check** → **3-vote status determination** |
-| `wf-milestone-audit` | maestro-milestone-audit | parallel 3-dim audit → **adversarial dimension challenge** → **3-vote verdict (strict/lenient/objective)** |
-
-Integration modes:
-- **Standalone**: `/maestro-swarm-workflow "analyze auth module"` — direct invocation
-- **Ralph step**: ralph chain 中某个 step 可指定 `swarm-workflow` 作为加速执行器
-- **Chained**: 输出 JSON 可被下游命令通过 `--from` 消费
+Parallel accelerator: route intent to pre-built Workflow scripts (`wf-*.js`) for multi-agent
+concurrent execution with adversarial decision patterns. Complements ralph's sequential chain.
 </purpose>
 
 <context>

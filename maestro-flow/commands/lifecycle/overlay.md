@@ -11,7 +11,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Turn a user's natural-language instruction into a command overlay — a JSON patch file that augments one or more `.claude/commands/*.md` files non-invasively. Overlays live at `~/.maestro/overlays/` and are auto-applied by every `maestro install` run, so injected steps survive reinstalls. Use this skill when the user says things like "always run CLI verification after `/maestro-execute`", "require reading doc X before `/maestro-plan`", or "add a `ccw cli` quality check at the end of every quality-review".
+Turn natural-language instructions into command overlays — JSON patch files that augment
+`.claude/commands/*.md` non-invasively. Auto-applied by `maestro install`.
 </purpose>
 
 <required_reading>
@@ -176,3 +177,12 @@ After the report, remind the user they can run `maestro overlay list` for the in
 - [ ] Injection point preview shown (with existing overlays + `>>>` marker) and confirmed before drafting
 - [ ] If chain configured, `content` includes Skill Handoff block with AskUserQuestion + Skip option + `Skill()` calls
 </success_criteria>
+
+<completion>
+### Next-step routing
+| Condition | Suggestion |
+|-----------|-----------|
+| Overlay installed | `maestro overlay list` for interactive management |
+| Want to create another | `/maestro-overlay "<intent>"` |
+| Want to remove | `maestro overlay remove <slug>` |
+</completion>

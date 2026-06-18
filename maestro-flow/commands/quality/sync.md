@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Synchronize project state after manual code changes or to refresh codebase documentation. Detects changes via git diff, traces impact through doc-index.json (file -> component -> feature -> requirement), updates state.json and index.json, and refreshes affected `.workflow/codebase/` documentation. Use --full flag for a complete resync of all tracked files regardless of git diff.
+Sync codebase docs after code changes: git diff → trace impact via doc-index.json → refresh `.workflow/codebase/` docs.
 </purpose>
 
 <required_reading>
@@ -30,11 +30,47 @@ $ARGUMENTS -- optional flags:
 <execution>
 Follow '~/.maestro/workflows/sync.md' completely.
 
-**Next-step routing on completion:**
-- Docs refreshed → `/manage-status`
-- Major structural changes detected → `/manage-codebase-rebuild` (full rebuild recommended)
-- Incremental refresh (replaces former `/manage-codebase-refresh`) → use `--since` flag
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Diff → Impact Trace**
+- REQUIRED: Git diff computed (or --full flag set for all files).
+- BLOCKED if no diff and no --full: nothing to sync (W001).
+
+**GATE 2: Impact Trace → Refresh**
+- REQUIRED: Affected components traced via doc-index.json.
+- BLOCKED if trace fails: cannot refresh docs without impact mapping.
+
+**GATE 3: Refresh → Completion**
+- REQUIRED: `.workflow/codebase/` docs refreshed for affected components.
+- REQUIRED: state.json updated with sync timestamp.
+- BLOCKED if missing: do not report completion without updated docs.
 </execution>
+
+<completion>
+### Standalone report
+
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS
+CONCERNS: {description if applicable}
+--- END STATUS ---
+```
+
+### Ralph-invoked completion
+
+End the step by calling the CLI (no text block output):
+```
+maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
+```
+
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Docs refreshed | `/manage-status` |
+| Major structural changes | `/manage-codebase-rebuild` |
+| Incremental refresh | Use `--since` flag |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

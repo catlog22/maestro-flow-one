@@ -12,13 +12,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Version router — detect current version, run schema migration to latest, then follow the version-specific smart upgrade workflow.
-
-Migration scripts live in two layers:
-- **Schema** (`src/migrations/`): code-level state.json transforms, auto-chained by registry
-- **Workflow** (`~/.maestro/workflows/updates/`): version-specific upgrade guides with environment setup
-
-Schema migrations handle the mechanical version bump. Workflow docs handle the smart part — what the user needs to know, configure, or verify for that version. The router runs schema first, then loads the matching workflow doc.
+Detect current version, run schema migration to latest, then follow the version-specific upgrade workflow.
+Schema (`src/migrations/`) handles transforms; workflow docs (`~/.maestro/workflows/updates/`) handle setup.
 </purpose>
 
 <context>
@@ -117,3 +112,11 @@ Next steps:
 - [ ] --dry-run previews without executing
 - [ ] Summary shows version change and backup path
 </success_criteria>
+
+<completion>
+### Next-step routing
+| Condition | Suggestion |
+|-----------|-----------|
+| Update complete | `/manage-status` to verify project state |
+| Want to continue workflow | `/maestro` |
+</completion>

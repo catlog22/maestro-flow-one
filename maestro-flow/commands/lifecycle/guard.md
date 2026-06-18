@@ -10,14 +10,7 @@ allowed-tools:
 ---
 <purpose>
 Configure directory-level write boundaries enforced by the workflow-guard PreToolUse hook.
-When enabled, Write and Edit tool calls targeting files outside allowed paths are blocked.
-
-Subcommands:
-- **on** — Enable path guard (defaults to `src/` if no paths configured)
-- **off** — Disable path guard (preserves path list)
-- **status** — Show current guard configuration
-- **allow `<path>`** — Add a directory to the allowed paths list
-- **deny `<path>`** — Switch to deny mode and add path to deny list
+Subcommands: on, off, status, allow `<path>`, deny `<path>`.
 </purpose>
 
 <context>
@@ -100,3 +93,11 @@ Display updated guard configuration.
 - [ ] Hook level warning displayed when applicable
 - [ ] Updated configuration shown after changes
 </success_criteria>
+
+<completion>
+### Next-step routing
+| Condition | Suggestion |
+|-----------|-----------|
+| Guard enabled, hook not installed | `maestro hooks level full` |
+| Want to verify guard works | Edit a file outside allowed paths |
+</completion>

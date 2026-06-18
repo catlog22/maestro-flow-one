@@ -13,15 +13,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Formal specification document chain producing a complete specification package through 6 sequential phases with multi-CLI analysis and interactive refinement. Pure documentation — no code generation, no roadmap generation.
+6-phase formal specification chain: Product Brief → PRD → Architecture → Epics. Pure documentation — no code generation.
 
-Parallel to `brainstorm` as an upstream origin command:
-- **brainstorm** = divergent exploration (lightweight, multi-role creative)
-- **blueprint** = convergent documentation (heavyweight, 6-phase formal spec chain)
-
-Output: `.workflow/blueprint/BLP-{slug}-{date}/` containing Product Brief, PRD, Architecture, and Epics.
-
-Pipeline position: downstream of maestro-brainstorm (optional). Upstream of maestro-analyze, maestro-roadmap, and maestro-plan.
+Pipeline: brainstorm (optional) → **blueprint** → analyze / roadmap / plan.
 </purpose>
 
 <required_reading>
@@ -49,15 +43,6 @@ $ARGUMENTS -- idea text, @file reference, or upstream context source.
 - File reference: `@requirements.md`
 - Context import: `--from brainstorm:BRN-001` or `--from @requirements.md` or `--from path/`
 - Resume: `-c` (resumes from first incomplete phase)
-
-**Pipeline position:**
-```
-maestro-brainstorm (optional upstream)
-        ↓ guidance-specification.md / context-package.json
-maestro-blueprint
-        ↓ .workflow/blueprint/BLP-{slug}-{date}/
-maestro-analyze → maestro-roadmap → maestro-plan
-```
 
 **Output boundary**: ALL file writes MUST target `.workflow/blueprint/BLP-{slug}-{date}/` or `.workflow/state.json` only. NEVER modify source code or files outside these paths.
 

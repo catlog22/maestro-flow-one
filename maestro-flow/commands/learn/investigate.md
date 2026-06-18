@@ -12,9 +12,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Systematic investigation for understanding questions (not bug-fixing). 4-phase scientific method with scope lock and 3-strike escalation. Produces evidence trails and understanding docs that persist to the learning system.
-
-Unlike `quality-debug` (fix bugs during execution), this answers "how does X work?", "why does Y happen?", "what if Z?".
+Systematic investigation for understanding questions (not bug-fixing).
+4-phase scientific method with scope lock, 3-strike escalation, and evidence persistence.
 </purpose>
 
 <context>

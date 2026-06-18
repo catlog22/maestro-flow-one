@@ -14,18 +14,8 @@ allowed-tools:
 ---
 
 <purpose>
-Task companion command — pairs with any task to provide knowledge context loading,
-structured companion document recording, insight capture, and skill routing.
-
-Does not create sessions or modify workflow state. Pure side-car utility.
-
-Four modes:
-- **before** — Pre-task: load spec + knowhow index + codebase index, create companion doc
-- **note** — Mid-task: append a structured entry to the active companion doc
-- **after** — Post-task: review companion doc, promote entries to spec/knowhow, suggest next steps
-- **route** — Routing: recommend next skill/command based on intent
-
-No arguments → auto-detect: uncommitted changes → `after`, else → `before`.
+Side-car utility for any task: load knowledge context (before), record structured entries (note),
+promote insights to spec/knowhow (after), or route to next command (route).
 </purpose>
 
 <context>
@@ -529,3 +519,13 @@ Reuses maestro-next routing table and scoring logic to recommend the best single
 - [ ] route: intent correctly forwarded to maestro-next
 - [ ] No session created, no state.json modified
 </success_criteria>
+
+<completion>
+### Next-step routing
+| Condition | Suggestion |
+|-----------|-----------|
+| Reusable pattern found | `/spec-add <category> "title" "content"` |
+| Solved complex problem | `/manage-knowhow-capture recipe "description"` |
+| Architecture decision made | `/manage-knowhow-capture decision "description"` |
+| Want next command recommendation | `/maestro-next` |
+</completion>

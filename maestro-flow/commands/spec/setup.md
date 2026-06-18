@@ -10,10 +10,7 @@ allowed-tools:
   - Grep
 ---
 <purpose>
-Initialize the project-level specs directory by scanning the codebase for conventions, patterns, and tech stack.
-Core files (coding, arch, learnings) are always created. Optional spec files (quality, test, ui) are created only when relevant signals are detected.
-Additionally, generates recipe-type knowhow docs in `.workflow/knowhow/` for detected operational workflows (test / debug / build / dev / lint) — capturing "how to do X in this project" so future agents can find them via `maestro search`.
-Spec output lands in `.workflow/specs/`; recipe output lands in `.workflow/knowhow/`.
+Initialize `.workflow/specs/` by scanning codebase for conventions. Core files always created; optional files created when signals detected. Also generates recipe knowhow for detected workflows.
 </purpose>
 
 <required_reading>

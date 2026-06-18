@@ -13,16 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Run UAT-style conversational testing for a completed phase. Designs test scenarios from verification criteria, walks through each scenario interactively one at a time with plain text responses, and records pass/fail results with severity inference.
-
-When issues are found, spawns parallel debug agents (one per gap cluster) to diagnose root causes, then optionally triggers the gap-fix loop (plan --gaps -> execute -> re-verify) to auto-close gaps.
-
-Key mechanisms from GSD verify-work:
-- **Session persistence**: uat.md survives context resets, resume from any point
-- **Severity inference**: Natural language -> blocker/major/minor/cosmetic (never ask)
-- **Cold-start smoke tests**: --smoke flag injects basic sanity tests before UAT
-- **Parallel auto-diagnosis**: Spawn debug agents per gap cluster with pre-filled symptoms
-- **Gap-plan closure loop**: --auto-fix triggers verify -> plan --gaps -> execute -> re-verify
+UAT-style conversational testing for a completed phase. Interactive scenario walk-through with severity inference. Issues trigger parallel debug agents and optional gap-fix loop (--auto-fix).
 </purpose>
 
 <required_reading>
@@ -37,6 +28,24 @@ Flags, artifact context resolution, and output directory format defined in workf
 
 <execution>
 Follow '~/.maestro/workflows/test.md' completely.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Setup → Test Design**
+- REQUIRED: Target resolved (phase or scratch task). E001 if missing.
+- REQUIRED: Smoke tests pass (if --smoke). E003 if fail.
+- BLOCKED if missing: cannot design tests without resolved target.
+
+**GATE 2: Test Design → Execution**
+- REQUIRED: test-plan.json generated with categorized tests mapped to requirements.
+- REQUIRED: uat.md created or resumed.
+- BLOCKED if plan missing: do not start interactive testing without plan.
+
+**GATE 3: Execution → Completion**
+- REQUIRED: All tests presented and responses processed.
+- REQUIRED: UAT confidence scored with 4-dimension factor model.
+- REQUIRED: Pressure pass completed if > 80% pass rate.
+- BLOCKED if incomplete: finish all scenarios before reporting.
 
 **Command-specific extensions (not in workflow):**
 
@@ -75,14 +84,35 @@ Append to state.json.artifacts[]:
 }
 ```
 
-**Next-step routing on completion:**
-- All tests pass → `/maestro-milestone-audit`
-- Issues found, --auto-fix ran and succeeded → `/maestro-execute {phase}`
-- Issues found, --auto-fix ran but gaps remain → `/quality-debug --from-uat {phase}`
-- Issues found, manual fix needed → `/quality-debug --from-uat {phase}`
-- Coverage below threshold → `/quality-auto-test {phase}`
-- Need integration tests → `/quality-auto-test {phase}`
 </execution>
+
+<completion>
+### Standalone report
+
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS|NEEDS_RETRY
+CONCERNS: {description if applicable}
+--- END STATUS ---
+```
+
+### Ralph-invoked completion
+
+End the step by calling the CLI (no text block output):
+```
+maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
+```
+
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| All tests pass | `/maestro-milestone-audit` |
+| --auto-fix succeeded | `/maestro-execute {phase}` |
+| --auto-fix gaps remain | `/quality-debug --from-uat {phase}` |
+| Manual fix needed | `/quality-debug --from-uat {phase}` |
+| Coverage below threshold | `/quality-auto-test {phase}` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

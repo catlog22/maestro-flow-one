@@ -12,17 +12,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Run unified automated testing via CSV layer pipeline. Reads project state to auto-select the optimal scenario source — PRD specs (when spec package exists), coverage gaps (when Nyquist audit found gaps), or code exploration (default). All sources converge into a CSV pipeline: discover infrastructure → plan → build scenarios.csv → write tests per layer (spawn_agents_on_csv parallel) → execute → diagnose failures (spawn_agents_on_csv parallel) → iterate → report.
+Unified automated testing via CSV layer pipeline. Auto-selects scenario source from project state (specs / coverage gaps / code exploration), then: discover → plan → build CSV → write tests (parallel) → execute → diagnose failures (parallel) → iterate → report.
 
-Key mechanisms:
-- **Intelligent routing**: Reads `.tests/`, `.workflow/blueprint/`, `verification.json` to auto-select source — no mode flag needed
-- **CSV parallel test writing**: Per-layer `spawn_agents_on_csv` — each agent writes one test file independently
-- **CSV parallel failure diagnosis**: Failed scenarios dispatched via `spawn_agents_on_csv` for classification + fix
-- **Unified iteration engine**: Nested inner loop (fix test_defects via diagnosis CSV, max 3/layer) + outer loop (adaptive strategy, max N iterations)
-- **Layers as waves**: L0→L1→L2→L3 sequential (fail-fast on critical), scenarios within layer parallel
-- **Discovery board**: `discoveries.ndjson` shared across all agents/iterations (append-only)
-- **Degenerate modes**: `--max-iter 1` = single-pass generation; default = full iterative cycle
-- **Session persistence**: CSV state + state.json survive context resets, resume from any point
+Layers L0→L3 sequential (fail-fast), scenarios within layer parallel. `--max-iter 1` = single-pass; default = full iterative cycle.
 </purpose>
 
 <required_reading>
@@ -62,6 +54,31 @@ Flags, artifact context resolution, and output formats defined in workflow auto-
 
 <execution>
 Follow '~/.maestro/workflows/auto-test.md' completely.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Setup → Plan** (Route Selection → CSV Generation)
+- REQUIRED: Phase resolved from artifact registry. E001/E002 if missing.
+- REQUIRED: Route auto-selected (spec/gap/code) from project state.
+- REQUIRED: Test infrastructure discovered (framework, patterns, conventions).
+- BLOCKED if missing: cannot generate test plan without route and framework.
+
+**GATE 2: Plan → Write** (CSV → Test Generation)
+- REQUIRED: test-plan.json generated with layer distribution (L0→L3).
+- REQUIRED: User confirmed plan (unless `--dry-run` stops here).
+- BLOCKED if plan missing or rejected: do not write tests.
+
+**GATE 3: Write → Execute** (Test Generation → Execution)
+- REQUIRED: All planned test files written following existing patterns.
+- REQUIRED: Tests follow RED-GREEN methodology.
+- BLOCKED if tests incomplete: finish writing before execution.
+
+**GATE 4: Execute → Report** (Iteration → Completion)
+- REQUIRED: Progressive execution completed (L0→L3, fail-fast on critical).
+- REQUIRED: Iteration engine ran (inner: test_defect fix, outer: strategy adjust).
+- REQUIRED: Confidence scored with 5-dimension factor model (>= 60%).
+- REQUIRED: Pressure pass completed on highest-pass-rate layer.
+- BLOCKED if iteration incomplete: continue iterating before reporting.
 
 **Command-specific extensions (not in workflow):**
 

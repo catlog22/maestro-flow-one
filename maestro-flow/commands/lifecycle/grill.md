@@ -13,9 +13,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Socratic stress-testing of a plan, idea, or requirement against codebase reality. Walks every branch of the decision tree one question at a time — challenging vague terminology against existing code, probing edge cases with concrete scenarios, and verifying assumptions with code evidence. Produces a verified context package (grill-report.md + terminology.md + context-package.json) for downstream brainstorm/analyze/roadmap consumption.
+Socratic stress-testing of plans/ideas against codebase reality. Produces grill-report.md + terminology.md + context-package.json for downstream brainstorm/analyze/roadmap.
 
-Positioned BEFORE brainstorm in the pipeline: grill stress-tests and sharpens; brainstorm generates and elaborates.
+Pipeline position: BEFORE brainstorm (stress-test → then elaborate).
 </purpose>
 
 <required_reading>
@@ -93,10 +93,9 @@ Follow '~/.maestro/workflows/grill.md' completely.
 
 ### Evidence Requirement
 
-Grill questions MUST reference specific code when challenging the user's proposal:
-- Valid: "The codebase uses `{symbol}` at `{file:line}` — your proposal calls it `{term}`. Which wins?"
-- INVALID: Generic questions without code grounding (e.g., "How would you handle errors?")
-- If codebase scan failed (W001): flag ALL subsequent locked decisions as LOW CONFIDENCE.
+Grill questions MUST reference specific code (`file:line`) when challenging the user's proposal. Generic questions without code grounding are INVALID.
+
+If codebase scan failed (W001): flag ALL subsequent locked decisions as LOW CONFIDENCE.
 
 ### Artifact Verification (before completion)
 

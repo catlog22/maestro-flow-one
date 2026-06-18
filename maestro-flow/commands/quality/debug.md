@@ -41,8 +41,6 @@ Each artifact's type determines its outputs at `.workflow/{a.path}/`:
 - **debug** → understanding.md, evidence.ndjson (prior investigations, avoid re-investigation)
 - **test** → uat.md (--from-uat gap source), .tests/
 
-Extract conclusions from related artifacts that may affect this debug session — review findings guide investigation direction, prior debug avoids redundant work.
-
 ### Pre-load (optional, proceed without)
 - Codebase docs: `.workflow/codebase/ARCHITECTURE.md` → module boundaries
 - Wiki: `maestro search "<symptom keywords>" --json` → prior investigations
@@ -54,6 +52,25 @@ Extract conclusions from related artifacts that may affect this debug session �
 
 <execution>
 Follow '~/.maestro/workflows/debug.md' completely.
+
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Input → Investigation**
+- REQUIRED: Symptoms gathered (interactive) or loaded from UAT (--from-uat).
+- REQUIRED: Debug output directory created.
+- BLOCKED if missing: cannot investigate without symptom baseline.
+
+**GATE 2: Investigation → Diagnosis**
+- REQUIRED: Debug agent(s) spawned with full symptom context.
+- REQUIRED: evidence.ndjson written with structured entries.
+- REQUIRED: understanding.md tracks evolving understanding.
+- BLOCKED if incomplete: continue investigation before declaring root cause.
+
+**GATE 3: Diagnosis → Completion**
+- REQUIRED: Root causes collected with fix_direction and affected_files.
+- REQUIRED: Multi-factor confidence scored per gap.
+- REQUIRED: Readiness gate checked and pressure pass completed.
+- BLOCKED if inconclusive: resume session or escalate.
 
 **Register artifact on completion (phase-scoped only):**
 ```
@@ -83,12 +100,34 @@ Append to state.json.artifacts[]:
 
 On confirm → `Skill("spec-add", "<category> <content> --description \"<summary>\"")`.
 
-**Next-step routing on completion:**
-- Root cause found, fix needed → `/maestro-plan {phase} --gaps`
-- Root cause found (from UAT), auto-fix → `/quality-test {phase} --auto-fix`
-- Inconclusive, need more info → `/quality-debug {issue} -c` (resume session)
-- Standalone fix already applied → `/maestro-execute {phase}`
 </execution>
+
+<completion>
+### Standalone report
+
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS|NEEDS_RETRY
+CONCERNS: {description if applicable}
+--- END STATUS ---
+```
+
+### Ralph-invoked completion
+
+End the step by calling the CLI (no text block output):
+```
+maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
+```
+
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Root cause found, fix needed | `/maestro-plan {phase} --gaps` |
+| Root cause found (from UAT), auto-fix | `/quality-test {phase} --auto-fix` |
+| Inconclusive, need more info | `/quality-debug {issue} -c` (resume) |
+| Standalone fix already applied | `/maestro-execute {phase}` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

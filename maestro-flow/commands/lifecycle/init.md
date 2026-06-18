@@ -12,9 +12,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Initialize a new project through auto state detection and unified flow. Invoked when starting a fresh project or onboarding an existing codebase into workflow management. Produces the `.workflow/` directory structure with project.md, state.json, config.json, and specs. Does NOT create roadmap — use maestro-roadmap (light mode, default) or maestro-roadmap --mode full (spec package) as the next step.
-
-Pipeline position: entry point (no upstream). Downstream: `maestro-roadmap` or `maestro-brainstorm`.
+Initialize project: detect state, create `.workflow/` with project.md, state.json, config.json.
+Entry point; downstream: maestro-roadmap or maestro-brainstorm.
 </purpose>
 
 <required_reading>

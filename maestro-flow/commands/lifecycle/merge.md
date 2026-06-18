@@ -13,9 +13,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Merge a completed milestone worktree branch back into the main branch, sync scratch artifacts, and reconcile the artifact registry. Uses a two-phase approach: git merge first (source code), artifact sync second (only after git succeeds). This prevents partial state corruption when merge conflicts occur.
-
-Includes registry health check, pre-merge rebase (pull main into worktree to minimize conflicts), and atomic state reconciliation (merge artifact entries, don't overwrite).
+Merge a milestone worktree branch back into main, sync scratch artifacts, and reconcile the artifact registry.
+Two-phase: git merge first, artifact sync second (only after git succeeds).
 </purpose>
 
 <required_reading>
@@ -40,20 +39,28 @@ Follow '~/.maestro/workflows/merge.md' completely.
 
 **GATE 2: Git Merge → Artifact Sync**
 - REQUIRED: Git merge completed without conflicts (or conflicts resolved via --continue).
-- Do NOT sync artifacts until git merge succeeds — prevents partial state corruption.
+- BLOCKED if: merge has unresolved conflicts — do NOT sync artifacts until git merge succeeds (prevents partial state corruption).
 
 **GATE 3: Artifact Sync → Completion**
 - REQUIRED: All scratch artifacts synced to main `.workflow/scratch/`.
 - REQUIRED: `state.json.artifacts[]` reconciled (worktree entries merged into main).
 - REQUIRED: Worktree cleaned up (unless --no-cleanup).
+- BLOCKED if missing: artifacts not synced or registry not reconciled — main worktree would have incomplete state.
 
-**Knowledge inquiry on completion:**
+</execution>
+
+<completion>
+### Knowledge inquiry
+
 After successful merge, ask user once: "Record milestone learnings?" If yes, persist via `Skill("spec-add", "learning \"<title>\" \"<insight>\" --keywords <kw1>,<kw2> --description \"<summary>\"")`.
 
-**Next-step routing on completion:**
-- View dashboard → Skill({ skill: "manage-status" })
-- Audit milestone → Skill({ skill: "maestro-milestone-audit" })
-</execution>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Merge complete | Skill({ skill: "manage-status" }) |
+| Audit needed | Skill({ skill: "maestro-milestone-audit" }) |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

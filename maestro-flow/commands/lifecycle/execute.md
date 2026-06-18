@@ -13,11 +13,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Execute all tasks in a plan using wave-based parallel execution with dependency-aware ordering. Each plan is executed independently (plans串行, plan内wave并行). Task summaries are written to the plan's scratch directory under `.summaries/`. Registers EXC artifact in state.json.
-
-Invoked after /maestro-plan produces a confirmed plan. When called without args on a milestone, finds all pending plans and executes them sequentially.
-
-Pipeline position: upstream from maestro-plan (consumes confirmed plan). Verification is built-in (E2.7).
+Execute confirmed plan tasks via wave-based parallel dispatch.
+Consumes plan from maestro-plan; registers EXC artifact in state.json.
 </purpose>
 
 <required_reading>
@@ -86,11 +83,13 @@ Follow '~/.maestro/workflows/execute.md' completely.
 **GATE 2: Per-Task Execution → Summary**
 - REQUIRED: Each completed task has `.summaries/TASK-{NNN}-summary.md` written with concrete evidence (files changed, tests run, verification results).
 - REQUIRED: `.task/TASK-{NNN}.json` status updated to completed|blocked.
+- BLOCKED if missing: summary file absent or task status not updated — halt wave progression until evidence is recorded.
 - Do NOT silently skip failed tasks — mark as blocked with reason.
 
 **GATE 3: All Tasks → Completion**
 - REQUIRED: All waves executed in dependency order.
 - REQUIRED: EXC artifact registered in state.json.
+- BLOCKED if missing: waves incomplete or EXC artifact not registered — do not report execution complete.
 
 ### Evidence Requirement
 

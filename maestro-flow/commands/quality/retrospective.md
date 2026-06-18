@@ -13,7 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Post-execution multi-perspective retrospective (复盘) for completed phases. Consumes existing execution artifacts (verification.json, review.json, issues.jsonl, plan.json, .summaries/, uat.md, state.json) and runs four parallel lenses — technical, process, quality, decision — to distill reusable insights. Routes each insight into the appropriate store: spec stub for reusable patterns, memory tip for process notes, issue for recurring gaps. Auto-scans for unreviewed completed phases and reports the backlog. Every insight is also persisted to `.workflow/specs/learnings.md` as `<spec-entry>` blocks for cross-phase queryability.
+Post-execution retrospective (复盘): four parallel lenses (technical/process/quality/decision) → distill insights → route to spec/knowhow/issue stores.
 </purpose>
 
 <required_reading>
@@ -34,15 +34,35 @@ Modes (scan/single/range/all), flags (--lens, --no-route, --compare, -y), and st
 </context>
 
 <execution>
-Follow `~/.maestro/workflows/retrospective.md` Stages 1–8 in order. Key invariants:
+Follow `~/.maestro/workflows/retrospective.md` Stages 1–8 in order.
 
-1. **Read-only until Stage 6** — Stages 1–5 must not write anything except the in-memory retrospective record.
-2. **Parallel lens dispatch** — Stage 4 spawns one Agent per active lens in a single message (multiple Agent tool calls). All agents use `subagent_type: "general-purpose"` and `run_in_background: false`.
-3. **Match canonical issues schema** — Stage 6 issue routing must produce rows that pass `jq` parsing and match the schema in `workflows/issue.md` Step 4 exactly (status `"open"`, full `issue_history` entry, all required fields).
-4. **Reuse `manage-knowhow-capture tip` for note routing** — do not duplicate the learning pipeline; invoke via `Skill({ skill: "manage-knowhow-capture", args: "tip ..." })`.
-5. **Backward-compat with phase-transition** — append a one-line summary per insight to `.workflow/specs/learnings.md` if and only if that file already exists. Never create it.
-6. **Stable insight IDs** — `INS-{8 hex}` from `hash(phase_num + lens + title)` so re-runs do not duplicate.
-7. **Archive before overwrite** — if existing `retrospective.{md,json}` are being replaced, move them to `{artifact_dir}/.history/` with a timestamp suffix first.
+### Phase Gates (MANDATORY, BLOCKING)
+
+**GATE 1: Input → Lens Analysis** (Stages 1-3 → Stage 4)
+- REQUIRED: Mode resolved (scan/single/range/all) and phases validated.
+- REQUIRED: At least one phase selected with status=completed and existing artifacts.
+- REQUIRED: Read-only — no file writes in Stages 1-3.
+- BLOCKED if no valid phases: E004/E005.
+
+**GATE 2: Lens Analysis → Routing** (Stages 4-5 → Stage 6)
+- REQUIRED: All requested lens agents returned valid JSON (or W001 logged for partial).
+- REQUIRED: Insights distilled with stable `INS-{8hex}` IDs.
+- REQUIRED: Archive existing `retrospective.{md,json}` before overwrite.
+- BLOCKED if all lens agents failed: cannot synthesize without results.
+
+**GATE 3: Routing → Completion** (Stage 6 → Stages 7-8)
+- REQUIRED: `retrospective.json` written with metrics, findings, insights, routing.
+- REQUIRED: `retrospective.md` written (human-readable).
+- REQUIRED: Issue rows match canonical `issues.jsonl` schema (status "open", full fields).
+- REQUIRED: Note tips routed via `Skill({ skill: "manage-knowhow-capture", args: "tip ..." })`.
+- BLOCKED if routing incomplete: finish all write operations before reporting.
+
+### Execution Constraints
+
+- **Parallel lens dispatch**: Stage 4 spawns one Agent per active lens in a single message.
+- **Stable IDs**: `INS-{8 hex}` from `hash(phase_num + lens + title)` — re-runs do not duplicate.
+- **No source modification**: Never modify verification.json, review.json, plan.json.
+- **Backward-compat**: Append to `.workflow/specs/learnings.md` only if file already exists.
 </execution>
 
 <error_codes>
@@ -73,5 +93,31 @@ Follow `~/.maestro/workflows/retrospective.md` Stages 1–8 in order. Key invari
 - [ ] `.workflow/specs/learnings.md` appended with one `<spec-entry>` per insight regardless of routing target
 - [ ] No existing phase artifacts modified (verification.json, review.json, plan.json untouched)
 - [ ] Confirmation banner displays routing counts and next-step suggestions
-- [ ] Next step: `/manage-status` to review state, or `/manage-issue list --source retrospective` to triage created issues, or `/manage-knowhow list` to browse the knowhow library
 </success_criteria>
+
+<completion>
+### Standalone report
+
+```
+--- COMPLETION STATUS ---
+STATUS: DONE|DONE_WITH_CONCERNS
+CONCERNS: {description if applicable}
+--- END STATUS ---
+```
+
+### Ralph-invoked completion
+
+End the step by calling the CLI (no text block output):
+```
+maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
+```
+
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Insights routed | `/manage-status` |
+| Issues created | `/manage-issue list --source retrospective` |
+| Knowhow captured | `/manage-knowhow list` |
+| More phases to review | `/quality-retrospective --all` |
+</completion>

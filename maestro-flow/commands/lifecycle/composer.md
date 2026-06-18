@@ -14,9 +14,8 @@ allowed-tools:
   - Skill
 ---
 <purpose>
-Interactive workflow template composer. Parse natural language → resolve executors → inject checkpoints → build DAG → persist to `~/.maestro/templates/workflows/`. Progressive disclosure — specs loaded only when phase needs them.
-
-Three entry modes: **New design** (default), **Resume** (`--resume`), **Edit** (`--edit <path>`).
+Interactive workflow template composer: natural language to DAG template.
+Three modes: new design (default), resume (`--resume`), edit (`--edit <path>`).
 </purpose>
 
 <deferred_reading>
@@ -177,3 +176,13 @@ Display: path, ID, node count, variables, execute/edit commands. Clean up draft 
 - [ ] Template JSON written with nodes, edges, checkpoints, context_schema
 - [ ] Index updated; deferred specs loaded only when phase needs them
 </success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Template saved | Execute template with `maestro run <template-id>` |
+| Template needs edits | `maestro composer --edit <template-path>` |
+| Design abandoned mid-flow | `maestro composer --resume` to continue from last draft |
+</completion>

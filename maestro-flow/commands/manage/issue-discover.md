@@ -12,15 +12,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Automated issue discovery via multi-perspective codebase analysis (8 perspectives) or prompt-driven exploration. Discovers issues, deduplicates findings, and records them in `.workflow/issues/issues.jsonl`.
-
-- **Default (no args)**: Interactive mode selection — choose multi-perspective or prompt-driven.
-- **`multi-perspective`**: 8-perspective parallel agent scan — security, performance, reliability, maintainability, scalability, UX, accessibility, compliance.
-- **`by-prompt "..."`**: Prompt-driven — CLI delegate plans exploration strategy, agents explore iteratively with cross-dimension analysis.
-
-For CRUD operations (create, list, update, close, link), use `/manage-issue`.
-
-After discovery, use `/maestro-analyze --gaps <ISS-ID>` to perform root cause analysis on individual findings.
+Automated issue discovery: multi-perspective (8 perspectives) or prompt-driven. Deduplicates and records to `issues.jsonl`. For CRUD operations, use `/manage-issue`.
 </purpose>
 
 <required_reading>
@@ -77,5 +69,15 @@ Follow '~/.maestro/workflows/issue-discover.md' completely.
 - [ ] Findings deduplicated before issue creation
 - [ ] Issues appended to issues.jsonl with correct schema
 - [ ] Discovery session fully traceable via session directory
-- [ ] Next step routing: `/maestro-analyze --gaps <ISS-ID>` for root cause analysis, or `/manage-issue list` to review all issues
+- [ ] Next step routed
 </success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Issues discovered | `/manage-issue list` to review |
+| Need root cause analysis | `/maestro-analyze --gaps <ISS-ID>` |
+| Want to plan fixes | `/maestro-plan --gaps` |
+</completion>

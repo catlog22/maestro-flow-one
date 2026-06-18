@@ -13,11 +13,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Extract knowledge fragments from workflow artifacts (analysis results, brainstorm outputs, debug sessions, lite-plan/fix results, scratchpad notes, completed sessions) and route them into the project's three knowledge stores: wiki entries, spec conventions, and trackable issues.
-
-Complements `quality-retrospective` (which is phase-scoped) by harvesting from **any** workflow artifact. Prevents knowledge loss from completed analysis and planning sessions that would otherwise only exist as stale files.
-
-**Closed-loop**: harvest extracts → wiki/spec/issue stores → downstream commands consume (wiki-digest, spec-load, maestro-plan --gaps).
+Extract knowledge from workflow artifacts → route to wiki/spec/issue stores. Works on any artifact (vs retrospective which is phase-scoped).
 </purpose>
 
 <required_reading>
@@ -51,13 +47,19 @@ Follow '~/.maestro/workflows/harvest.md' Stages 1-8 in order.
 
 Extraction patterns, classification rules, routing infrastructure, and fragment ID scheme defined in workflow harvest.md.
 
-**Next-step routing on completion:**
-- Review wiki entries → `maestro wiki list --type note`
-- Connect wiki graph → `/manage-wiki connect --fix`
-- Triage issues → `/manage-issue list --source harvest`
-- View specs → `/spec-load --role implement`
-- Full retrospective → `/quality-retrospective`
 </execution>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Wiki entries created | `maestro wiki list --type note` |
+| Wiki graph needs linking | `/manage-wiki connect --fix` |
+| Issues created | `/manage-issue list --source harvest` |
+| Specs extracted | `/spec-load --role implement` |
+| Full phase retrospective | `/quality-retrospective` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |

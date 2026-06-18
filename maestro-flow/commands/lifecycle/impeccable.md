@@ -15,11 +15,8 @@ allowed-tools:
 ---
 
 <purpose>
-UI design command. Parse input → prerequisites → read workflow file → execute → track.
-
-- **Direct**: single command via workflow file
-- **Chain**: orchestrate command sequence with quality gates
-- **Search**: query design knowledge base via CLI
+UI design command: direct single-command, chain multi-step with quality gates, or search design knowledge.
+Parse input → prerequisites → read workflow file → execute → track.
 </purpose>
 
 ## Input
@@ -260,9 +257,55 @@ Never auto-select: teach, shape, craft, live, document, extract, overdrive, crit
 - REQUIRED: Score parsed from critique/audit output (not assumed or estimated).
 - REQUIRED: P0 count extracted from findings — P0 == 0 required for pass.
 - REQUIRED: If gate fails, refine commands executed and re-gate attempted.
+- BLOCKED if: score not parsed from actual output, or P0 > 0 and max refine loops not exhausted — do not advance past gate.
 - Do NOT skip quality gate steps or mark as "passed" without parsing actual score.
 
 **GATE: Chain → Completion**
 - REQUIRED: All non-skipped steps executed (TodoWrite all completed).
 - REQUIRED: status.json updated with `status: "completed"` and final scores.
 - REQUIRED: If any step failed: documented in status.json with reason.
+- BLOCKED if missing: steps not all completed or status.json not updated — chain is incomplete.
+
+<error_codes>
+| Code | Severity | Condition | Recovery |
+|------|----------|-----------|----------|
+| E001 | error | No command or intent resolved from input | Provide a known command, chain name, or descriptive intent |
+| E002 | error | Source/target path not found | Verify path exists |
+| E003 | error | PRODUCT.md missing and teach step failed | Run `maestro impeccable teach` manually first |
+| E004 | error | Chain quality gate failed after max loops | Review findings manually, fix critical issues, then resume |
+| W001 | warning | UI specs not found via spec load | Continuing without specs — output may miss project conventions |
+| W002 | warning | Quality gate score below threshold but P0 == 0 | Auto-refine loop triggered |
+| W003 | warning | Chain step failed but non-blocking | Step failure documented, chain continues |
+</error_codes>
+
+<success_criteria>
+Direct mode:
+- [ ] Command resolved from input (routing table or free text matching)
+- [ ] Prerequisites satisfied (UI specs loaded, PRODUCT.md present)
+- [ ] Workflow file read and executed completely
+- [ ] TodoWrite tracking created and all phases marked completed
+- [ ] Next-step suggestion provided
+
+Chain mode:
+- [ ] Chain steps resolved and preview displayed
+- [ ] Session status.json created in `.workflow/.maestro/ui-craft-*/`
+- [ ] TodoWrite items created for all chain steps
+- [ ] Each step executed with workflow file read
+- [ ] Quality gates parsed with actual scores (not estimated)
+- [ ] Refine loops executed when gate fails (up to max-loops)
+- [ ] status.json updated with `status: "completed"` and final scores
+- [ ] Final report with scores, trend, and commands executed
+</success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Direct teach complete | `maestro impeccable shape` |
+| Direct shape complete | `maestro impeccable craft` |
+| Direct craft complete | `maestro impeccable critique` |
+| Direct critique findings | `maestro impeccable polish` or targeted fix command |
+| Chain complete | Review final scores, consider `maestro impeccable improve` for iteration |
+| Chain paused/interrupted | `maestro impeccable continue` to resume |
+</completion>

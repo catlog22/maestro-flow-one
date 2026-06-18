@@ -13,14 +13,9 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Generate a milestone/phase roadmap from requirements or upstream context. Produces `.workflow/roadmap.md` with Milestone > Phase hierarchy ready for maestro-analyze and maestro-plan.
+Generate milestone/phase roadmap from requirements or upstream context. Three modes: create (default), revise (`--revise`), review (`--review`). For formal spec documents, use `/maestro-blueprint`.
 
-Operation modes:
-- **Create** (default): Build roadmap from requirements or upstream context
-- **Revise** (`--revise`): Modify existing roadmap while preserving completed phase progress
-- **Review** (`--review`): Health assessment of current roadmap (read-only)
-
-For formal specification documents (Product Brief, PRD, Architecture, Epics), use `/maestro-blueprint` instead.
+Pipeline: brainstorm/blueprint/analyze → **roadmap** → analyze {phase} → plan → execute.
 </purpose>
 
 <required_reading>
@@ -52,17 +47,6 @@ $ARGUMENTS -- requirement text, @file reference, or upstream context source.
 - File reference: `@requirements.md`
 - Context import: `--from brainstorm:BRN-001` or `--from analyze:ANL-xxx` or `--from blueprint:BLP-xxx`
 - No args + `--revise` / `--review`: Operate on existing `.workflow/roadmap.md`
-
-**Pipeline position:**
-```
-maestro-brainstorm ─┐
-maestro-blueprint  ─┤ (optional upstream, parallel)
-maestro-analyze    ─┘ context-package.json
-        ↓
-maestro-roadmap → .workflow/roadmap.md (Milestone > Phase hierarchy)
-        ↓
-maestro-analyze {phase} → maestro-plan → maestro-execute
-```
 
 ### Pre-load
 
@@ -97,17 +81,20 @@ Sub-modes:
 **GATE 1: Input → Decomposition**
 - REQUIRED: Requirement parsed with goal, constraints, stakeholders.
 - REQUIRED: Upstream context loaded via --from (if specified).
+- BLOCKED if missing: cannot decompose without parsed requirement.
 
 **GATE 2: Decomposition → Refinement**
 - REQUIRED: Milestones defined with deliverable targets.
 - REQUIRED: Phases defined within milestones with dependencies.
 - REQUIRED: Every Active requirement from project.md mapped to exactly one phase.
-- REQUIRED: No circular dependencies in phase ordering.
+- REQUIRED: No circular dependencies in phase ordering (E003 if detected).
+- BLOCKED if incomplete: finish milestone/phase decomposition before refinement.
 
 **GATE 3: Refinement → Completion**
 - REQUIRED: User approved roadmap (or auto-approved with -y).
 - REQUIRED: `.workflow/roadmap.md` written with Milestone > Phase hierarchy.
 - REQUIRED: Artifact registered in state.json with milestone entries.
+- BLOCKED if missing: do not report completion without written roadmap.
 
 ### Artifact Verification (before completion)
 

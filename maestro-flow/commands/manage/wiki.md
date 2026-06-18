@@ -12,7 +12,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Unified wiki graph management command. Provides interactive access to wiki health monitoring, entry search, orphan cleanup, graph statistics, link discovery, and knowledge synthesis — the single entry point for all wiki graph operations.
+Wiki graph management: health, search, cleanup, stats, connect, digest.
 </purpose>
 
 <required_reading>
@@ -69,3 +69,14 @@ $ARGUMENTS — subcommand and optional flags.
 - [ ] If digest: themes clustered, gaps identified, coverage heatmap generated
 - [ ] Next-step suggestions provided
 </success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Health score < 50 | `/manage-wiki cleanup --fix` |
+| Orphan entries found | `/manage-wiki connect --fix` |
+| Knowledge gaps identified | `/manage-knowhow-capture` |
+| Want knowledge synthesis | `/manage-wiki digest` |
+</completion>

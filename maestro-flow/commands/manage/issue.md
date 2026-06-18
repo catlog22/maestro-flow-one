@@ -12,11 +12,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Issue lifecycle management for the project issue tracker. Supports create, list, status, update, close, and link (bidirectional issue-task cross-reference). All issues stored in `.workflow/issues/issues.jsonl` using the issue.json schema.
-
-For automated issue discovery, use `/manage-issue-discover`.
-
-**Closed-loop workflow**: After creating an issue, use `/maestro-analyze --gaps <ISS-ID>` for root cause analysis, `/maestro-plan --gaps` for solution planning, and `/maestro-execute` for execution.
+Issue lifecycle management: create, list, status, update, close, link. Stored in `.workflow/issues/issues.jsonl`. For automated discovery, use `/manage-issue-discover`.
 </purpose>
 
 <required_reading>
@@ -47,11 +43,17 @@ $ARGUMENTS -- subcommand + options. Parse first token as subcommand.
 Parse subcommand from first token of $ARGUMENTS.
 Follow '~/.maestro/workflows/issue.md' completely.
 
-**Next-step routing on completion:**
-- create → `/maestro-analyze --gaps <ISS-ID>` or `/maestro-plan --gaps`
-- list → `/maestro-analyze --gaps <ISS-ID>` for any open issue
-- close → `/manage-status`
 </execution>
+
+<completion>
+### Next-step routing
+
+| Subcommand | Suggestion |
+|-----------|-----------|
+| create | `/maestro-analyze --gaps <ISS-ID>` or `/maestro-plan --gaps` |
+| list | `/maestro-analyze --gaps <ISS-ID>` for open issues |
+| close | `/manage-status` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |
@@ -66,8 +68,5 @@ Follow '~/.maestro/workflows/issue.md' completely.
 - [ ] Issue data read/written to correct JSONL file
 - [ ] Output displayed in appropriate format (table for list, detail for status)
 - [ ] Cross-references maintained (link creates bidirectional references)
-- [ ] Next step routing by subcommand:
-  - create → `/maestro-analyze --gaps <ISS-ID>` or `/maestro-plan --gaps`
-  - list → `/maestro-analyze --gaps <ISS-ID>` for any open issue
-  - close → `/manage-status`
+- [ ] Next step routed by subcommand
 </success_criteria>

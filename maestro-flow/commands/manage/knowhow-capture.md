@@ -80,3 +80,13 @@ Follow '~/.maestro/workflows/knowhow.md' completely.
 - [ ] File written to .workflow/knowhow/ with correct prefix and YAML frontmatter
 - [ ] Confirmation displayed with ID, type, path
 </success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Entry captured | `/manage-knowhow list` to view library |
+| Want to connect entries | `/manage-wiki connect` |
+| Want to bridge to specs | `/spec-add <category>` with `--spec-category` |
+</completion>

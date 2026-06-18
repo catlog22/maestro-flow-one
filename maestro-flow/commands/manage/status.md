@@ -9,9 +9,7 @@ allowed-tools:
   - Grep
 ---
 <purpose>
-Display a unified project dashboard showing artifact progress, task counts, active work, and intelligent next-step suggestions.
-Reads state.json artifact registry and roadmap to render a formatted overview with progress and status tables.
-Provides situational awareness before continuing work. Uses virtual phase view derived from artifact registry.
+Project dashboard: artifact progress, task counts, active work, next-step suggestions.
 </purpose>
 
 <required_reading>
@@ -50,3 +48,15 @@ Next-step decision table defined in workflow status.md Step 5.
 - [ ] Next steps suggested based on current state analysis
 - [ ] Wiki health score displayed (or graceful unavailable message)
 </success_criteria>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| Phase needs analysis | `/maestro-analyze {phase}` |
+| Phase needs planning | `/maestro-plan {phase}` |
+| Phase needs execution | `/maestro-execute {phase}` |
+| Milestone ready for audit | `/maestro-milestone-audit` |
+| Issues need triage | `/manage-issue list` |
+</completion>

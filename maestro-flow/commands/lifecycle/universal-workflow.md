@@ -13,21 +13,8 @@ allowed-tools:
   - AskUserQuestion
 ---
 <purpose>
-Dynamic workflow generator that inherits the adversarial decision philosophy.
-Unlike swarm-workflow (fixed 8 scripts), this command generates task-specific
-Workflow scripts on-the-fly with adversarial patterns baked into every decision point.
-
-Flow: Scan library → Match or Design → Generate script → Execute → Persist
-
-Generated scripts accumulate at `~/.maestro/workflows/dynamic/uwf-*.js`,
-building a reusable library over time.
-
-Adversarial depth levels:
-| Level | Decision Pattern | Agent Cost |
-|-------|-----------------|------------|
-| `shallow` | Single skeptic per decision | +1 per decision |
-| `standard` | 3-vote majority per decision (default) | +4 per decision |
-| `deep` | Cross-verify + 3-way advocacy + meta-skeptic | +8 per decision |
+Dynamic workflow generator: scan library for matches or generate task-specific Workflow scripts
+on-the-fly with adversarial patterns. Scripts persist at `~/.maestro/workflows/dynamic/uwf-*.js`.
 </purpose>
 
 <context>

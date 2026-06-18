@@ -14,9 +14,7 @@ allowed-tools:
 ---
 
 <purpose>
-Perform a full rebuild of the .workflow/codebase/ documentation system from scratch. Scans the entire project source to identify components, features, requirements, and ADRs, then spawns parallel workflow-codebase-mapper agents to generate all documentation artifacts. This is a destructive operation that overwrites existing codebase docs.
-
-Can run before or after `/maestro-init` -- works on any codebase with source files. Also serves the previous `spec-map` use case via `--focus <area>` for scoped dimension analysis.
+Full rebuild of `.workflow/codebase/` docs: 4 parallel mapper agents → tech-stack, architecture, features, concerns. Destructive — overwrites existing docs.
 </purpose>
 
 <required_reading>
@@ -51,13 +49,18 @@ Follow '~/.maestro/workflows/codebase-rebuild.md' completely.
 
 **When `--focus <area>` is set:** pass the area string to each mapper agent as scoping context; only regenerate the docs relevant to that scope (leave others untouched unless missing).
 
-**Next-step routing on completion:**
-- View updated project state → `/manage-status`
-- Incremental updates later → `/quality-sync`
-- Verify KG stats → `maestro kg stats`
-- Verify wiki integration → `maestro search "kg" --type knowhow`
-- Future change impact → `maestro kg diff-wiki`
 </execution>
+
+<completion>
+### Next-step routing
+
+| Condition | Suggestion |
+|-----------|-----------|
+| View updated state | `/manage-status` |
+| Incremental updates later | `/quality-sync` |
+| Verify KG stats | `maestro kg stats` |
+| Future change impact | `maestro kg diff-wiki` |
+</completion>
 
 <error_codes>
 | Code | Severity | Condition | Recovery |
@@ -80,6 +83,5 @@ Follow '~/.maestro/workflows/codebase-rebuild.md' completely.
 - [ ] KG pipeline executed (`maestro kg index`)
 - [ ] knowledge-graph.json generated in .workflow/codebase/
 - [ ] KG nodes indexed as virtual wiki entries (automatic via WikiIndexer on next wiki access)
-- [ ] Next step routing: `/manage-status` or `/quality-sync` for incremental updates later
-- [ ] KG impact check available: `maestro kg diff-wiki` for future change impact analysis
+- [ ] Next step routed
 </success_criteria>
