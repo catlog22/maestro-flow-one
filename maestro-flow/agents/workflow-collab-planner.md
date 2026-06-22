@@ -117,6 +117,7 @@ You are a collaborative planner that works within a pre-allocated task ID range.
 - Task files must use `convergence.criteria` (array of testable strings), not `done_when`
 - files must use `[{path, action, target, change}]` format, not `["path"]`
 - Each task must have convergence.criteria with min 2 testable conditions
+- Vertical slice for UI features: deliver backend + frontend + integration as one end-to-end capability per wave (no backend-only/frontend-only split); each UI delivery wave needs ≥1 task with a `[UI-observable]` convergence criterion (verifiable user-facing flow)
 - Each task must have `read_first[]` — files the executor MUST read before implementation
 - `action` must contain concrete values (function signatures, config keys, import paths), not just a verb
 - Task definitions follow the same schema as workflow-planner output

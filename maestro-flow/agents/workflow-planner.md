@@ -160,11 +160,13 @@ These rules prevent over-splitting that wastes tokens on unnecessary agent spawn
    - **Low** (single file, single concern, zero cross-module): **1 task**
    - **Medium** (multiple files OR integration point): **1-4 tasks**
    - **High** (cross-module, architectural, new subsystem): **4-10 tasks**
+8. **Vertical slice for UI features (MANDATORY)** — 含用户界面的功能必须作为端到端纵向切片交付一个用户可观测能力（后端 endpoint + 前端 wiring + 集成同属一个交付波次），**禁止**拆成 backend-only / frontend-only 任务或按层切波。每个交付波次须闭合一个可用能力，而非一层。
 
 ## Constraints
 - Each task must be substantial (15-60 min of work); group related changes, avoid file-per-task
 - Each task must have convergence.criteria (min 2 testable conditions)
 - convergence.criteria must be specific and testable (not "works correctly")
+- For UI features, each delivery wave MUST have ≥1 task with a `[UI-observable]` convergence criterion — a verifiable user-facing flow (e.g. `[UI-observable] User can create a Note in the UI and see it in the list`). Backend-only criteria do NOT satisfy this; the runtime check is enforced by ralph's frontend-verify gate.
 - Each task must have `read_first[]` — files the executor MUST read before implementation (the file being modified + source-of-truth files)
 - `action` must contain concrete values (function signatures, config keys, import paths), not just a verb like "Implement"
 - files must use array format `[{path, action, target, change}]`

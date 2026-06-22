@@ -88,7 +88,8 @@ Follow '~/.maestro/workflows/plan.md' completely.
 - REQUIRED: Plan-checker passed (or minor issues acknowledged).
 - REQUIRED: Confidence scored with 5-dimension factor model.
 - REQUIRED: Pressure pass completed on highest-complexity task.
-- BLOCKED if: plan-checker found critical issues — fix plan before presenting to user.
+- REQUIRED: If plan touches UI (检出 `dashboard/` 或 UI 关键词 `landing|page|dashboard|frontend|UI|component|界面`), each delivery wave has ≥1 `[UI-observable]` convergence criterion (vertical-slice delivery, not backend-only).
+- BLOCKED if: plan-checker found critical issues, OR UI plan missing `[UI-observable]` coverage — fix plan before presenting to user.
 
 **GATE P5 → Completion: User Confirmation → Done**
 - REQUIRED: User confirmation captured (execute/modify/cancel).
@@ -213,6 +214,7 @@ Status verdicts:
 - [ ] .task/TASK-*.json files created for each task
 - [ ] Every task has `read_first[]` with at least the file being modified + source of truth files
 - [ ] Every task has `convergence.criteria[]` with grep-verifiable conditions (no subjective language)
+- [ ] UI plans: each delivery wave has ≥1 `[UI-observable]` convergence criterion (vertical slice; verified at runtime by ralph frontend-verify gate)
 - [ ] Every task `action` and `implementation` contain concrete values (no "align X with Y")
 - [ ] Plan confidence scored in P4 with 5-dimension factor model
 - [ ] Plan readiness gate checked before P4.5 collision detection

@@ -1,7 +1,7 @@
 ---
 name: quality-test
 description: Use when implementation needs user acceptance testing with interactive verification and gap closure
-argument-hint: "[phase] [--smoke] [--auto-fix]"
+argument-hint: "[phase] [--smoke] [--auto-fix] [--frontend-verify]"
 allowed-tools:
   - Read
   - Write
@@ -27,6 +27,31 @@ Flags, artifact context resolution, and output directory format defined in workf
 </context>
 
 <execution>
+**Mode select:** `--frontend-verify` → 走下方 **Frontend Verify Mode**（确定性浏览器 smoke，**不是**对话式 UAT）；否则 Follow '~/.maestro/workflows/test.md' completely.
+
+### Frontend Verify Mode (`--frontend-verify`)
+
+补 ralph 链路缺失的运行时可用性门：确定性验证每个用户可观测能力真正经 UI 可触发，避免"后端绿灯=完成"。
+
+1. **Resolve targets**: 读 phase 的 `plan.json` / `.task/TASK-*.json`，提取所有 `[UI-observable]` convergence.criteria（plan 阶段产出）；缺失则枚举后端写端点（POST/PUT/PATCH/DELETE）作为待验证清单。
+2. **Start app**: `next start`（或从 dashboard/package.json 解析的既有启动脚本）；启动失败 → E003。
+3. **Drive browser**: 用 chrome-devtools MCP（`mcp__claude_dms3-chrome-devtools__*`：navigate / click / fill / take_snapshot / list_network_requests）逐条执行每个 `[UI-observable]` 流程，断言：UI 入口存在且可触发 → 对应写请求返回 2xx → DOM 出现预期结果。
+4. **Write evidence**: 产出 `e2e-results.json`（结构见下），逐条记 pass/fail + 证据（网络状态码、快照引用）。**确定性断言，禁止"无人应答=全过"**。
+5. **Verdict**: 任一 `[UI-observable]` fail 或写端点无 UI 入口 → STATUS=NEEDS_RETRY（ralph 经 post-frontend-verify 触发 Fix-Loop）；全过 → DONE。
+
+```json
+// e2e-results.json
+{ "phase": "{phase}", "app_url": "http://localhost:3000",
+  "checks": [ { "criterion": "[UI-observable] ...", "ui_entry": "<selector/route>",
+    "request": "POST /api/notes", "status": 201, "dom_assert": "list shows new item",
+    "passed": true } ],
+  "summary": { "total": 0, "passed": 0, "failed": 0 }, "verdict": "pass|fail" }
+```
+
+Ralph-invoked 完成：`maestro ralph complete <idx> --status {STATUS} --evidence e2e-results.json`。
+
+---
+
 Follow '~/.maestro/workflows/test.md' completely.
 
 ### Phase Gates (MANDATORY, BLOCKING)
@@ -144,4 +169,5 @@ maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
 - [ ] Gaps updated with root_cause, fix_direction, affected_files
 - [ ] Gap-fix loop triggered if --auto-fix (max 2 iterations)
 - [ ] Next step routed (phase-transition if pass, verify if auto-fix success, debug --from-uat if issues, test-gen if low coverage)
+- [ ] `--frontend-verify`: 每条 [UI-observable] criterion 经真实浏览器断言，产出 e2e-results.json；任一 fail → NEEDS_RETRY（不放行）
 </success_criteria>
