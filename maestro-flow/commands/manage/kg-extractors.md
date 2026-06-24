@@ -101,7 +101,7 @@ If `--scan-only`: stop after Phase 2 summary.
 
 | Condition | Suggestion |
 |-----------|-----------|
-| Verify new symbols | `maestro kg search "<pattern_name>"` |
+| Verify new symbols | `maestro search --kg "<pattern_name>"` |
 | Re-index after changes | `maestro kg index` |
 | View KG stats | `maestro kg stats` |
 | Edit rules manually | Edit `.workflow/kg/extractors.yaml` |
@@ -122,5 +122,5 @@ If `--scan-only`: stop after Phase 2 summary.
 - [ ] extractors.yaml generated with valid rules
 - [ ] Each rule has match.type, match.pattern, extract.kind
 - [ ] Re-index succeeds with new extractors.yaml active
-- [ ] New symbols searchable via `maestro kg search`
+- [ ] New symbols searchable via `maestro search --kg`
 </success_criteria>

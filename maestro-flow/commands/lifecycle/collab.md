@@ -1,7 +1,7 @@
 ---
 name: maestro-collab
 description: Use when a question needs cross-verification from multiple CLI tools or diverse analytical perspectives
-argument-hint: "<requirement> [--tools gemini,qwen,claude] [--mode analysis|write] [--rule <template>] [-y]"
+argument-hint: "<requirement> [--tools agy,qwen,claude] [--mode analysis|write] [--rule <template>] [-y]"
 allowed-tools:
   - Read
   - Write
@@ -25,7 +25,7 @@ $ARGUMENTS — requirement text and optional flags.
 - `--rule <template>`: Shared rule template for all delegates
 - `-y`: Skip plan confirmation
 
-**Pre-load** (optional): `maestro spec load --category arch` + `maestro search --category arch` → include in delegate prompts.
+**Pre-load** (optional): `maestro load --type spec --category arch` + `maestro search --category arch` → include in delegate prompts.
 
 **Output**: `.workflow/scratch/{YYYYMMDD}-collab-{slug}/`
 - `collab-report.md` — merged findings with consensus/conflict/unique tags
