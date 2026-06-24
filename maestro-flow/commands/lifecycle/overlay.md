@@ -21,7 +21,10 @@ Turn natural-language instructions into command overlays — JSON patch files th
 </required_reading>
 
 <context>
-**Overlay model** — an overlay is a JSON file with a `name`, one or more `targets` (command names without `.md`), and a list of `patches`. Each patch targets an XML section (`execution`, `required_reading`, `context`, `success_criteria`, etc.), a mode (`append`, `prepend`, `replace`, `new-section`), and `content`. On apply, the patcher wraps the content in hashed HTML-comment markers so re-apply is idempotent and removal is surgical.
+**Overlay model**:
+- JSON file: `name`, `targets[]` (command names), `patches[]`
+- Patch: `section` (XML tag), `mode` (append/prepend/replace/new-section), `content`
+- Apply: hashed HTML-comment markers (idempotent, surgical removal)
 
 **Where overlays live**
 - User overlays: `~/.maestro/overlays/*.json` — created by this skill
@@ -138,8 +141,6 @@ Run:
 ```bash
 maestro overlay add ~/.maestro/overlays/<slug>.json
 ```
-
-This validates the overlay, copies it into place (idempotent), and applies it across all known install scopes. On validation failure, fix the JSON and re-run.
 
 ### 5. Report
 

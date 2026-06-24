@@ -15,8 +15,6 @@ allowed-tools:
 
 <purpose>
 Analyze current repository's code patterns to auto-generate `.workflow/kg/extractors.yaml` — a declarative config that teaches MaestroGraph's codegraph extractor to recognize project-specific symbols beyond standard function/class/method declarations.
-
-Detects: builder/factory API registrations, domain constant patterns, custom decorator conventions, framework-specific patterns, module-level constants.
 </purpose>
 
 <context>

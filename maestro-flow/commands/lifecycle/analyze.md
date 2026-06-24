@@ -23,6 +23,7 @@ Multi-dimensional analysis of a proposal, decision, or architecture choice via C
 <deferred_reading>
 - [state.json](~/.maestro/templates/state.json) — read when registering artifact
 - [issue-gaps-analyze.md](~/.maestro/workflows/issue-gaps-analyze.md) — read when --gaps is triggered
+- [boundary-grill.md](~/.maestro/workflows/boundary-grill.md) — read when boundary conflicts detected (between Phase 4 and Phase 5)
 </deferred_reading>
 
 <context>
@@ -93,6 +94,12 @@ Every decision MUST trace to independently gathered evidence. Manual Read/Grep i
 - User-provided input (domain knowledge, constraints, corrections)
 
 Decisions without CLI/agent-sourced evidence MUST be flagged as LOW CONFIDENCE.
+
+### Boundary Grill (Step 5 → Step 6)
+
+After discussion rounds, BEFORE synthesis: run boundary grill per `~/.maestro/workflows/boundary-grill.md`.
+Input: discussion.md decisions + exploration-codebase.json. Scope guard: "only analyze decisions; do not prejudge plan/execute concerns".
+IF conflicts → results to `analysis.md` § Boundary Grill Results + update `context.md` Locked/Free/Deferred.
 
 ### Standard Mode Gates
 
@@ -193,6 +200,8 @@ Full mode:
 - [ ] Confidence tracking initialized (Step 4.6) and re-scored each round (Step 5.8)
 - [ ] Readiness gate checked before synthesis (Step 5.10)
 - [ ] Pressure pass completed ≥ 1 time before Step 6
+- [ ] Boundary grill executed between Phase 4 and Phase 5 (skip if no conflicts detected)
+- [ ] Boundary grill results written to analysis.md § Boundary Grill Results (if conflicts found)
 - [ ] Confidence summary with factor decomposition written to analysis.md
 
 Gaps mode:

@@ -25,6 +25,7 @@ Pipeline: grill (optional) → **brainstorm** → roadmap / analyze / blueprint.
 - [scratch-index.json](~/.maestro/templates/scratch-index.json) — read when operating in scratch mode
 - [index.json](~/.maestro/templates/index.json) — read when operating in phase mode
 - [brainstorm-visualize.md](~/.maestro/workflows/brainstorm-visualize.md) — read when html-prototypes/ produced and user wants to browse them
+- [boundary-grill.md](~/.maestro/workflows/boundary-grill.md) — read when boundary conflicts detected (in cross-role review)
 </deferred_reading>
 
 <context>
@@ -88,8 +89,14 @@ These gates apply to Auto mode (full pipeline). Do NOT advance past a gate until
 - REQUIRED: Per-feature files `{role}/analysis-F-*.md` written for each feature in §10.
 - BLOCKED if missing: complete all role analyses before spawning cross-role-reviewer.
 
-**GATE 3: Cross-Role Review → Completion** (Step 4.5 → Report)
+**GATE 2.5: Cross-Role Review → Boundary Grill** (Step 4.5 → Step 4.6)
+Run boundary grill per `~/.maestro/workflows/boundary-grill.md` after cross-role-reviewer output.
+Input: reviewer findings + role Decision Digests. Scope guard: "only brainstorm decisions; do not pre-resolve roadmap/plan choices".
+IF conflicts → results to `guidance-specification.md` §12.5 + feed into GATE 3. NON-BLOCKING.
+
+**GATE 3: Cross-Role Review → Completion** (Step 4.5/4.6 → Report)
 - REQUIRED: Cross-role-reviewer output received with `patch_targets[]`.
+- REQUIRED: Boundary grill completed (if conflicts detected, results logged).
 - REQUIRED: If findings > 0, resolutions applied via Edit AND logged in `guidance-specification.md` §12.
 - REQUIRED: If findings == 0, final report explicitly states "No cross-role issues detected".
 - BLOCKED if missing: complete review synthesis before reporting.
@@ -191,6 +198,8 @@ Status verdicts:
 - [ ] `ui-designer/analysis.md` references DESIGN.md visual constraints when ui-designer is selected
 - [ ] Each `{role}/analysis.md` §2 Decisions table has ≥ 1 row per feature
 - [ ] Cross-role review (Step 4.5) executed; reviewer compares §2 Decision Digests; output includes `patch_targets[]` for every finding
+- [ ] Boundary grill executed after cross-role review (skip if no conflicts detected)
+- [ ] Boundary grill results written to guidance-specification.md §12.5 (if conflicts found)
 - [ ] If findings exist: each accepted resolution applied via Edit (annotate / strikeout / append) AND logged in `guidance-specification.md` §12 "Cross-Role Resolutions"
 - [ ] If zero findings: final report explicitly states "No cross-role issues detected"; guidance §12 unchanged
 - [ ] Heading-drift patch failures surfaced in final report (if any)

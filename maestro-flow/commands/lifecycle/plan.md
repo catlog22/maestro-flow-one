@@ -25,6 +25,7 @@ Produces plan.json + TASK files; registers PLN artifact in state.json.
 - [plan.json](~/.maestro/templates/plan.json) — read when generating plan output
 - [task.json](~/.maestro/templates/task.json) — read when generating task files
 - [state.json](~/.maestro/templates/state.json) — read when registering artifact
+- [boundary-grill.md](~/.maestro/workflows/boundary-grill.md) — read when boundary conflicts detected (in P4)
 </deferred_reading>
 
 <context>
@@ -50,7 +51,7 @@ Scope routing, base flags (`--collab`, `--spec`, `-y`, `--gaps`, `--dir`), outpu
 
 **Ad-hoc milestone (D-008):** When scope resolves to "standalone" via the standard standalone resolution (no `--from` source), and `current_milestone == null`, plan auto-creates an adhoc milestone (`type: "adhoc"`) in state.json before proceeding. This ensures downstream milestone-audit/complete have a valid milestone context. See workflow plan.md § "Ad-hoc Milestone Auto-Creation".
 
-**Exception (`--from analyze:ANL-xxx` / `blueprint:BLP-xxx`):** When scope is set to "standalone" by `--from`, skip adhoc milestone auto-creation — the upstream analyze/blueprint artifact already provides the milestone context (or is intentionally milestone-free). Adhoc creation in this path would conflict with the `--from` semantic of "this is a one-shot plan rooted in an existing artifact".
+**`--from analyze:*` / `blueprint:*`**: scope=standalone → skip adhoc milestone auto-creation.
 
 ### Role Knowledge
 `maestro search --category arch` → select relevant → `maestro wiki load`
@@ -84,8 +85,15 @@ Follow '~/.maestro/workflows/plan.md' completely.
 - REQUIRED: Main flow inline planning is FORBIDDEN (see P3 Agent Constraint below).
 - BLOCKED if missing: plan.json or TASK files not produced by planner agent — do not proceed to checking.
 
+**GATE P3.5 → P4: Boundary Grill → Plan Check**
+Run boundary grill per `~/.maestro/workflows/boundary-grill.md`.
+Input: plan.json tasks + convergence criteria + upstream context. Scope guard: "only plan scope; do not re-analyze or re-scope".
+IF conflicts → results to plan.json `boundary_grill` section + affected TASK files. DEC conflicts add `boundary_warning` to confidence.
+NON-BLOCKING: warnings, not hard stops.
+
 **GATE P4 → P5: Plan Check → User Confirmation**
 - REQUIRED: Plan-checker passed (or minor issues acknowledged).
+- REQUIRED: Boundary grill completed (conflicts resolved or accepted as risks).
 - REQUIRED: Confidence scored with 5-dimension factor model.
 - REQUIRED: Pressure pass completed on highest-complexity task.
 - REQUIRED: If plan touches UI (检出 `dashboard/` 或 UI 关键词 `landing|page|dashboard|frontend|UI|component|界面`), each delivery wave has ≥1 `[UI-observable]` convergence criterion (vertical-slice delivery, not backend-only).
@@ -151,8 +159,6 @@ For each created TASK-{NNN}.json that has issue_id:
   Append history entry: { action: "planned", at: <ISO>, by: "maestro-plan", summary: "Linked to TASK-{NNN}" }
 ```
 
-This ensures issue → TASK traceability. The `task_refs[]` and `task_plan_dir` fields on the issue allow the dashboard to resolve and display associated TASK details.
-
 ### Mode: Revise / Check
 
 Follow workflow plan.md § "Revise Mode" and § "Check Mode" respectively. These modes bypass the standard P1-P5 create pipeline.
@@ -216,6 +222,9 @@ Status verdicts:
 - [ ] Every task has `convergence.criteria[]` with grep-verifiable conditions (no subjective language)
 - [ ] UI plans: each delivery wave has ≥1 `[UI-observable]` convergence criterion (vertical slice; verified at runtime by ralph frontend-verify gate)
 - [ ] Every task `action` and `implementation` contain concrete values (no "align X with Y")
+- [ ] Boundary grill executed in P3.5 (skip if no conflicts detected)
+- [ ] Boundary grill results written to plan.json `boundary_grill` section (if conflicts found)
+- [ ] DEC conflicts reflected in confidence `boundary_warning` factor
 - [ ] Plan confidence scored in P4 with 5-dimension factor model
 - [ ] Plan readiness gate checked before P4.5 collision detection
 - [ ] Pressure pass completed on highest-complexity task

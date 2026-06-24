@@ -43,8 +43,6 @@ Load project UI conventions before extracting design system:
 maestro spec load --category ui
 ```
 
-If specs not initialized, continue without — the workflow still produces valid output.
-
 ## 2. Execute Workflow
 
 Route to `~/.maestro/workflows/ui-codify.md` and follow completely.

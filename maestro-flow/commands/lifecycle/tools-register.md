@@ -68,11 +68,7 @@ Parse $ARGUMENTS to determine mode:
 - Update frontmatter via: `maestro wiki update <id> --frontmatter '{"tool": true, "category": "<cat>", "summary": "<summary>"}'`
 - Do NOT recreate the document — modify in place
 
-**For all modes** — identify the usage timing: when should an agent or user invoke this tool? This becomes the first line of the entry description (see Step 5).
-
 ### Step 3: Determine Category
-
-**Core principle**: `category` = **who consumes this tool** (which agent type discovers and uses it), not what the content is about.
 
 | Category | Consumer Agent | Decision Question | Signal Words |
 |---|---|---|---|
@@ -86,8 +82,6 @@ Parse $ARGUMENTS to determine mode:
 - API contract (what endpoints look like) → `category: coding` (AST-*, tool: false)
 - API verification steps (how to test) → `category: test` (RCP-*, tool: true)
 - Ask user when ambiguous: "This tool content serves both developers and testers. Split into separate documents?"
-
-**Ambiguous cases**: Choose the **primary consumer** — the agent that would fail without this knowledge.
 
 ### Step 4: Decide Inline vs Ref
 

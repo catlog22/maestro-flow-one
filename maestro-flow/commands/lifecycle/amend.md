@@ -12,8 +12,6 @@ allowed-tools:
 ---
 <purpose>
 Signal-driven overlay generator — collect workflow deficiency signals from multiple sources, diagnose which commands need amendment, batch-generate targeted overlays. All amendments use overlay system (`~/.maestro/overlays/*.json`) — non-invasive, idempotent, survives reinstall.
-
-Differs from `/maestro-overlay` (single explicit intent). This command **discovers** what needs amending by analyzing workflow artifacts.
 </purpose>
 
 <required_reading>
