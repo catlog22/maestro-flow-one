@@ -1,10 +1,11 @@
 ---
 name: maestro-brainstorm
 description: Use when exploring ideas, evaluating approaches, or needing multi-perspective analysis before implementation
-argument-hint: "[topic|role-name] [--yes] [--count N] [--session ID] [--update] [--skip-questions] [--include-questions] [--style-skill PKG]"
+argument-hint: "[topic|role-name] [--yes] [--count N] [--session ID] [--update] [--skip-questions] [--include-questions] [--style-skill PKG] [--review-only] [--from <source>]"
 allowed-tools:
   - Read
   - Write
+  - Edit
   - Bash
   - Glob
   - Grep
@@ -51,6 +52,8 @@ $ARGUMENTS -- topic text for auto mode, or role name for single role mode.
 | `--skip-questions` | Skip context gathering questions | false |
 | `--include-questions` | Force context gathering even if analysis exists | false |
 | `--style-skill PKG` | Style package for ui-designer role | — |
+| `--review-only` | Run cross-role review on existing analyses without re-running role analysis | false |
+| `--from <source>` | Load upstream context package (grill:ID, blueprint:ID, @file, or path) | — |
 
 ### Pre-load specs
 1. **Architecture specs**: Run `maestro load --type spec --category arch` to load architecture constraints. Use as context for multi-role analysis — ensures roles respect documented decisions.

@@ -86,8 +86,14 @@ Follow '~/.maestro/workflows/execute.md' completely.
 - BLOCKED if missing: summary file absent or task status not updated — halt wave progression until evidence is recorded.
 - Do NOT silently skip failed tasks — mark as blocked with reason.
 
+**GATE 2.5: Wave Failure Handling**
+- IF all tasks in a wave failed: halt wave progression, report E005 with per-task failure reasons. Do NOT proceed to next wave — downstream waves depend on current wave outputs.
+- IF cascading failure (wave N fails → wave N+1 has unmet dependencies): mark all dependent tasks in subsequent waves as `blocked` with reason `"upstream_wave_failed"`. Skip blocked waves and proceed to completion with partial results.
+- `-y` mode: auto-skip blocked waves without prompting, log warning W002.
+- Non `-y` mode: `AskUserQuestion` with options [retry wave / skip and continue / abort execution].
+
 **GATE 3: All Tasks → Completion**
-- REQUIRED: All waves executed in dependency order.
+- REQUIRED: All waves executed in dependency order (or explicitly skipped via Gate 2.5).
 - REQUIRED: EXC artifact registered in state.json.
 - BLOCKED if missing: waves incomplete or EXC artifact not registered — do not report execution complete.
 
@@ -100,27 +106,37 @@ Task summaries MUST include:
 
 ### Post-task Knowledge Inquiry
 
-After each task completion, check triggers:
+After each task completion, extract structured fields from the task summary, then check triggers:
+
+**Structured extraction** (from `.summaries/TASK-{NNN}-summary.md`):
+- `deviations[]` — explicit plan deviations (look for "deviated", "changed approach", "instead of", "unlike plan")
+- `design_rationale[]` — explicit design decisions (look for "chose X because", "decided to", "trade-off")
+- `retry_count` — from `.task/TASK-{NNN}.json` status history
 
 | Condition | Ask | Route |
 |-----------|-----|-------|
-| Summary mentions approach change / plan deviation | "Record as arch constraint?" | spec-add arch |
-| retry_count >= 2 | "Document fix pattern?" | spec-add debug |
-| Summary contains design rationale ("chose X because") | "Record as knowhow?" | spec-add learning |
+| `deviations[]` is non-empty | "Record as arch constraint?" | spec-add arch |
+| `retry_count >= 2` | "Document fix pattern?" | spec-add debug |
+| `design_rationale[]` is non-empty | "Record as knowhow?" | spec-add learning |
 
 On confirm → `Skill("spec-add", "<category> <content> --description \"<summary>\"")`.
 Include `--description` with a one-line summary for search result display.
 
 ### Issue Status Sync
 
-On each task completion, if `task.issue_id` exists, sync status back to the issue in `.workflow/issues/issues.jsonl`:
+On each task completion, if `task.issue_id` exists, sync status back to the issue in `.workflow/issues/issues.jsonl`.
+
+**Confirmation gate**: Before writing to issues.jsonl, show the proposed status change and ask for confirmation — unless `-y` is active, in which case auto-approve.
 
 ```
 For each completed/failed TASK with issue_id:
   Read issue from issues.jsonl by issue_id
   Collect all task_refs[] statuses for that issue:
-    all task_refs completed → issue.status = "resolved"
-    any task_ref failed    → issue.status = "in_progress"
+    all task_refs completed → proposed issue.status = "resolved"
+    any task_ref failed    → proposed issue.status = "in_progress"
+  IF NOT auto_mode (-y):
+    AskUserQuestion: "Update issue {issue_id} status to {proposed_status}?" [Yes / Skip]
+    IF Skip → continue to next task without writing
   Append history entry: { action: "executed", at: <ISO>, by: "maestro-execute", summary: "TASK-{NNN} {status}" }
   Write updated issue back to issues.jsonl
 ```
@@ -169,7 +185,9 @@ Status verdicts:
 | E002 | error | Plan directory not found | Check --dir path |
 | E003 | error | plan.json not found in directory | Verify plan.json exists, run maestro-plan first |
 | E004 | error | No pending tasks, all tasks already completed | Check task statuses, reset if needed |
+| E005 | error | All tasks in wave failed — wave progression halted | Review per-task failure reasons; retry wave or abort |
 | W001 | warning | Executor completed with partial failures | Check task dependencies, retry failed wave |
+| W002 | warning | Cascading wave failure — downstream waves auto-blocked | Review blocked tasks; re-run after fixing upstream failures |
 </error_codes>
 
 <success_criteria>

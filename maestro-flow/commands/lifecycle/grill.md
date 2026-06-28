@@ -151,7 +151,7 @@ Status verdicts:
 - [ ] Risk register captures all unresolved tensions
 - [ ] `context-package.json` generated with schema "context-package/1.0"
 - [ ] Artifact registered in state.json (type=grill, id=GRL-xxx)
-- [ ] Session sealed via finish-work
+- [ ] Session sealed via finish-work (finish-work.md includes AskUserQuestion confirmation before state.json artifact registration and optional spec/knowhow extraction)
 </success_criteria>
 
 <on_complete>

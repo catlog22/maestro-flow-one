@@ -70,10 +70,13 @@ Follow '~/.maestro/workflows/milestone-release.md' completely.
 
 **GATE 3: Changelog → Tag/Push**
 - REQUIRED: CHANGELOG.md entry written with milestone summary + grouped changes.
-- REQUIRED: Release commit created with conventional message.
+- REQUIRED: AskUserQuestion confirmation before creating release commit — show version, changelog diff, and files to be committed. User must confirm or abort.
+- REQUIRED: Release commit created with conventional message (after confirmation).
 
-**GATE 4: Tag → Completion**
-- REQUIRED: Annotated git tag created (unless --no-tag).
+**GATE 4: Tag → Push → Completion**
+- REQUIRED: AskUserQuestion confirmation before git tag creation — show tag name and annotation (unless --no-tag). User must confirm or abort.
+- REQUIRED: Annotated git tag created (unless --no-tag) (after confirmation).
+- REQUIRED: AskUserQuestion confirmation before git push — show remote and refs to push (unless --no-push). User must confirm or abort.
 - REQUIRED: state.json updated with last_release_version + last_release_at.
 
 For `--dry-run`: print computed version, changelog diff, and tag name without side effects.
@@ -132,5 +135,6 @@ Status verdicts:
 - [ ] Release commit created with conventional message
 - [ ] Annotated git tag created (unless `--no-tag`)
 - [ ] Commit + tag pushed to remote (unless `--no-push` or push failed → W002)
-- [ ] state.json updated with last_release_version + last_release_at timestamp
+- [ ] User confirmed before each destructive git operation (commit, tag, push) via AskUserQuestion
+- [ ] state.json updated with last_release_version + last_release_at timestamp (after AskUserQuestion confirmation)
 </success_criteria>

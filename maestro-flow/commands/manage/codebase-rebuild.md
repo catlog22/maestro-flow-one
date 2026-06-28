@@ -29,6 +29,8 @@ $ARGUMENTS -- optional flags.
 - `--force` -- Skip confirmation prompt and proceed directly
 - `--skip-commit` -- Do not auto-commit after rebuild
 
+**Confirmation gate:** Unless `--force` is set, prompt the user (AskUserQuestion) before executing git commit. Show the list of changed files and proposed commit message. If `--skip-commit` is set, skip the commit entirely.
+
 **Mapper agent assignments (when `--focus` omitted):**
 | Agent | Focus | Output file |
 |-------|-------|-------------|
@@ -66,6 +68,7 @@ Follow '~/.maestro/workflows/codebase-rebuild.md' completely.
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
 | E001 | error | .workflow/ not initialized | Run maestro-init first to create .workflow/ |
+| E002 | error | All 4 mapper agents failed | Abort rebuild; check agent configuration and retry |
 | W001 | warning | A mapper agent failed (partial results) | Retry failed mapper or accept partial results |
 | W002 | warning | `.workflow/codebase/` already exists -- user prompted for rebuild/skip | check_existing |
 | W003 | warning | KG validation failed (graph written with valid=false) | Review .kg-tmp/ artifacts, re-run KG pipeline |
@@ -75,7 +78,8 @@ Follow '~/.maestro/workflows/codebase-rebuild.md' completely.
 <success_criteria>
 - [ ] User confirmed rebuild (or --force used)
 - [ ] .workflow/codebase/ cleared and rebuilt from scratch (or scoped subset when --focus set)
-- [ ] All 4 mapper agents spawned (failures logged as W001)
+- [ ] All 4 mapper agents spawned (all-fail → E002; partial fail → W001)
+- [ ] If not --skip-commit: user confirmed git commit (or --force used) before committing
 - [ ] doc-index.json generated and valid
 - [ ] All documentation files regenerated
 - [ ] state.json updated with rebuild timestamp

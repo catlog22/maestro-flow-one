@@ -1,7 +1,7 @@
 ---
 name: learn-follow
 description: Guided reading of code or wiki to extract patterns
-argument-hint: "<path|wiki-id|topic> [--depth shallow|deep] [--save-wiki]"
+argument-hint: "<path|wiki-id|topic> [--depth shallow|deep] [--save-wiki] [-y]"
 allowed-tools:
   - Read
   - Write
@@ -29,6 +29,7 @@ $ARGUMENTS — target and optional flags.
 - `--depth shallow` (default): key patterns and structure only
 - `--depth deep`: every function, every branch, every assumption
 - `--save-wiki`: create wiki note entry with reading notes
+- `-y`: Skip confirmation prompts for knowhow/spec writes
 
 **Storage read**: target file + wiki forward/backlinks + `coding-conventions.md` + `.workflow/specs/learnings.md` (dedup)
 **Storage write**: `.workflow/knowhow/KNW-follow-{slug}-{date}.md` + append `.workflow/specs/learnings.md`
@@ -64,7 +65,8 @@ S_EXTRACT:
   → S_PERSIST     DO: A_EXTRACT_PATTERNS
 
 S_PERSIST:
-  → END           DO: write KNW-follow + append .workflow/specs/learnings.md [+ wiki note if --save-wiki]
+  → END           GATE: unless -y, AskUserQuestion showing files to write and spec-entries to append — proceed only on confirm
+                  DO: write KNW-follow + append .workflow/specs/learnings.md [+ wiki note if --save-wiki]
 
 </transitions>
 

@@ -11,6 +11,7 @@ allowed-tools:
   - Grep
   - Agent
   - Skill
+  - AskUserQuestion
 ---
 <purpose>
 Extract design system from source code into tokens, reference package, and knowledge assets.
@@ -63,10 +64,19 @@ The workflow orchestrates 4 phases with deferred loading of phase-specific workf
 **GATE Phase 3 → Phase 4: Package → Knowhow**
 - REQUIRED: preview.html + preview.css generated as interactive showcase.
 - BLOCKED if missing: preview artifacts not generated — knowhow phase needs rendered reference for validation.
+- REQUIRED: AskUserQuestion confirmation before proceeding to knowhow generation:
+  ```
+  question: "Preview 生成完成。是否继续将设计系统持久化为 knowhow 知识资产？"
+  options:
+    - label: "继续生成 knowhow"
+      description: "调用 codify-to-knowhow 写入 AST/DCS assets 和 spec entries"
+    - label: "仅保留 preview，跳过 knowhow"
+      description: "保留 preview.html + preview.css，不写入知识库"
+  ```
 
 **GATE Phase 4 → Completion: Knowhow → Done**
 - REQUIRED: knowhow-manifest.json created with AST/DCS assets and spec entries.
-- REQUIRED: codify-to-knowhow called and completed.
+- REQUIRED: codify-to-knowhow called and completed (only after user confirmation at Phase 3→4 gate).
 - BLOCKED if missing: knowhow-manifest.json absent or codify-to-knowhow not invoked — knowledge assets not persisted.
 
 ### Artifact Verification (before completion)

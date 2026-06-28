@@ -27,6 +27,7 @@ Requires audit PASS; produces milestone archive and learnings.
 
 <context>
 Milestone: $ARGUMENTS (optional -- defaults to current_milestone from state.json).
+If $ARGUMENTS is empty AND current_milestone is null → raise E001 with message "No milestone specified and no current_milestone set in state.json. Provide a milestone identifier as argument."
 
 **Requires:** `/maestro-milestone-audit` should have passed.
 
@@ -59,7 +60,8 @@ Archive flow steps (validation, directory archival, artifact history, knowhow ex
 - BLOCKED if missing: knowhow extraction not attempted or project.md not updated — state advancement requires completed knowledge capture.
 
 **GATE 4: State Advancement → Completion**
-- REQUIRED: state.json updated — next milestone as current (standard) or current_milestone=null (adhoc).
+- REQUIRED: AskUserQuestion confirmation before state.json advancement — show current milestone, next milestone (or null for adhoc), and artifacts to clear. User must confirm or abort.
+- REQUIRED: state.json updated — next milestone as current (standard) or current_milestone=null (adhoc) (after confirmation).
 - REQUIRED: Roadmap snapshot saved (standard only).
 - BLOCKED if missing: state.json not advanced — project remains stuck on completed milestone.
 
@@ -73,9 +75,12 @@ After knowhow extraction (step 4), scan `learnings.md` for promotion candidates:
 2. **Convention drift detection**: Compare executed task summaries against `coding-conventions.md` and `architecture-constraints.md`:
    → Ask: "Were any established conventions bypassed during this milestone? Should conventions be updated?"
 
-3. **Wiki island check**: Auto-trigger `manage-wiki connect --fix` to link newly extracted knowledge.
+3. **Wiki island check**: AskUserQuestion "Run wiki-connect --fix to link newly extracted knowledge?" — execute `manage-wiki connect --fix` only if user confirms.
 
-If user confirms promotion, invoke `Skill({ skill: "spec-add", args: "<category> <content>" })` with promoted content, preserving original date and source traceability.
+Each promotion candidate requires explicit user confirmation via AskUserQuestion before writing:
+- **"Promote"** → invoke `Skill({ skill: "spec-add", args: "<category> <content>" })` with promoted content, preserving original date and source traceability.
+- **"Skip"** → do not promote this candidate; proceed to next.
+- **"Skip all"** → skip remaining candidates.
 
 **Adhoc milestone (D-008):** When completing an adhoc milestone, skip roadmap snapshot and do not advance to next milestone. Set `current_milestone = null`, `status = "idle"`. Adhoc milestones are self-contained — no successor in roadmap chain.
 </execution>

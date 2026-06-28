@@ -1,7 +1,7 @@
 ---
 name: learn-investigate
 description: Investigate questions with hypothesis testing and evidence logging
-argument-hint: "<question> [--scope <path>] [--max-hypotheses N]"
+argument-hint: "<question> [--scope <path>] [--max-hypotheses N] [-y]"
 allowed-tools:
   - Read
   - Write
@@ -22,6 +22,7 @@ $ARGUMENTS — question text and optional flags.
 **Flags**:
 - `--scope <path>`: Restrict to files under this dir (default: entire project)
 - `--max-hypotheses N`: Max hypotheses before escalation (default: 3)
+- `-y`: Skip confirmation prompts for report/spec writes
 
 **Storage write**:
 - `.workflow/knowhow/KNW-investigate-{slug}/evidence.ndjson` — structured evidence (one JSON line per item)
@@ -57,11 +58,11 @@ S_PATTERN:
   → S_HYPOTHESIZE DO: match evidence against debug-notes.md + .workflow/specs/learnings.md patterns
 
 S_HYPOTHESIZE:
-  → S_CLI_EXPLORE WHEN: CLI tools enabled AND hypotheses non-trivial    DO: A_FORM_HYPOTHESES
-  → S_TEST        WHEN: no CLI tools OR trivial hypotheses              DO: A_FORM_HYPOTHESES
+  → S_CLI_EXPLORE WHEN: CLI tools enabled (at least one tool in cli-tools.json enabled) AND hypotheses non-trivial (require cross-file tracing or data-flow analysis)    DO: A_FORM_HYPOTHESES
+  → S_TEST        WHEN: no CLI tools OR trivial hypotheses (answerable by local Grep/Read)    DO: A_FORM_HYPOTHESES
 
 S_CLI_EXPLORE:
-  → S_TEST        DO: A_CLI_SUPPLEMENT (maestro delegate --role explore --mode analysis, run_in_background, STOP)
+  → S_TEST        DO: A_CLI_SUPPLEMENT (maestro delegate --to <first-enabled-tool> --mode analysis, run_in_background, STOP)
 
 S_TEST:
   → S_REPORT      WHEN: hypothesis confirmed                  DO: A_TEST_HYPOTHESIS
@@ -73,7 +74,8 @@ S_ESCALATE:
   → S_REPORT      WHEN: user selects "Escalate" or still stuck          DO: mark INCONCLUSIVE
 
 S_REPORT:
-  → END           DO: A_SYNTHESIZE_REPORT
+  → END           GATE: unless -y, AskUserQuestion showing report.md path and spec-entries to append — proceed only on confirm
+                  DO: A_SYNTHESIZE_REPORT
 
 </transitions>
 
@@ -108,7 +110,7 @@ Rank by plausibility (evidence strength). Write to understanding.md:
 maestro delegate "PURPOSE: Gather evidence for hypotheses
 TASK: Trace call chains and data flows per hypothesis | Find corroborating/contradicting patterns
 EXPECTED: JSON [{hypothesis_rank, evidence: [{file, line, supports: bool, explanation}]}]
-" --role explore --mode analysis
+" --to <first-enabled-tool> --mode analysis
 ```
 Run_in_background, STOP, wait. On callback: append to evidence.ndjson.
 

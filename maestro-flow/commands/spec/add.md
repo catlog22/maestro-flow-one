@@ -1,13 +1,14 @@
 ---
 name: spec-add
 description: Add spec entry by category with role tagging
-argument-hint: "[--scope project|global|team|personal] <category> <content>"
+argument-hint: "[--scope project|global|team|personal] [-y] <category> <content>"
 allowed-tools:
   - Read
   - Write
   - Bash
   - Glob
   - Grep
+  - AskUserQuestion
 ---
 <purpose>
 Add `<spec-entry>` to specs by category. 4 scopes: project (default), global, team, personal.
@@ -45,6 +46,8 @@ Scope-to-directory mapping, category-to-file mapping, and entry format defined i
 
 <execution>
 Follow '~/.maestro/workflows/specs-add.md' completely.
+
+**Confirmation gate**: Unless -y flag is passed, after formatting the `<spec-entry>` block but before appending to the target file, AskUserQuestion showing the formatted entry, target file path, and scope. Proceed only on user confirm.
 </execution>
 
 <error_codes>
@@ -52,7 +55,7 @@ Follow '~/.maestro/workflows/specs-add.md' completely.
 |------|----------|-------------|-------|
 | E001 | fatal | Category and content are both required | parse_input |
 | E002 | fatal | Specs directory not initialized -- run `maestro spec init --scope <scope>` | validate_entry |
-| E003 | fatal | Invalid category -- must be one of: coding, arch, quality, debug, test, review, learning, tools, ui | parse_input |
+| E003 | fatal | Invalid category -- must be one of: coding, arch, quality, debug, test, review, learning, ui | parse_input |
 | E004 | fatal | Invalid scope -- must be one of: project, global, team, personal | parse_input |
 | E005 | fatal | Personal scope requires uid -- use `--uid` or run `maestro collab join` first | parse_input |
 </error_codes>

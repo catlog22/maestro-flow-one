@@ -64,14 +64,14 @@ Read `.workflow/config.json`. If file missing, initialize with empty guard secti
 
 **`allow <path>`:**
 - Normalize path to forward slashes, ensure trailing slash for directories
-- If `guard.mode` is `deny`, switch to `allow` and clear paths with warning
+- If `guard.mode` is `deny`, AskUserQuestion: "Switching from deny to allow mode will clear existing paths ({N} paths). Continue?" — abort if user declines.
 - Add path to `guard.paths` (deduplicate)
 - Set `guard.enabled = true` if not already
 - Write config
 
 **`deny <path>`:**
 - Normalize path to forward slashes, ensure trailing slash for directories
-- If `guard.mode` is `allow`, switch to `deny` and clear paths with warning
+- If `guard.mode` is `allow`, AskUserQuestion: "Switching from allow to deny mode will clear existing paths ({N} paths). Continue?" — abort if user declines.
 - Set `guard.mode = "deny"`
 - Add path to `guard.paths` (deduplicate)
 - Set `guard.enabled = true` if not already (symmetric with `allow`: adding a deny path auto-enables the guard)

@@ -202,7 +202,8 @@ Before reading any command workflow:
    - `↺` marks refine loop with max iteration count
    - Conditional steps show trigger condition
    - Skipped conditional steps marked `(skipped)`
-3. Create session: `.workflow/.maestro/ui-craft-{YYYYMMDD-HHmmss}/status.json`
+3. **Confirm chain session**: AskUserQuestion "Create chain session for '{chain_type}' targeting '{target}'?" — proceed only if user confirms. On decline, abort chain.
+   Create session: `.workflow/.maestro/ui-craft-{YYYYMMDD-HHmmss}/status.json`
    ```json
    { "chain_type": "...", "target": "...", "steps": [...], "current_step": 0,
      "gate_history": [], "loop_count": 0, "status": "running" }

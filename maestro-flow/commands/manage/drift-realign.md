@@ -1,7 +1,7 @@
 ---
 name: manage-drift-realign
 description: Detect and realign .workflow/ artifact drift against code reality after refactoring
-argument-hint: "--scope <roadmap|spec|codebase|state|issue|knowhow|project|all> [--since YYYY-MM-DD|commit|HEAD~N] [--depth shallow|deep] [--dry-run] [--report] [--auto-archive] [--interactive]"
+argument-hint: "[--scope <roadmap|spec|codebase|state|issue|knowhow|project|all>] [--since YYYY-MM-DD|commit|HEAD~N] [--depth shallow|deep] [--dry-run] [--report] [--auto-archive] [--interactive]"
 allowed-tools:
   - Read
   - Write
@@ -43,7 +43,10 @@ Arguments: $ARGUMENTS
 
 **`--interactive`：** 逐项交互分诊（默认）。
 
-**互斥规则：** `--report` 覆盖 `--interactive`；`--auto-archive` 覆盖 `--interactive`。
+**互斥规则：**
+- `--report` 覆盖 `--interactive`
+- `--auto-archive` 覆盖 `--interactive`
+- `--report` 与 `--auto-archive` 互斥（同时传入 → E006）
 
 **状态文件读取：**
 - `.workflow/state.json`
@@ -127,6 +130,7 @@ Follow `~/.maestro/workflows/drift-realign.md` Stages 1-9 in order.
 | E003 | error | git 不可用（非 git 仓库） | 初始化 git |
 | E004 | error | `--since` 无法解析 | 检查日期格式或 commit ref |
 | E005 | error | 备份失败 | 检查磁盘空间 |
+| E006 | error | `--report` 与 `--auto-archive` 同时传入 | 二选一：`--report` 仅生成报告，`--auto-archive` 执行归档 |
 | W001 | warning | session 历史不可用（wiki 未索引） | 运行 `maestro wiki rebuild` |
 | W002 | warning | `drift_window` > 180 天 | 建议使用 `--depth deep` |
 | W003 | warning | 部分 scanner agent 失败 | 以部分覆盖继续 |

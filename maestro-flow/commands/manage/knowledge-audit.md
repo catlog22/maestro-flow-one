@@ -32,6 +32,8 @@ Arguments: $ARGUMENTS
 
 **删除策略**默认 `--interactive`（三态面板逐项决策）；非交互模式 `--mark`（仅打标）/ `--delete`（软删到 `.trash/`）/ `--purge`（物理擦除，仅 artifact 且需双重确认）。
 
+**互斥规则：** `--interactive`、`--mark`、`--delete`、`--purge` 四选一，同时传入多个 → E006。
+
 Flag 全集、scope 对应的扫描路径、Stage 步骤、检测算法定义在 workflow knowledge-audit.md。
 </context>
 
@@ -111,6 +113,7 @@ Follow `~/.maestro/workflows/knowledge-audit.md` Stages 1-8 in order.
 | E003 | error | `--purge` 与 `--dry-run` 同用 | 二选一 |
 | E004 | error | `--purge` 作用于非 artifact 范围 | purge 仅支持 artifact scope |
 | E005 | error | 备份失败（`.trash/` 写入异常） | 检查磁盘空间与权限，重试 |
+| E006 | error | `--interactive`/`--mark`/`--delete`/`--purge` 同时传入多个 | 四选一，默认 `--interactive` |
 | W001 | warning | 检出冲突但用户选择 keep | 记入 report，不阻断 |
 | W002 | warning | 待删 artifact 无 harvest-log 记录 | 提示先跑 manage-harvest |
 | W003 | warning | 循环 supersedes 链 | 自动断环或交互选保留节点 |

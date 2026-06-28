@@ -52,7 +52,18 @@ Follow '~/.maestro/workflows/merge.md' completely.
 <completion>
 ### Knowledge inquiry
 
-After successful merge, ask user once: "Record milestone learnings?" If yes, persist via `Skill("spec-add", "learning \"<title>\" \"<insight>\" --keywords <kw1>,<kw2> --description \"<summary>\"")`.
+After successful merge, use `AskUserQuestion` to confirm knowledge persistence:
+
+```
+question: "Merge 完成。是否记录里程碑经验教训？"
+options:
+  - label: "记录经验"
+    description: "通过 spec-add 持久化此次里程碑的关键洞察"
+  - label: "跳过"
+    description: "不记录，直接完成"
+```
+
+User selects "记录经验" → prompt for title/insight, then persist via `Skill("spec-add", "learning \"<title>\" \"<insight>\" --keywords <kw1>,<kw2> --description \"<summary>\"")`. User selects "跳过" → proceed to next-step routing.
 
 ### Next-step routing
 

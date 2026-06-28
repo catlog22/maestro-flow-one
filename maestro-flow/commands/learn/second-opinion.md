@@ -1,7 +1,7 @@
 ---
 name: learn-second-opinion
 description: Get alternative perspectives — review, challenge, or consult
-argument-hint: "<target> [--mode review|challenge|consult]"
+argument-hint: "<target> [--mode review|challenge|consult] [-y]"
 allowed-tools:
   - Read
   - Write
@@ -27,7 +27,9 @@ $ARGUMENTS — target and optional mode flag.
 | `HEAD` / `staged` | `git diff HEAD` / `git diff --staged` |
 | Phase number | Resolve via state.json.artifacts[] → plan.json |
 
-**Flags**: `--mode review|challenge|consult` (default: review)
+**Flags**:
+- `--mode review|challenge|consult` (default: review)
+- `-y`: Skip confirmation prompts for knowhow/spec writes
 
 **Pre-load** (optional): `Skill("spec-load")` for conventions + `maestro search "<target topic>"` for related entries.
 
@@ -62,7 +64,8 @@ S_SYNTHESIZE:
   → S_PERSIST     DO: merge perspectives → agreements, disagreements, verdict, top 3 recommendations
 
 S_PERSIST:
-  → END           DO: write KNW-opinion + append <spec-entry> blocks to .workflow/specs/learnings.md
+  → END           GATE: unless -y, AskUserQuestion showing files to write and spec-entries to append — proceed only on confirm
+                  DO: write KNW-opinion + append <spec-entry> blocks to .workflow/specs/learnings.md
 
 </transitions>
 

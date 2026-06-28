@@ -23,6 +23,7 @@ Produces audit-report.md with PASS/FAIL verdict.
 
 <context>
 Milestone: $ARGUMENTS (optional -- defaults to current_milestone from state.json).
+If $ARGUMENTS is empty AND current_milestone is null → raise E001 with message "No milestone specified and no current_milestone set in state.json. Provide a milestone identifier as argument."
 
 **Requires:** All phases in the milestone should have completed execute artifacts.
 

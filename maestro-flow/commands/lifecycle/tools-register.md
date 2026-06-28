@@ -100,6 +100,21 @@ Use when {timing/trigger condition}.
 1. Step one ...
 ```
 
+**Confirm before writing** — Use `AskUserQuestion` to show the user the planned knowhow document (title, category, keywords, summary, step count) and spec ref entry before persisting:
+
+```
+question: "确认写入以下 knowhow 工具文档？"
+options:
+  - label: "确认写入"
+    description: "knowhow: {title} (category: {category}, keywords: {keywords}), spec ref entry"
+  - label: "修改后写入"
+    description: "调整 title/category/keywords 后重新确认"
+  - label: "取消"
+    description: "不写入任何文件"
+```
+
+User confirms → proceed; user edits → re-gather; user cancels → END.
+
 **Create knowhow tool document** in `.workflow/knowhow/` with `tool: true` in YAML frontmatter:
 ```yaml
 ---
@@ -115,7 +130,7 @@ summary: "Use when <timing>. <scope description>"
 1. Step one ...
 ```
 
-**Optionally register spec ref entry** for index discoverability:
+**Optionally register spec ref entry** (after user confirmation above) for index discoverability:
 ```bash
 maestro spec add <category> "<title>" "Use when <timing>. <scope summary>" --keywords "<csv>" \
   --description "<one-line summary>" --ref "knowhow/RCP-<slug>.md" --knowhow-type recipe

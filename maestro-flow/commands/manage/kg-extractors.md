@@ -1,7 +1,7 @@
 ---
 name: manage-kg-extractors
 description: Analyze codebase patterns and generate .workflow/kg/extractors.yaml for custom symbol extraction
-argument-hint: "[--scan-only] [--append] [--language <lang>]"
+argument-hint: "[--scan-only] [--append] [--language <lang>] [--min-count <n>]"
 allowed-tools:
   - Read
   - Write
@@ -24,6 +24,7 @@ $ARGUMENTS -- optional flags.
 - `--scan-only` — Only report detected patterns, don't write extractors.yaml
 - `--append` — Append new rules to existing extractors.yaml (default: overwrite)
 - `--language <lang>` — Limit analysis to specific language (python, typescript, java, etc.)
+- `--min-count <n>` — Minimum occurrences to include a pattern (default: 3). Use `--min-count 1` to include rare patterns.
 
 **Analysis targets (per language):**
 
@@ -77,6 +78,8 @@ Spawn **3 parallel agents** to scan the codebase:
 
 Each agent returns: `[{pattern_type, regex_evidence, file_count, sample_matches: [{file, line, code}]}]`
 
+**Gate:** If all 3 agents return empty results → E002 (abort). If at least 1 agent succeeds, proceed with partial results (log W001 for failed agents).
+
 ### Phase 2: Generate rules
 
 For each discovered pattern with ≥3 occurrences:
@@ -112,6 +115,7 @@ If `--scan-only`: stop after Phase 2 summary.
 | Code | Severity | Condition | Recovery |
 |------|----------|-----------|----------|
 | E001 | error | .workflow/ not initialized | Run maestro-init first |
+| E002 | error | All 3 Phase 1 agents failed — zero patterns discovered | Check codebase language detection; retry with `--language` |
 | W001 | warning | No patterns detected for language | Try broader scan or different language |
 | W002 | warning | Pattern has < 3 occurrences | Skipped by default, include with --min-count 1 |
 | W003 | warning | Existing extractors.yaml will be overwritten | Use --append to preserve |

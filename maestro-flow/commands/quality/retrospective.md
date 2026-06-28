@@ -30,7 +30,14 @@ Post-execution retrospective (复盘): four parallel lenses (technical/process/q
 <context>
 Arguments: $ARGUMENTS
 
-Modes (scan/single/range/all), flags (--lens, --no-route, --compare, -y), and storage paths defined in workflow retrospective.md Argument Shape and Stages 1-7.
+**Flags:**
+- `-y` — Skip confirmation prompts for external writes (issues.jsonl, spec entries, knowhow capture)
+- `--no-route` — Skip routing stage (produce retrospective files only, no spec/issue/knowhow writes)
+- `--compare N` — Compare current phase retrospective against phase N (requires single phase argument)
+- `--all` — Run retrospective on all completed phases that lack retrospective.json
+- `--lens <name>` — Restrict to specific lens (technical|process|quality|decision); default: all four
+
+Modes (scan/single/range/all) and storage paths defined in workflow retrospective.md Argument Shape and Stages 1-7.
 </context>
 
 <execution>
@@ -55,6 +62,7 @@ Follow `~/.maestro/workflows/retrospective.md` Stages 1–8 in order.
 - REQUIRED: `retrospective.md` written (human-readable).
 - REQUIRED: Issue rows match canonical `issues.jsonl` schema (status "open", full fields).
 - REQUIRED: Note tips routed via `Skill({ skill: "manage-knowhow-capture", args: "tip ..." })`.
+- REQUIRED: Unless `-y` flag is set, confirm before each external write (issues.jsonl append, spec-entry append, knowhow-capture). With `-y`, skip all confirmation prompts.
 - BLOCKED if routing incomplete: finish all write operations before reporting.
 
 ### Execution Constraints

@@ -45,7 +45,7 @@ $ARGUMENTS -- phase number for micro mode, topic text for macro/adhoc mode, no a
 |------|--------|---------|
 | `-y` / `--yes` | Auto mode — skip interactive scoping, use recommended defaults, auto-deepen | false |
 | `-c` / `--continue` | Resume from existing session (auto-detect session folder + discussion.md) | false |
-| `-q` / `--quick` | Quick mode — skip exploration + scoring, go straight to decision extraction (context.md only) | false |
+| `-q` / `--quick` | Quick mode — skip exploration + scoring, go straight to decision extraction (context.md only). **Precedence**: when combined with `-c`, the resumed session preserves its original mode (full or quick); `-q` does NOT override a resumed full session to quick mode. | false |
 | `--from <source>` | Load upstream context package (grill:ID, brainstorm:ID, blueprint:BLP-xxx, @file, or path) | — |
 | `--gaps [ISS-ID]` | Issue root cause analysis mode. If ISS-ID provided, analyze single issue. If omitted, analyze all open/registered issues from issues.jsonl | — |
 

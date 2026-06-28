@@ -43,6 +43,7 @@ S_SCAN        — 扫描现有 workflow 库匹配            PERSIST: —
 S_DECIDE      — 用户选择：复用现有 / 生成新脚本       PERSIST: —
 S_DESIGN      — 分析任务、设计工作流结构              PERSIST: —
 S_GENERATE    — 生成脚本 → 写入文件 → node --check 验证  PERSIST: uwf-{slug}.js
+S_CONFIRM_EXEC — 确认执行前门控                       PERSIST: —
 S_EXECUTE     — 调用 Workflow 工具执行               PERSIST: —
 S_PERSIST     — 保存脚本到 dynamic/ 目录              PERSIST: —
 </states>
@@ -58,7 +59,7 @@ S_SCAN:
   → S_DESIGN    WHEN: no matches                    DO: A_SCAN_LIBRARY
 
 S_DECIDE:
-  → S_EXECUTE   WHEN: user picks existing script    DO: —
+  → S_EXECUTE   WHEN: user picks existing script    DO: A_CONFIRM_EXECUTE
   → S_DESIGN    WHEN: user wants new script         DO: —
   → S_DESIGN    WHEN: --from specified              DO: —
 
@@ -66,10 +67,15 @@ S_DESIGN:
   → S_GENERATE  DO: A_DESIGN_WORKFLOW
 
 S_GENERATE:
-  → S_EXECUTE   WHEN: Write + node --check pass AND NOT --dry-run  DO: A_GENERATE_SCRIPT
-  → S_PERSIST   WHEN: --dry-run (file already written)             DO: A_GENERATE_SCRIPT
-  → S_GENERATE  WHEN: node --check fails (retry ≤2)               DO: A_GENERATE_SCRIPT (fix & retry)
-  → END         WHEN: node --check fails after 2 retries          DO: report E003
+  → S_CONFIRM_EXEC  WHEN: Write + node --check pass AND NOT --dry-run  DO: A_GENERATE_SCRIPT
+  → S_PERSIST       WHEN: --dry-run (file already written)             DO: A_GENERATE_SCRIPT
+  → S_GENERATE      WHEN: node --check fails (retry ≤2)               DO: A_GENERATE_SCRIPT (fix & retry)
+  → END             WHEN: node --check fails after 2 retries          DO: report E003
+
+S_CONFIRM_EXEC:
+  → S_EXECUTE   WHEN: user confirms execution      DO: A_CONFIRM_EXECUTE
+  → S_PERSIST   WHEN: user declines execution       DO: —
+  → END         WHEN: user cancels                  DO: —
 
 S_EXECUTE:
   → S_PERSIST   WHEN: workflow completed             DO: A_EXECUTE_WORKFLOW
@@ -283,6 +289,23 @@ Bash({ command: 'node --check "path/to/uwf-{slug}.js"' })
 4. 仍失败则报 E003，展示脚本内容和错误信息
 
 验证通过后进入 S_EXECUTE（若非 `--dry-run`）。
+
+### A_CONFIRM_EXECUTE
+
+Use `AskUserQuestion` to confirm before executing the generated or selected script:
+
+```
+question: "脚本已就绪，是否执行？"
+options:
+  - label: "执行"
+    description: "调用 Workflow 工具运行 {script_name}（预估 {agent_count} 个 agent）"
+  - label: "仅保存，不执行"
+    description: "保存脚本到 dynamic/ 目录，稍后手动执行"
+  - label: "取消"
+    description: "不执行也不保存"
+```
+
+User confirms → S_EXECUTE; user declines → S_PERSIST (save only); user cancels → END.
 
 ### A_EXECUTE_WORKFLOW
 

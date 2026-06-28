@@ -27,7 +27,7 @@ $ARGUMENTS -- optional flags and keyword
   - `global`: global + project merged (~/.maestro/specs/ + .workflow/specs/)
   - `team`: project + team shared (.workflow/collab/specs/)
   - `personal`: project + team + personal (requires uid)
-- `--category <category>` — Load by category: primary category doc (full) + cross-file entries with matching category attr. Categories: coding, arch, test, review, debug, learning, ui.
+- `--category <category>` — Load by category: primary category doc (full) + cross-file entries with matching category attr. Categories: coding, arch, quality, test, review, debug, learning, ui.
 - `--keyword <word>` — Filter by keyword within entries
 
 **File → Primary Category mapping:**

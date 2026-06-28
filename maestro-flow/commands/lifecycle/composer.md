@@ -124,7 +124,7 @@ Read deferred `node-catalog.md` (fallback to built-in mapping):
 | testing | `quality-test` |
 | review | `quality-review` |
 | brainstorm | `maestro-brainstorm` |
-| analysis | `maestro delegate --role analyze` |
+| analysis | `maestro delegate --to <tool> --mode analysis` |
 | verify | `maestro-execute` |
 | refactor | `quality-refactor` |
 | debug | `quality-debug` |
@@ -154,7 +154,9 @@ Write `nodes.json`. Display resolved node list.
 
 Read deferred `template-schema.md` (fallback to built-in structure).
 Assemble template JSON: template_id, name, nodes, edges, checkpoints, context_schema, execution_mode.
-Write to `~/.maestro/templates/workflows/<slug>.json`. Update index.json.
+**Confirmation gate**: AskUserQuestion showing template summary (ID, node count, variables) before writing.
+- User confirms → write to `~/.maestro/templates/workflows/<slug>.json` and update index.json.
+- User cancels → save draft, do not write template or index.
 Display: path, ID, node count, variables, execute/edit commands. Clean up draft dir.
 
 </actions>

@@ -1,7 +1,7 @@
 ---
 name: quality-debug
 description: Use when bugs, test failures, or unexpected behavior need systematic root cause investigation
-argument-hint: "[issue description] [--from-uat <phase>] [--parallel]"
+argument-hint: "[issue description] [-c] [--from-uat <phase>] [--parallel]"
 allowed-tools:
   - Read
   - Write
@@ -73,6 +73,14 @@ Follow '~/.maestro/workflows/debug.md' completely.
 - BLOCKED if inconclusive: resume session or escalate.
 
 **Register artifact on completion (phase-scoped only):**
+
+Confirm before writing:
+```
+AskUserQuestion("Register debug artifact DBG-{NNN} in state.json? (yes/no)")
+→ yes: proceed with write
+→ no: skip registration, continue to knowledge inquiry
+```
+
 ```
 Append to state.json.artifacts[]:
 {
@@ -92,13 +100,19 @@ Append to state.json.artifacts[]:
 
 ### Post-debug Knowledge Inquiry
 
+For each matching condition, ask the user explicitly:
+
 | Condition | Ask | Route |
 |-----------|-----|-------|
 | Recurring root cause pattern (seen in prior debug) | "Document in debug-notes.md?" | spec-add debug |
 | Non-obvious fix / workaround | "Record as learning?" | spec-add learning |
 | Root cause = architectural boundary violation | "Update architecture-constraints.md?" | spec-add arch |
 
-On confirm → `Skill("spec-add", "<category> <content> --description \"<summary>\"")`.
+```
+AskUserQuestion("<ask text> (yes/no)")
+→ yes: Skill("spec-add", "<category> <content> --description \"<summary>\"")
+→ no: skip this entry, proceed to next condition or completion
+```
 
 </execution>
 

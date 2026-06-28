@@ -92,20 +92,22 @@ S_FALLBACK:
 
 ### A_ROUTE_SCRIPT
 
-Intent-to-script routing（按关键词匹配，--script 优先级最高）：
+Intent-to-script routing（按关键词匹配，--script 优先级最高）。
 
-| Keywords | Script |
-|----------|--------|
-| 分析 / analyze / 探索 / explore / 架构 / architecture / 复杂度 / 风险 | `wf-analyze` |
-| 头脑风暴 / brainstorm / 方案 / 设计 / 评估 / evaluate / 多角度 | `wf-brainstorm` |
-| 审查 / review / 代码审查 / code review / 质量 / quality | `wf-review` |
-| 验证 / verify / 检查 / check / 反模式 / antipattern | `wf-verify` |
-| 拷问 / grill / 压力测试 / stress-test / 挑战 / challenge | `wf-grill` |
-| 规划 / plan / 任务分解 / decompose / 分波 / wave | `wf-plan` |
-| 执行 / execute / 实现 / implement / 开发 / develop | `wf-execute` |
-| 里程碑审计 / milestone-audit / 集成检查 / integration | `wf-milestone-audit` |
+**Priority ordering** — 按下表自上而下匹配，先命中先用。高优先级的具体关键词优先于低优先级的宽泛关键词（如 "grill" > "analyze"，"verify" > "check"）：
 
-多命中 → AskUserQuestion 让用户选择。
+| Priority | Keywords | Script |
+|----------|----------|--------|
+| 1 | 里程碑审计 / milestone-audit / 集成检查 / integration | `wf-milestone-audit` |
+| 2 | 拷问 / grill / 压力测试 / stress-test / 挑战 / challenge | `wf-grill` |
+| 3 | 验证 / verify / 反模式 / antipattern | `wf-verify` |
+| 4 | 审查 / review / 代码审查 / code review / 质量 / quality | `wf-review` |
+| 5 | 执行 / execute / 实现 / implement / 开发 / develop | `wf-execute` |
+| 6 | 规划 / plan / 任务分解 / decompose / 分波 / wave | `wf-plan` |
+| 7 | 头脑风暴 / brainstorm / 方案 / 评估 / evaluate / 多角度 | `wf-brainstorm` |
+| 8 | 分析 / analyze / 探索 / explore / 架构 / architecture / 复杂度 / 风险 | `wf-analyze` |
+
+**Disambiguation**: 多命中（同一优先级内多个关键词匹配不同脚本）→ AskUserQuestion 让用户选择。跨优先级命中取高优先级。
 
 ### A_ASSEMBLE_CONTEXT
 

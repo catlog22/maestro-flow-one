@@ -159,7 +159,7 @@ Status verdicts:
 - [ ] Readiness gate: Pass (>=80%) or Review (>=60%) with documented caveats
 - [ ] Artifact registered in state.json (type=blueprint)
 - [ ] context-package.json generated for downstream consumption
-- [ ] On gate Pass/Review: session sealed via finish-work (archive.json + optional spec/knowhow extraction). On Fail: skip — session stays active, excluded from wiki search.
+- [ ] On gate Pass/Review: session sealed via finish-work (finish-work.md includes AskUserQuestion confirmation before state.json artifact registration and optional spec/knowhow extraction). On Fail: skip — session stays active, excluded from wiki search.
 </success_criteria>
 
 <on_complete>

@@ -90,6 +90,14 @@ Follow '~/.maestro/workflows/test.md' completely.
 - Generate regression test scenarios from confirmed root causes, marked `source: "debug_root_cause"`
 
 **Register artifact on completion:**
+
+Confirm before writing:
+```
+AskUserQuestion("Register test artifact TST-{NNN} in state.json? (yes/no)")
+→ yes: proceed with write
+→ no: skip registration, continue to completion
+```
+
 ```
 Append to state.json.artifacts[]:
 {
@@ -163,7 +171,7 @@ maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
 - [ ] Pressure pass completed if > 80% pass rate
 - [ ] Confidence summary appended to uat.md
 - [ ] index.json uat fields updated
-- [ ] If issues: parallel debug agents spawned per gap cluster
+- [ ] If issues: confirm with user before spawning parallel debug agents per gap cluster
 - [ ] Gaps updated with root_cause, fix_direction, affected_files
 - [ ] Gap-fix loop triggered if --auto-fix (max 2 iterations)
 - [ ] Next step routed (phase-transition if pass, verify if auto-fix success, debug --from-uat if issues, test-gen if low coverage)

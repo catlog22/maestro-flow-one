@@ -1,7 +1,7 @@
 ---
 name: maestro-quick
 description: Quick task execution, skip optional agents
-argument-hint: "[description] [--full] [--discuss]"
+argument-hint: "[description] [--full] [--discuss] [-y]"
 allowed-tools:
   - Read
   - Write
@@ -15,6 +15,7 @@ allowed-tools:
 <purpose>
 Execute small, ad-hoc tasks with workflow guarantees (atomic commits, state tracking) via a shortened pipeline.
 Flags --discuss and --full enable additional pipeline stages.
+**Implicit write**: state.json scratch task entry is written automatically as part of workflow tracking (no confirmation gate).
 </purpose>
 
 <required_reading>
@@ -27,6 +28,7 @@ $ARGUMENTS
 Parse for:
 - `--full` flag -- Enables plan-checking (max 2 iterations) and post-execution verification
 - `--discuss` flag -- Decision extraction before planning (gray areas, Locked/Free/Deferred classification)
+- `-y` / `--yes` flag -- Auto mode: skip commit confirmation, auto-approve state writes
 - Remaining text as task description
 
 ### Pre-load context
@@ -78,6 +80,6 @@ Task summaries MUST include concrete evidence of completion (files changed, test
 - [ ] Scratch task directory created under .workflow/scratch/
 - [ ] plan.json written with task definitions
 - [ ] All tasks executed with summaries written
-- [ ] state.json updated with scratch task entry
-- [ ] Commit created with task changes
+- [ ] state.json updated with scratch task entry (implicit — part of workflow tracking, no confirmation needed)
+- [ ] Commit created with task changes: stage ONLY files modified by the task (from `.summaries/TASK-*-summary.md` "Files modified" list); confirm with `AskUserQuestion` showing staged files and proposed commit message — unless `-y` is active, in which case auto-commit
 </success_criteria>

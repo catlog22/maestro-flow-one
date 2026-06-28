@@ -413,7 +413,10 @@ Collect task outcome data:
 
 ```bash
 # Detect files changed since companion doc creation
-git diff --name-only --since="{companion_created_timestamp}"
+# Use git log --since for time-based filtering, then git diff for the range
+git log --since="{companion_created_timestamp}" --format="%H" -1  # get oldest commit in range
+git diff --name-only {oldest_commit}..HEAD                         # diff from that commit to HEAD
+# Fallback if no commits since timestamp: git diff --name-only HEAD
 ```
 
 Update frontmatter:

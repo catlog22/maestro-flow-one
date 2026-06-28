@@ -43,6 +43,7 @@ S_CONFIRM         — 展示计划、用户确认（-y 跳过）              PE
 S_FANOUT          — 构建 prompt、并行启动 delegate、STOP       PERSIST: —
 S_COLLECT         — 回调到达、收集结果                          PERSIST: per-tool outputs
 S_CROSS_VERIFY    — 分类发现（共识/冲突/独有）                  PERSIST: —
+S_BOUNDARY_GRILL  — 边界冲突检测与解决                          PERSIST: —
 S_SYNTHESIZE      — 解决冲突、生成 3 个输出文件                 PERSIST: outputs
 S_REGISTER        — 注册 CLB artifact                          PERSIST: state.json
 S_REPORT          — 显示摘要 + next-step routing               PERSIST: —
@@ -84,7 +85,9 @@ S_SYNTHESIZE:
   → S_REGISTER      DO: A_GENERATE_OUTPUTS
 
 S_REGISTER:
-  → S_REPORT        DO: append CLB artifact to state.json (type: collab, scope: adhoc)
+  → S_REPORT        WHEN: user confirms or -y    DO: append CLB artifact to state.json (type: collab, scope: adhoc)
+  → S_REPORT        WHEN: user declines           DO: skip artifact registration, proceed to report
+  GUARD: AskUserQuestion "Register collab artifact to state.json?" (skipped if -y)
 
 S_REPORT:
   → END             DO: display summary (requirement, tools, consensus_level, per-tool status, artifact id, output dir)
@@ -96,8 +99,9 @@ S_REPORT:
 ### A_DISCOVER_TOOLS
 
 ```
-Bash("maestro tools list --json 2>/dev/null || cat ~/.maestro/cli-tools.json")
+Bash("maestro tools list --json 2>$null || cat ~/.maestro/cli-tools.json")
 ```
+**Note:** Shell commands MUST use the Bash tool (not PowerShell). Use POSIX syntax within Bash calls.
 Filter: enabled == true. If --mode write: exclude type == "api-endpoint".
 Auto-select (no --tools): first 3 eligible in config order.
 

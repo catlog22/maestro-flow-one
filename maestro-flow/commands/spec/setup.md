@@ -8,6 +8,7 @@ allowed-tools:
   - Bash
   - Glob
   - Grep
+  - AskUserQuestion
 ---
 <purpose>
 Initialize `.workflow/specs/` by scanning codebase for conventions. Core files always created; optional files created when signals detected. Also generates recipe knowhow for detected workflows.
@@ -27,6 +28,8 @@ $ARGUMENTS (no arguments expected)
 
 <execution>
 Follow '~/.maestro/workflows/specs-setup.md' completely.
+
+**Confirmation gate**: After scanning codebase and determining which files/directories will be created (core specs, optional specs, recipe knowhow), AskUserQuestion showing the full list of files to create with their categories and detected signals. Proceed only on user confirm.
 </execution>
 
 <error_codes>

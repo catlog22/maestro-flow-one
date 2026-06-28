@@ -21,7 +21,7 @@ $ARGUMENTS — optional flags.
 
 **Flags:**
 - `--dry-run` -- Preview migration plan without executing
-- `--force` -- Skip confirmation prompts
+- `--force` -- Skip confirmation prompts (intended for CI/automated contexts). Migration diff is still displayed even with `--force` to maintain audit visibility.
 - `--setup-only` -- Skip schema migration, run only the setup for current version
 
 **Version source:** `.workflow/state.json` → `version` field
@@ -69,24 +69,27 @@ IF `--dry-run` → display info and EXIT.
 ### Step 3: Execute
 
 ```
-1. Confirm (unless --force):
+1. Display migration diff (always — even with --force):
+   Show schema changes that will be applied.
+
+2. Confirm (unless --force):
    AskUserQuestion: "Upgrade v{current} → v{target}?"
    Options: [执行 / 取消]
 
-2. Create backup:
+3. Create backup:
    Bash: cp .workflow/state.json .workflow/state.json.backup-v{current}-{timestamp}
 
-3. Run schema migration (handles all intermediate steps automatically):
+4. Run schema migration (handles all intermediate steps automatically):
    Bash: npx tsx src/migrations/run.ts "$(pwd)" --json
    Parse result, display changes.
 
-4. IF failed → display backup restore command → EXIT
+5. IF failed → display backup restore command → EXIT
 
-5. Load version-specific setup:
+6. Load version-specific setup:
    Read: ~/.maestro/workflows/updates/update-v{target}-setup.md
    IF exists → follow completely (hooks, deps, knowledge system config)
 
-6. Display: "v{current} → v{target}: done"
+7. Display: "v{current} → v{target}: done"
 ```
 
 ### Step 4: Summary

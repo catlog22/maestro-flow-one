@@ -80,6 +80,14 @@ Follow '~/.maestro/workflows/review.md' completely.
 - `REVIEW_DIR/review.json` — findings, severity distribution, verdict
 
 **Register artifact on completion:**
+
+Confirm before writing state.json and issues.jsonl:
+```
+AskUserQuestion("Register review artifact REV-{NNN} in state.json and create {N} issues in issues.jsonl? (yes/no)")
+→ yes: proceed with both writes
+→ no: skip registration and issue creation, continue to completion
+```
+
 ```
 Append to state.json.artifacts[]:
 {

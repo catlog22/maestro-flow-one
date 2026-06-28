@@ -36,6 +36,7 @@ $ARGUMENTS — subcommand and optional flags.
 **Flags:**
 - `--type <type>` — Filter by wiki type: spec, knowhow, note, issue
 - `--fix` — Auto-fix issues found during cleanup/connect (remove broken links, apply connections)
+- `--dry-run` — Preview mode, no writes. **Overrides `--fix`**: when both are passed, `--dry-run` takes precedence (preview only, no fixes applied).
 - `--json` — Output in JSON format
 - `--min-similarity N` — (connect) Minimum similarity threshold for link candidates
 - `--max N` — (connect) Maximum number of suggestions

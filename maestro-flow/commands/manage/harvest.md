@@ -33,7 +33,10 @@ Arguments: $ARGUMENTS
 - `<session-id>` (e.g., `ANL-auth-20260410`, `WFS-xxx`) → `session` mode: harvest specific session
 - `<path>` (e.g., `.workflow/.analysis/ANL-auth-20260410/`) → `path` mode: harvest from explicit directory
 
-Flags, source registry (scan paths), and storage locations defined in workflow harvest.md.
+**Flags:**
+- `-y` / `--yes` — Skip confirmation prompts for all write operations (artifact selection, routing decisions, store writes). Useful for CI or batch harvesting.
+
+Additional flags, source registry (scan paths), and storage locations defined in workflow harvest.md.
 </context>
 
 <execution>

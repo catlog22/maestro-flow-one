@@ -1,7 +1,7 @@
 ---
 name: learn-decompose
 description: Extract design patterns from code into specs and wiki
-argument-hint: "<path|module> [--patterns <list>] [--save-spec] [--save-wiki]"
+argument-hint: "<path|module> [--patterns <list>] [--save-spec] [--save-wiki] [-y]"
 allowed-tools:
   - Read
   - Write
@@ -24,6 +24,7 @@ $ARGUMENTS — target path/module and optional flags.
 - `--patterns <list>`: Comma-separated pattern names to look for (default: detect all)
 - `--save-spec`: `Skill("spec-add")` for each new pattern
 - `--save-wiki`: create wiki note per dimension group
+- `-y`: Skip confirmation prompts for knowhow/spec writes
 
 **Storage read**: target files + `coding-conventions.md` + `.workflow/specs/learnings.md` (dedup)
 **Storage write**: `.workflow/knowhow/KNW-decompose-{slug}-{date}.md` + append `.workflow/specs/learnings.md`
@@ -59,7 +60,8 @@ S_CATALOG:
   → S_PERSIST     DO: write KNW-decompose report (grouped by dimension: pattern table + details)
 
 S_PERSIST:
-  → END           DO: append .workflow/specs/learnings.md [+ spec-add if --save-spec] [+ wiki note if --save-wiki]
+  → END           GATE: unless -y, AskUserQuestion showing files to write and patterns to persist — proceed only on confirm
+                  DO: append .workflow/specs/learnings.md [+ spec-add if --save-spec] [+ wiki note if --save-wiki]
 
 </transitions>
 
@@ -86,8 +88,8 @@ For each finding, match against known pattern set:
 | Status | Condition |
 |--------|-----------|
 | documented | Already in coding-conventions.md |
-| known | In .workflow/specs/learnings.md |
-| new | Not seen before |
+| known | In .workflow/specs/learnings.md (if file exists) |
+| new | Not seen before (or learnings.md absent — treat all as new) |
 
 Flag contradictions (finding conflicts with documented convention). Merge duplicates across agents (same pattern found by multiple dimensions).
 
@@ -100,6 +102,7 @@ Flag contradictions (finding conflicts with documented convention). Merge duplic
 |------|-----------|----------|
 | E002 | No source files in target | Check target has .ts/.js files |
 | W001 | One+ dimension agent failed | Proceed with available dimensions |
+| W002 | .workflow/specs/learnings.md missing or malformed | Treat all patterns as new; create file on persist |
 | W003 | Large target (>50 files) | Consider --patterns filter |
 </error_codes>
 

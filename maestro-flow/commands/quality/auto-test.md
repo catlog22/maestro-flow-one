@@ -25,6 +25,8 @@ Layers L0→L3 sequential (fail-fast), scenarios within layer parallel. `--max-i
 Phase or task: $ARGUMENTS (required — phase number)
 
 **Flags:**
+- `-c N` — Resume from iteration N of an existing session (skips setup, resumes from last checkpoint)
+- `-y` — Skip confirmation prompts for artifact registration and issue creation
 - `--max-iter N` — Maximum outer iterations (default: 5). Set to 1 for single-pass generation only.
 - `--layer L` — Start from or restrict to specific layer (L0|L1|L2|L3)
 - `--dry-run` — Generate test plan only, do not execute
@@ -90,6 +92,14 @@ Follow '~/.maestro/workflows/auto-test.md' completely.
 - Generate regression test scenarios from confirmed root causes, marked `source: "debug_root_cause"`
 
 **Register artifact on completion:**
+
+Unless `-y` flag is set, confirm before writing:
+```
+AskUserQuestion("Register auto-test artifact TST-{NNN} in state.json? (yes/no)")
+→ yes: proceed with write
+→ no: skip registration, continue to next-step routing
+```
+
 ```
 Append to state.json.artifacts[]:
 {
@@ -147,7 +157,7 @@ Append to state.json.artifacts[]:
 - [ ] report.json includes confidence section
 - [ ] index.json updated with auto_test section
 - [ ] If spec source: traceability matrix built, traceability.md written
-- [ ] If failures: issues auto-created in issues.jsonl
+- [ ] If failures: issues created in issues.jsonl (confirmed by user unless `-y`)
 - [ ] If gap source: validation.json gaps updated (MISSING→COVERED)
 - [ ] Next step routed based on convergence status
 </success_criteria>

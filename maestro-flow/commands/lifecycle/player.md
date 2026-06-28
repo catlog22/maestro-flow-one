@@ -35,7 +35,7 @@ $ARGUMENTS — template slug/path, or flags.
 | skill | `Skill(skill, args)` | sync |
 | command | `Skill(skill, args)` | sync |
 | cli | `maestro delegate --to tool --mode mode` via `Bash(run_in_background: true)` | async, STOP + wait |
-| agent | `Agent(subagent_type, prompt)` | configurable |
+| agent | `Agent(subagent_type, prompt)` — valid subagent_type: `"task"` (default), `"research"`, `"code"`. Unknown type falls back to `"task"`. | configurable |
 | checkpoint | State save + optional user pause | — |
 
 **Runtime reference resolution** in args_template:
@@ -105,7 +105,7 @@ S_EXEC_LOOP:
   → END           WHEN: checkpoint pause                    DO: set status=paused, display resume command
   → END           WHEN: abort chosen                        DO: set status=aborted, save progress
   GUARD: cli nodes → Bash(run_in_background: true) + STOP, wait for callback
-  GUARD: on failure → on_fail: skip (log, advance) | retry (once) | abort (AskUserQuestion: Retry/Skip/Abort)
+  GUARD: on failure → on_fail: skip (log, advance) | retry (once) | abort (AskUserQuestion: Retry/Skip/Abort). Default on_fail when not specified: `abort` (prompt user via AskUserQuestion).
   GUARD: after step 3+ → display context hint "可随时 /maestro-player -c 恢复"
 
 S_COMPLETE:

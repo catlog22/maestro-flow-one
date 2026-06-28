@@ -1,7 +1,7 @@
 ---
 name: maestro-amend
 description: Generate overlays to fix workflow command deficiencies
-argument-hint: "[description] [--from-verify <dir>] [--from-review <dir>] [--from-session <id>] [--from-issues ISS-xxx,...] [--scan] [--dry-run]"
+argument-hint: "[description] [--from-verify <dir>] [--from-review <dir>] [--from-session <id>] [--from-issues ISS-xxx,...] [--scan] [--dry-run] [-y]"
 allowed-tools:
   - Read
   - Write

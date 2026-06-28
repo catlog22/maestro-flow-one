@@ -42,7 +42,7 @@ Follow '~/.maestro/workflows/sync.md' completely.
 
 **GATE 3: Refresh → Completion**
 - REQUIRED: `.workflow/codebase/` docs refreshed for affected components.
-- REQUIRED: state.json updated with sync timestamp.
+- REQUIRED: If `--dry-run` is set, skip state.json write and report what would change. Otherwise, update state.json with sync timestamp.
 - BLOCKED if missing: do not report completion without updated docs.
 </execution>
 
@@ -80,7 +80,7 @@ maestro ralph complete <idx> --status {STATUS} [--evidence {path}]
 </error_codes>
 
 <success_criteria>
-- [ ] state.json updated with current sync timestamp
+- [ ] state.json updated with current sync timestamp (skipped if `--dry-run`)
 - [ ] Codebase docs refreshed for all affected components
 - [ ] doc-index.json reflects current file state
 - [ ] Changes tracked and logged

@@ -38,6 +38,7 @@ Scope routing, base flags (`--collab`, `--spec`, `-y`, `--gaps`, `--dir`), outpu
   - `analyze:ANL-xxx` → CONTEXT_DIR = artifact path, scope = "standalone"
   - `blueprint:BLP-xxx` → CONTEXT_DIR = blueprint path, scope = "standalone"
   - `@file` or `path/` → load context-package.json from path
+- `--tdd` — Enable TDD mode: generate test-first task structure (Red-Green-Refactor). See workflow `plan.md` § TDD Mode for task generation rules.
 - `--revise [instructions]` -- See workflow plan.md § Revise Mode
 - `--check <plan-dir>` -- See workflow plan.md § Check Mode
 

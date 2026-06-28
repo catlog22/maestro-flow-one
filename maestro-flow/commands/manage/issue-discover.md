@@ -5,6 +5,7 @@ argument-hint: "[multi-perspective | by-prompt <prompt>] [-y] [--scope <glob>] [
 allowed-tools:
   - Read
   - Write
+  - Edit
   - Bash
   - Glob
   - Grep

@@ -134,6 +134,15 @@ Handoff rules:
 - Support runtime variable placeholders: `{phase}`, `{description}`, `{session_id}`
 - Keep handoff block under 10 lines of markdown
 
+### 3.5. Content approval
+
+Display the full overlay JSON to the user. AskUserQuestion:
+- **"Approve & install"** — proceed to installation
+- **"Edit"** — user provides corrections, re-draft
+- **"Cancel"** — discard overlay, do not write
+
+Only write the overlay JSON file to `~/.maestro/overlays/<slug>.json` after user approval.
+
 ### 4. Install via `maestro overlay add`
 
 Run:

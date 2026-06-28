@@ -53,9 +53,10 @@ Fork and sync algorithm steps are defined in workflow `fork.md`.
 - BLOCKED if missing: worktree creation failed or shared files not copied — do not proceed to artifact scoping.
 
 **GATE 3: Artifact Copy → Completion**
-- REQUIRED: `worktree-scope.json` written with milestone scope.
-- REQUIRED: Scoped `state.json` written (only this milestone's artifacts).
-- REQUIRED: `worktrees.json` registry updated in main worktree.
+- REQUIRED: AskUserQuestion confirmation before registry writes — show milestone scope, worktree path, and state entries to be written. User must confirm or abort.
+- REQUIRED: `worktree-scope.json` written with milestone scope (after confirmation).
+- REQUIRED: Scoped `state.json` written (only this milestone's artifacts) (after confirmation).
+- REQUIRED: `worktrees.json` registry updated in main worktree (after confirmation).
 - BLOCKED if missing: scope marker, scoped state, or registry update absent — worktree is unusable without these.
 
 **Sync mode:**

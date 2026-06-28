@@ -1,7 +1,7 @@
 ---
 name: maestro-roadmap
 description: Generate roadmap with milestone/phase structure from requirements or upstream context
-argument-hint: "<requirement> [-y] [-c] [-m progressive|direct|auto] [--from <source>] [--revise [instructions]] [--review]"
+argument-hint: "<requirement> [-y] [-c] [-m progressive|direct|auto] [--from <source>] [--from-brainstorm SESSION-ID] [--revise [instructions]] [--review]"
 allowed-tools:
   - Read
   - Write
